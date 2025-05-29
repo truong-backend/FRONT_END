@@ -1,0 +1,34 @@
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import type { UserRole } from '../types/auth';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles: UserRole[];
+}
+
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { isAuthenticated, userRole } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (userRole && !allowedRoles.includes(userRole)) {
+    // Redirect to appropriate dashboard based on user role
+    switch (userRole) {
+      case 'STUDENT':
+        return <Navigate to="/student/dashboard" replace />;
+      case 'TEACHER':
+        return <Navigate to="/teacher/dashboard" replace />;
+      case 'ADMIN':
+        return <Navigate to="/admin/dashboard" replace />;
+      default:
+        return <Navigate to="/login" replace />;
+    }
+  }
+
+  return <>{children}</>;
+};
