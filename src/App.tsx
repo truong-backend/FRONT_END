@@ -1,10 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { LoginForm } from './components/LoginForm';
-import { StudentDashboard } from './components/StudentDashboard.';
-import { TeacherDashboard } from './components/TeacherDashboard';
-import { AdminDashboard } from './components/AdminDashboard';
+import { LoginForm } from './components/login/Router/form/LoginForm';
+import { StudentDashboard } from './components/student/StudentDashboard.';
+import { TeacherDashboard } from './components/teacher/TeacherDashboard';
+import { AdminDashboard } from './components/admim/AdminDashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {

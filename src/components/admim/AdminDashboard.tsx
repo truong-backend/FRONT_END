@@ -1,7 +1,7 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Settings, LogOut, User, Mail, Crown, Users, Wrench, BarChart3, Cog } from 'lucide-react';
-import type { AdminLoginResponse } from '../types/auth';
+import type { AdminLoginResponse } from '../../types/auth';
 
 export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();

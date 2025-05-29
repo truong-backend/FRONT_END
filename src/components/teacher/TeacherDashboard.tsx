@@ -1,6 +1,6 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { BookOpen, LogOut, User, Mail, Users, FileText, BarChart3 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { LogOut, Users, FileText, BarChart3 } from 'lucide-react';
 
 export const TeacherDashboard: React.FC = () => {
   const { user, logout } = useAuth();

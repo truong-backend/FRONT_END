@@ -1,11 +1,11 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { User, Mail, BookOpen, Calendar, CheckCircle, Bell, LogOut } from 'lucide-react';
-import type { StudentLoginResponse } from '../types/auth';
+import { useAuth } from '../../contexts/AuthContext';
+import { BookOpen, Calendar, CheckCircle, Bell, LogOut } from 'lucide-react';
+import type { UserLoginResponse } from '../../types/auth';
 
 export const StudentDashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  const studentUser = user as StudentLoginResponse;
+  const studentUser = user as UserLoginResponse;
 
   return (
     <div className="min-h-screen bg-white">
@@ -14,7 +14,7 @@ export const StudentDashboard: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 flex justify-between items-center">
           <div>
             <h1 className="text-xl font-medium text-gray-900">Trang Sinh Viên</h1>
-            <p className="text-sm text-gray-500 mt-1">Xin chào, {studentUser?.fullName || 'Sinh viên'}</p>
+            {/* <p className="text-sm text-gray-500 mt-1">Xin chào, {studentUser?.fullName || 'Sinh viên'}</p> */}
           </div>
           <button
             onClick={logout}
@@ -34,7 +34,7 @@ export const StudentDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-gray-500">Mã sinh viên:</span>
-                <p className="font-medium mt-1">{studentUser?.studentId || 'SV2024001'}</p>
+                {/* <p className="font-medium mt-1">{studentUser?.studentId || 'SV2024001'}</p> */}
               </div>
               <div>
                 <span className="text-gray-500">Email:</span>
@@ -42,7 +42,7 @@ export const StudentDashboard: React.FC = () => {
               </div>
               <div>
                 <span className="text-gray-500">Họ và tên:</span>
-                <p className="font-medium mt-1">{studentUser?.fullName || 'Chưa cập nhật'}</p>
+                {/* <p className="font-medium mt-1">{studentUser?.fullName || 'Chưa cập nhật'}</p> */}
               </div>
             </div>
           </div>
