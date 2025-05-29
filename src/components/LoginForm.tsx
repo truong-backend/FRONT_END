@@ -38,30 +38,29 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
     setIsLoading(true);
     setError('');
 
-try {
-  await login(data, userType);
-  // Redirect based on user type
-  switch (userType) {
-    case 'STUDENT':
-      navigate('/student/dashboard');
-      break;
-    case 'TEACHER':
-      navigate('/teacher/dashboard');
-      break;
-    case 'ADMIN':
-      navigate('/admin/dashboard');
-      break;
-  }
-} catch (err: unknown) {
-  if (err instanceof Error) {
-    setError(err.message);
-  } else {
-    setError('Đã xảy ra lỗi không xác định.');
-  }
-} finally {
-  setIsLoading(false);
-}
-
+    try {
+      await login(data, userType);
+      // Redirect based on user type
+      switch (userType) {
+        case 'STUDENT':
+          navigate('/student/dashboard');
+          break;
+        case 'TEACHER':
+          navigate('/teacher/dashboard');
+          break;
+        case 'ADMIN':
+          navigate('/admin/dashboard');
+          break;
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Đã xảy ra lỗi không xác định');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

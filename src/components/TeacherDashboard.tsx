@@ -34,7 +34,7 @@ export const TeacherDashboard: React.FC = () => {
                 <User className="h-5 w-5 text-gray-400 mr-3" />
                 <div>
                   <p className="text-sm text-gray-500">Tên đăng nhập</p>
-                  {/* <p className="font-medium">{(user as User)?.username}</p> */}
+                  {/* <p className="font-medium">{(user as any)?.username}</p> */}
                 </div>
               </div>
               <div className="flex items-center">

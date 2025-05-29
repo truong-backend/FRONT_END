@@ -2,6 +2,7 @@ export interface LoginRequest {
   email: string;
   password: string;
 }
+
 export interface UserLoginResponse {
   accessToken: string;
   tokenType: string;
@@ -10,6 +11,7 @@ export interface UserLoginResponse {
   email: string;
   role: string;
 }
+
 export interface AdminLoginResponse {
   accessToken: string;
   tokenType: string;
@@ -18,7 +20,9 @@ export interface AdminLoginResponse {
   email: string;
   fullName: string;
   role: string;
-}export type UserRole = 'STUDENT' | 'TEACHER' | 'ADMIN';
+}
+
+export type UserRole = 'STUDENT' | 'TEACHER' | 'ADMIN';
 
 export interface AuthContextType {
   user: UserLoginResponse | AdminLoginResponse | null;

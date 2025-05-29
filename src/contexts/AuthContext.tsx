@@ -51,8 +51,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole(userType);
     } catch (error: unknown) {
       let errorMessage = 'Đăng nhập thất bại';
-      if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response) {
-        errorMessage = (error as { response: { data: string } }).response.data;
+      type ErrorWithResponse = { response?: { data?: string } };
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        (error as ErrorWithResponse).response &&
+        typeof (error as ErrorWithResponse).response?.data === 'string'
+      ) {
+        errorMessage = (error as ErrorWithResponse).response!.data!;
       }
       throw new Error(errorMessage);
     }

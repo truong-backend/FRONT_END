@@ -1,10 +1,11 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Settings, LogOut, User, Mail, Crown } from 'lucide-react';
+import type { AdminLoginResponse } from '../types/auth'; // Adjust the import path as necessary
 
 export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  const adminUser = user; // AdminLoginResponse
+  const adminUser = user as AdminLoginResponse; // AdminLoginResponse
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -49,7 +50,7 @@ export const AdminDashboard: React.FC = () => {
                 <Crown className="h-5 w-5 text-gray-400 mr-3" />
                 <div>
                   <p className="text-sm text-gray-500">Họ và tên</p>
-                  {/* <p className="font-medium">{adminUser?.fullName}</p> */}
+                  <p className="font-medium">{adminUser?.fullName}</p>
                 </div>
               </div>
             </div>
