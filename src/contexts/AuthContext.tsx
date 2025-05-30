@@ -15,14 +15,22 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserLoginResponse | AdminLoginResponse | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    if (savedUser && savedRole) {
-      setUser(JSON.parse(savedUser));
-      setUserRole(savedRole);
-    }
+    const initializeAuth = () => {
+      const savedUser = localStorage.getItem('user');
+      const savedRole = localStorage.getItem('userRole') as UserRole;
+      const token = localStorage.getItem('accessToken');
+
+      if (savedUser && savedRole && token) {
+        setUser(JSON.parse(savedUser));
+        setUserRole(savedRole);
+      }
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (credentials: LoginRequest, userType: UserRole) => {
@@ -74,6 +82,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAuthenticated = !!user;
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>;
+  }
 
   return (
     <AuthContext.Provider value={{ user, login, logout, isAuthenticated, userRole }}>

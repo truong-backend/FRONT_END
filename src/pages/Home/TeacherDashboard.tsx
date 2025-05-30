@@ -160,4 +160,4 @@ export const TeacherDashboard: React.FC = () => {
       </main>
     </div>
   );
-};
+}; 

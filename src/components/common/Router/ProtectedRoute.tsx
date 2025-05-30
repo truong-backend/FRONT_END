@@ -13,11 +13,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   const location = useLocation();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const loginPath = allowedRoles.includes('ADMIN') 
+      ? '/admin/login'
+      : allowedRoles.includes('TEACHER')
+      ? '/teacher/login'
+      : '/login';
+
+    return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
   if (userRole && !allowedRoles.includes(userRole)) {
-    // Redirect to appropriate dashboard based on user role
     switch (userRole) {
       case 'STUDENT':
         return <Navigate to="/student/dashboard" replace />;
@@ -31,4 +36,4 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   return <>{children}</>;
-};
+}; 

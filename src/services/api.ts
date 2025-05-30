@@ -46,4 +46,6 @@ export const authAPI = {
     api.post('/admin/login', credentials).then(res => res.data),
 };
 
+export const API_URL = "http://localhost:8080/api/auth/";
+
 export default api;

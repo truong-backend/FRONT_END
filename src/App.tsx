@@ -1,11 +1,33 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { LoginForm } from './components/login/form/LoginForm';
-import { StudentDashboard } from './components/student/StudentDashboard.';
-import { TeacherDashboard } from './components/teacher/TeacherDashboard';
-import { AdminDashboard } from './components/admim/AdminDashboard';
-import { ProtectedRoute } from './components/login/Router/ProtectedRoute';
+import { LoginForm } from './components/ui/LoginForm';
+import { StudentDashboard } from './pages/Home/StudentDashboard';
+import { TeacherDashboard } from './pages/Home/TeacherDashboard';
+import { AdminDashboard } from './pages/Home/AdminDashboard';
+import { ProtectedRoute } from './components/common/Router/ProtectedRoute';
+import { useAuth } from './contexts/AuthContext';
+
+// Component để bảo vệ các route đăng nhập
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, userRole } = useAuth();
+
+  if (isAuthenticated && userRole) {
+    // Nếu đã đăng nhập, chuyển về dashboard tương ứng
+    switch (userRole) {
+      case 'STUDENT':
+        return <Navigate to="/student/dashboard" replace />;
+      case 'TEACHER':
+        return <Navigate to="/teacher/dashboard" replace />;
+      case 'ADMIN':
+        return <Navigate to="/admin/dashboard" replace />;
+      default:
+        return <Navigate to="/login" replace />;
+    }
+  }
+
+  return <>{children}</>;
+};
 
 function App() {
   return (
@@ -17,31 +39,37 @@ function App() {
             <Route
               path="/login"
               element={
-                <LoginForm
-                  userType="STUDENT"
-                  title="Đăng nhập Sinh viên"
-                  description="Sử dụng email sinh viên (@student.stu.edu.vn)"
-                />
+                <PublicRoute>
+                  <LoginForm
+                    userType="STUDENT"
+                    title="Đăng nhập Sinh viên"
+                    description="Sử dụng email sinh viên (@student.stu.edu.vn)"
+                  />
+                </PublicRoute>
               }
             />
             <Route
               path="/teacher/login"
               element={
-                <LoginForm
-                  userType="TEACHER"
-                  title="Đăng nhập Giảng viên"
-                  description="Dành cho giảng viên và cán bộ"
-                />
+                <PublicRoute>
+                  <LoginForm
+                    userType="TEACHER"
+                    title="Đăng nhập Giảng viên"
+                    description="Dành cho giảng viên và cán bộ"
+                  />
+                </PublicRoute>
               }
             />
             <Route
               path="/admin/login"
               element={
-                <LoginForm
-                  userType="ADMIN"
-                  title="Đăng nhập Quản trị"
-                  description="Trang quản trị hệ thống"
-                />
+                <PublicRoute>
+                  <LoginForm
+                    userType="ADMIN"
+                    title="Đăng nhập Quản trị"
+                    description="Trang quản trị hệ thống"
+                  />
+                </PublicRoute>
               }
             />
 
