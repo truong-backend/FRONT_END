@@ -17,7 +17,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
       ? '/admin/login'
       : allowedRoles.includes('TEACHER')
       ? '/teacher/login'
-      : '/login';
+      : '/student/login';
 
     return <Navigate to={loginPath} state={{ from: location }} replace />;
   }

@@ -22,7 +22,7 @@ export interface AdminLoginResponse {
   role: string;
 }
 
-export type UserRole = 'STUDENT' | 'TEACHER' | 'ADMIN';
+export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT';
 
 export interface AuthContextType {
   user: UserLoginResponse | AdminLoginResponse | null;
@@ -30,4 +30,27 @@ export interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   userRole: UserRole | null;
+}
+
+export interface ForgotPasswordFormProps {
+  userType: UserRole;
+  title: string;
+  description: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface OTPVerificationResponse {
+  success: boolean;
+  message: string;
+  token?: string;
+}
+
+export interface PasswordResetVerificationRequest {
+  email: string;
+  otp: string;
+  newPassword: string;
 }

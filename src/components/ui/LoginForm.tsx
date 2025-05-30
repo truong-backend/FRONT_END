@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import type { UserRole, LoginRequest } from '../../types/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 
 const schema = yup.object({
   email: yup.string().email('Email không hợp lệ').required('Email là bắt buộc'),
@@ -22,9 +22,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const {
     register,
@@ -33,6 +35,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
   } = useForm<LoginRequest>({
     resolver: yupResolver(schema),
   });
+
+  useEffect(() => {
+    // Show success message if redirected from password reset
+    if (searchParams.get('reset') === 'success') {
+      setSuccess('Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập với mật khẩu mới.');
+      // Tự động xóa thông báo sau 5 giây
+      const timer = setTimeout(() => {
+        setSuccess('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const onSubmit = async (data: LoginRequest) => {
     setIsLoading(true);
@@ -87,6 +101,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
             </h2>
             <p className="text-gray-300 text-sm leading-relaxed">{description}</p>
           </div>
+
+          {success && (
+            <div className="rounded-md bg-green-500/10 backdrop-blur-sm border border-green-500/20 text-green-300 px-4 py-3 mb-6 rounded-xl text-sm animate-slideInDown">
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                {success}
+              </div>
+            </div>
+          )}
 
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             {/* Error message */}
@@ -158,6 +181,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
                   {errors.password.message}
                 </p>
               )}
+            </div>
+
+            {/* Forgot password link */}
+            <div className="flex items-center justify-end">
+              <Link
+                to={`/${userType.toLowerCase()}/forgot-password`}
+                className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors duration-200"
+              >
+                Quên mật khẩu?
+              </Link>
             </div>
 
             {/* Submit button */}

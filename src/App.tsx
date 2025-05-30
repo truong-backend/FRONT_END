@@ -6,6 +6,9 @@ import { StudentDashboard } from './pages/Home/StudentDashboard';
 import { TeacherDashboard } from './pages/Home/TeacherDashboard';
 import { AdminDashboard } from './pages/Home/AdminDashboard';
 import { ProtectedRoute } from './components/common/Router/ProtectedRoute';
+import { ForgotPasswordForm } from './components/ui/ForgotPasswordForm';
+import { OTPVerificationForm } from './components/ui/OTPVerificationForm';
+import { ResetPasswordForm } from './components/ui/ResetPasswordForm';
 import { useAuth } from './contexts/AuthContext';
 
 // Component để bảo vệ các route đăng nhập
@@ -35,9 +38,12 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/student/login" replace />} />
+
             {/* Login Routes */}
             <Route
-              path="/login"
+              path="/student/login"
               element={
                 <PublicRoute>
                   <LoginForm
@@ -73,6 +79,120 @@ function App() {
               }
             />
 
+            {/* Password Reset Routes - Student */}
+            <Route
+              path="/student/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPasswordForm
+                    userType="STUDENT"
+                    title="Quên mật khẩu"
+                    description="Khôi phục mật khẩu tài khoản sinh viên"
+                  />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/student/verify-otp"
+              element={
+                <PublicRoute>
+                  <OTPVerificationForm
+                    userType="STUDENT"
+                    title="Xác thực OTP"
+                    description="Nhập mã OTP đã được gửi đến email của bạn"
+                  />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/student/reset-password"
+              element={
+                <PublicRoute>
+                  <ResetPasswordForm
+                    userType="STUDENT"
+                    title="Đặt lại mật khẩu"
+                    description="Tạo mật khẩu mới cho tài khoản sinh viên"
+                  />
+                </PublicRoute>
+              }
+            />
+
+            {/* Password Reset Routes - Teacher */}
+            <Route
+              path="/teacher/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPasswordForm
+                    userType="TEACHER"
+                    title="Quên mật khẩu"
+                    description="Khôi phục mật khẩu tài khoản giảng viên"
+                  />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/teacher/verify-otp"
+              element={
+                <PublicRoute>
+                  <OTPVerificationForm
+                    userType="TEACHER"
+                    title="Xác thực OTP"
+                    description="Nhập mã OTP đã được gửi đến email của bạn"
+                  />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/teacher/reset-password"
+              element={
+                <PublicRoute>
+                  <ResetPasswordForm
+                    userType="TEACHER"
+                    title="Đặt lại mật khẩu"
+                    description="Tạo mật khẩu mới cho tài khoản giảng viên"
+                  />
+                </PublicRoute>
+              }
+            />
+
+            {/* Password Reset Routes - Admin */}
+            <Route
+              path="/admin/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPasswordForm
+                    userType="ADMIN"
+                    title="Quên mật khẩu"
+                    description="Khôi phục mật khẩu tài khoản quản trị"
+                  />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/admin/verify-otp"
+              element={
+                <PublicRoute>
+                  <OTPVerificationForm
+                    userType="ADMIN"
+                    title="Xác thực OTP"
+                    description="Nhập mã OTP đã được gửi đến email của bạn"
+                  />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/admin/reset-password"
+              element={
+                <PublicRoute>
+                  <ResetPasswordForm
+                    userType="ADMIN"
+                    title="Đặt lại mật khẩu"
+                    description="Tạo mật khẩu mới cho tài khoản quản trị"
+                  />
+                </PublicRoute>
+              }
+            />
+
             {/* Protected Dashboard Routes */}
             <Route
               path="/student/dashboard"
@@ -98,9 +218,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
       </Router>
