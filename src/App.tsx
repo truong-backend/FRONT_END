@@ -1,11 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { LoginForm } from './components/login/Router/form/LoginForm';
+import { LoginForm } from './components/login/form/LoginForm';
 import { StudentDashboard } from './components/student/StudentDashboard.';
 import { TeacherDashboard } from './components/teacher/TeacherDashboard';
 import { AdminDashboard } from './components/admim/AdminDashboard';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { ProtectedRoute } from './components/login/Router/ProtectedRoute';
 
 function App() {
   return (

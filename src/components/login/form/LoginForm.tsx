@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-react';
-import type { LoginRequest, UserRole } from '../../../../types/auth';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import type { UserRole, LoginRequest } from '../../../types/auth';
 import { useNavigate } from 'react-router-dom';
 
 const schema = yup.object({
