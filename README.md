@@ -1,12 +1,59 @@
-# React + Vite
+# Dự Án Frontend - Ứng Dụng React
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Giới Thiệu
+Đây là ứng dụng frontend được xây dựng bằng React, cung cấp giao diện người dùng hiện đại và tương thích. Được phát triển với React.js, ứng dụng triển khai các chức năng cốt lõi cho tương tác người dùng và quản lý dữ liệu.
 
-Currently, two official plugins are available:
+## Yêu Cầu Hệ Thống
+- npm 
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Hướng Dẫn Cài Đặt
+1. Clone dự án:
+```bash
+git clone https://github.com/truong-backend/FRONT_END.git
+cd FRONT_END
+```
 
-## Expanding the ESLint configuration
+2. Cài đặt thư viện:
+```bash
+npm install
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+3. Khởi chạy môi trường phát triển:
+```bash
+npm start
+```
+Ứng dụng sẽ chạy tại `http://localhost:3000`
+
+## Cấu Trúc Dự Án
+```
+FRONT_END/
+├── public/          # File tĩnh
+├── src/
+│   ├── components/  # Components React có thể tái sử dụng
+│   ├── pages/       # Components trang
+│   ├── assets/      # Hình ảnh, styles, fonts
+│   ├── services/    # Dịch vụ API
+│   └── utils/       # Hàm tiện ích
+└── README.md
+```
+
+## Tính Năng Chính
+- Framework React.js
+- Kiến trúc dựa trên component
+- Thiết kế UI/UX hiện đại
+- Giao diện tương thích đa thiết bị
+
+## Phát Triển
+- `npm start` - Chế độ phát triển
+- `npm test` - Chạy kiểm thử
+- `npm build` - Build sản phẩm
+
+## Đóng Góp
+1. Fork repository
+2. Tạo nhánh tính năng mới
+3. Commit thay đổi
+4. Push lên nhánh
+5. Tạo Pull Request
+
+## Giấy Phép
+Giấy phép MIT
