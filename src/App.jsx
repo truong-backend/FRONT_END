@@ -5,18 +5,17 @@ import { LoginForm } from './components/ui/LoginForm';
 import { StudentDashboard } from './pages/Home/StudentDashboard';
 import { TeacherDashboard } from './pages/Home/TeacherDashboard';
 import { AdminDashboard } from './pages/Home/AdminDashboard';
-import { ProtectedRoute } from './components/common/Router/ProtectedRoute';
+import { ProtectedRoute } from './components/Router/ProtectedRoute';
 import { ForgotPasswordForm } from './components/ui/ForgotPasswordForm';
 import { OTPVerificationForm } from './components/ui/OTPVerificationForm';
 import { ResetPasswordForm } from './components/ui/ResetPasswordForm';
 import { useAuth } from './contexts/AuthContext';
 
 // Component để bảo vệ các route đăng nhập
-const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const PublicRoute = ({ children }) => {
   const { isAuthenticated, userRole } = useAuth();
 
   if (isAuthenticated && userRole) {
-    // Nếu đã đăng nhập, chuyển về dashboard tương ứng
     switch (userRole) {
       case 'STUDENT':
         return <Navigate to="/student/dashboard" replace />;

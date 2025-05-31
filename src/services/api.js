@@ -1,13 +1,4 @@
 import axios from 'axios';
-import type { 
-  LoginRequest, 
-  UserLoginResponse, 
-  AdminLoginResponse,
-  ResetPasswordResponse,
-  OTPVerificationResponse,
-  UserRole,
-  PasswordResetVerificationRequest
-} from '../types/auth';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -45,33 +36,33 @@ api.interceptors.response.use(
 
 export const authAPI = {
   // Login endpoints
-  loginStudent: (credentials: LoginRequest): Promise<UserLoginResponse> =>
+  loginStudent: (credentials) =>
     api.post('/sinhvien/login', credentials).then(res => res.data),
   
-  loginTeacher: (credentials: LoginRequest): Promise<UserLoginResponse> =>
+  loginTeacher: (credentials) =>
     api.post('/giangvien/login', credentials).then(res => res.data),
   
-  loginAdmin: (credentials: LoginRequest): Promise<AdminLoginResponse> =>
+  loginAdmin: (credentials) =>
     api.post('/admin/login', credentials).then(res => res.data),
 
   // Password reset endpoints
-  requestOTP: (email: string, userType: UserRole): Promise<ResetPasswordResponse> => {
+  requestOTP: (email, userType) => {
     const endpoint = userType === 'ADMIN' ? 'password-reset/admin/request-otp' : 'password-reset/user/request-otp';
     return api.post(endpoint, { email }).then(res => res.data);
   },
 
-  verifyOTPAndResetPassword: (data: PasswordResetVerificationRequest, userType: UserRole): Promise<ResetPasswordResponse> => {
+  verifyOTPAndResetPassword: (data, userType) => {
     const endpoint = userType === 'ADMIN' ? 'password-reset/admin/verify-otp' : 'password-reset/user/verify-otp';
     return api.post(endpoint, data).then(res => res.data);
   },
 
-  verifyOTP: (email: string, otp: string, userType: UserRole): Promise<OTPVerificationResponse> => {
+  verifyOTP: (email, otp, userType) => {
     const endpoint = userType === 'ADMIN' ? 'password-reset/admin/verify-otp' : 
       userType === 'TEACHER' ? 'password-reset/user/verify-otp' : 'password-reset/user/verify-otp';
     return api.post(endpoint, { email, otp }).then(res => res.data);
   },
 
-  resetPassword: (token: string, newPassword: string, userType: UserRole): Promise<ResetPasswordResponse> => {
+  resetPassword: (token, newPassword, userType) => {
     const endpoint = userType === 'ADMIN' ? 'password-reset/admin/reset-password' : 
       userType === 'TEACHER' ? 'password-reset/user/reset-password' : 'password-reset/user/reset-password';
     return api.post(endpoint, { token, newPassword }).then(res => res.data);
@@ -80,4 +71,4 @@ export const authAPI = {
 
 export const API_URL = "http://localhost:8080/api/";
 
-export default api;
+export default api; 

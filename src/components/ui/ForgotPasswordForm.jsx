@@ -1,26 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ForgotPasswordFormProps } from '../../types/auth';
 import { requestOTP } from '../../services/authService';
 import { Mail, ArrowLeft, Send } from 'lucide-react';
 
-export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType, title, description }) => {
+export const ForgotPasswordForm = ({ userType, title, description }) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
       await requestOTP(email, userType);
-      // Store email in sessionStorage for the next steps
       sessionStorage.setItem('resetEmail', email);
       navigate(`/${userType.toLowerCase()}/verify-otp`);
-    } catch (err: any) {
+    } catch (err) {
       setError(err.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -131,4 +129,4 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType
       </div>
     </div>
   );
-}; 
+};

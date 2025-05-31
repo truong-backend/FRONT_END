@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { AuthContextType, LoginRequest, UserRole, UserLoginResponse, AdminLoginResponse } from '../types/auth';
 import { authAPI } from '../services/api';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -12,15 +11,15 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserLoginResponse | AdminLoginResponse | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initializeAuth = () => {
       const savedUser = localStorage.getItem('user');
-      const savedRole = localStorage.getItem('userRole') as UserRole;
+      const savedRole = localStorage.getItem('userRole');
       const token = localStorage.getItem('accessToken');
 
       if (savedUser && savedRole && token) {
@@ -33,9 +32,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
   }, []);
 
-  const login = async (credentials: LoginRequest, userType: UserRole) => {
+  const login = async (credentials, userType) => {
     try {
-      let response: UserLoginResponse | AdminLoginResponse;
+      let response;
       
       switch (userType) {
         case 'STUDENT':
@@ -57,17 +56,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUser(response);
       setUserRole(userType);
-    } catch (error: unknown) {
+    } catch (error) {
       let errorMessage = 'Đăng nhập thất bại';
-      type ErrorWithResponse = { response?: { data?: string } };
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        (error as ErrorWithResponse).response &&
-        typeof (error as ErrorWithResponse).response?.data === 'string'
-      ) {
-        errorMessage = (error as ErrorWithResponse).response!.data!;
+      if (error?.response?.data) {
+        errorMessage = error.response.data;
       }
       throw new Error(errorMessage);
     }
@@ -94,4 +86,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-};
+}; 

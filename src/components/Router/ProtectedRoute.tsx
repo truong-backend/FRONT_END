@@ -1,19 +1,13 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
-import type { UserRole } from '../../../types/auth';
+import { useAuth } from '../../contexts/AuthContext';
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  allowedRoles: UserRole[];
-}
-
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+export const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, userRole } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated) {
-    const loginPath = allowedRoles.includes('ADMIN') 
+    const loginPath = allowedRoles.includes('ADMIN')
       ? '/admin/login'
       : allowedRoles.includes('TEACHER')
       ? '/teacher/login'
@@ -36,4 +30,4 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   return <>{children}</>;
-}; 
+};

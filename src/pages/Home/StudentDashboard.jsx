@@ -1,11 +1,10 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { BookOpen, Calendar, CheckCircle, Bell, LogOut } from 'lucide-react';
-import type { UserLoginResponse } from '../../types/auth';
 
-export const StudentDashboard: React.FC = () => {
+export const StudentDashboard = () => {
   const { user, logout } = useAuth();
-  const studentUser = user as UserLoginResponse;
+  const studentUser = user;
 
   return (
     <div className="min-h-screen bg-white">
@@ -127,4 +126,4 @@ export const StudentDashboard: React.FC = () => {
       </main>
     </div>
   );
-}; 
+};

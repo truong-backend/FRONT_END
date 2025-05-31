@@ -1,38 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ForgotPasswordFormProps } from '../../types/auth';
-import { resetPassword } from '../../services/authService';
-import { KeyRound, ArrowLeft, Save, Eye, EyeOff } from 'lucide-react';
+import { verifyOTPAndResetPassword, requestOTP } from '../../services/authService';
+import { KeyRound, ArrowLeft, Save, Eye, EyeOff, Timer } from 'lucide-react';
 
-export const ResetPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType, title }) => {
+export const OTPVerificationForm = ({ userType, title }) => {
+  const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
-
-  const token = sessionStorage.getItem('resetToken');
   const email = sessionStorage.getItem('resetEmail');
 
   useEffect(() => {
-    if (!token || !email) {
+    if (!email) {
       navigate(`/${userType.toLowerCase()}/forgot-password`);
     }
-  }, [token, email, navigate, userType]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    let timer;
+    if (countdown > 0 && !canResend) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else {
+      setCanResend(true);
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [countdown, canResend, email, navigate, userType]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!token) return;
-
+    if (!email) return;
+    
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
       return;
     }
 
-    if (password.length < 8) {
-      setError('Mật khẩu phải có ít nhất 8 ký tự');
+    if (password.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
 
@@ -40,14 +54,43 @@ export const ResetPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType,
     setLoading(true);
 
     try {
-      await resetPassword(token, password, userType);
+      const response = await verifyOTPAndResetPassword({
+        email,
+        otp,
+        newPassword: password
+      }, userType);
+      
       // Clear session storage
-      sessionStorage.removeItem('resetToken');
       sessionStorage.removeItem('resetEmail');
-      // Redirect to login with success message
-      navigate(`/${userType.toLowerCase()}/login?reset=success`);
-    } catch (err: any) {
+
+      // Hiển thị thông báo thành công
+      setSuccess('✓ ' + (response.message || 'Đặt lại mật khẩu thành công!'));
+      setLoading(false);
+
+      // Hiển thị thông báo chuyển hướng sau 1 giây
+      setTimeout(() => {
+        setSuccess(prev => prev + '\n⟳ Đang chuyển hướng về trang đăng nhập...');
+        // Chuyển hướng sau thêm 1 giây nữa
+        setTimeout(() => {
+          navigate(`/${userType.toLowerCase()}/login?reset=success`);
+        }, 1000);
+      }, 1000);
+    } catch (err) {
       setError(err.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!email || !canResend) return;
+
+    setLoading(true);
+    try {
+      await requestOTP(email, userType);
+      setCountdown(60);
+      setCanResend(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -76,7 +119,7 @@ export const ResetPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType,
               {title}
             </h2>
             <p className="text-gray-300 text-sm leading-relaxed">
-              Tạo mật khẩu mới cho tài khoản của bạn
+              Nhập mã OTP đã được gửi đến email {email}
             </p>
           </div>
 
@@ -90,7 +133,43 @@ export const ResetPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType,
               </div>
             )}
 
+            {success && (
+              <div className="bg-green-500/10 backdrop-blur-sm border border-green-500/20 text-green-300 px-4 py-3 rounded-xl text-sm animate-slideInDown">
+                <div className="flex flex-col space-y-2">
+                  {success.split('\n').map((line, index) => (
+                    <div key={index} className="flex items-center">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="otp" className="block text-sm font-medium text-gray-200">
+                  Mã OTP
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                    <KeyRound className="h-5 w-5 text-gray-400 group-focus-within:text-blue-400 transition-colors duration-200" />
+                  </div>
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    required
+                    maxLength={6}
+                    className="block w-full pl-12 pr-4 py-3 bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 text-white placeholder-gray-400 transition-all duration-200 hover:bg-white/10"
+                    placeholder="Nhập mã OTP"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                  />
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-focus-within:from-blue-500/10 group-focus-within:via-purple-500/10 group-focus-within:to-pink-500/10 transition-all duration-300 pointer-events-none"></div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-200">
                   Mật khẩu mới
@@ -104,7 +183,7 @@ export const ResetPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType,
                     name="password"
                     type={showPassword ? 'text' : 'password'}
                     required
-                    minLength={8}
+                    minLength={6}
                     className="block w-full pl-12 pr-12 py-3 bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 text-white placeholder-gray-400 transition-all duration-200 hover:bg-white/10"
                     placeholder="Nhập mật khẩu mới"
                     value={password}
@@ -138,7 +217,7 @@ export const ResetPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType,
                     name="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
                     required
-                    minLength={8}
+                    minLength={6}
                     className="block w-full pl-12 pr-12 py-3 bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 text-white placeholder-gray-400 transition-all duration-200 hover:bg-white/10"
                     placeholder="Xác nhận mật khẩu mới"
                     value={confirmPassword}
@@ -163,7 +242,7 @@ export const ResetPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType,
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || success !== ''}
                 className="w-full relative overflow-hidden group bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 hover:from-blue-500 hover:via-purple-500 hover:to-blue-500 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
@@ -176,21 +255,40 @@ export const ResetPasswordForm: React.FC<ForgotPasswordFormProps> = ({ userType,
                   ) : (
                     <>
                       <Save className="h-5 w-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                      <span>Đặt lại mật khẩu</span>
+                      <span>Xác nhận</span>
                     </>
                   )}
                 </div>
               </button>
             </div>
 
-            <div className="text-center">
+            <div className="text-center space-y-4">
               <button
                 type="button"
-                onClick={() => navigate(`/${userType.toLowerCase()}/login`)}
+                onClick={handleResendOTP}
+                disabled={!canResend || loading}
+                className="inline-flex items-center text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {canResend ? (
+                  <>
+                    <KeyRound className="h-4 w-4 mr-2" />
+                    Gửi lại mã OTP
+                  </>
+                ) : (
+                  <>
+                    <Timer className="h-4 w-4 mr-2" />
+                    Gửi lại mã sau {countdown} giây
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate(`/${userType.toLowerCase()}/forgot-password`)}
                 className="inline-flex items-center text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors duration-200"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Quay lại đăng nhập
+                Thay đổi email
               </button>
             </div>
           </form>

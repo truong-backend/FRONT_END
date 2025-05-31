@@ -4,7 +4,6 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import type { UserRole, LoginRequest } from '../../types/auth';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 
 const schema = yup.object({
@@ -12,18 +11,12 @@ const schema = yup.object({
   password: yup.string().required('Mật khẩu là bắt buộc'),
 });
 
-interface LoginFormProps {
-  userType: UserRole;
-  title: string;
-  description: string;
-}
-
-export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, description }) => {
+export const LoginForm = ({ userType, title, description }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -32,15 +25,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginRequest>({
+  } = useForm({
     resolver: yupResolver(schema),
   });
 
   useEffect(() => {
-    // Show success message if redirected from password reset
     if (searchParams.get('reset') === 'success') {
       setSuccess('Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập với mật khẩu mới.');
-      // Tự động xóa thông báo sau 5 giây
       const timer = setTimeout(() => {
         setSuccess('');
       }, 5000);
@@ -48,13 +39,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
     }
   }, [searchParams]);
 
-  const onSubmit = async (data: LoginRequest) => {
+  const onSubmit = async (data) => {
     setIsLoading(true);
     setError('');
 
     try {
       await login(data, userType);
-      // Redirect based on user type
       switch (userType) {
         case 'STUDENT':
           navigate('/student/dashboard');
@@ -65,8 +55,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
         case 'ADMIN':
           navigate('/admin/dashboard');
           break;
+        default:
+          break;
       }
-    } catch (err: unknown) {
+    } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -79,7 +71,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
@@ -88,7 +79,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
 
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="backdrop-blur-xl bg-white/10 shadow-2xl rounded-2xl border border-white/20 p-8 hover:bg-white/15 transition-all duration-300">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="relative mb-6">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
@@ -112,7 +102,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            {/* Error message */}
             {error && (
               <div className="bg-red-500/10 backdrop-blur-sm border border-red-500/20 text-red-300 px-4 py-3 rounded-xl text-sm animate-slideInDown">
                 <div className="flex items-center">
@@ -122,11 +111,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
               </div>
             )}
 
-            {/* Email input */}
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-200">
-                Email
-              </label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-200">Email</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                   <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-blue-400 transition-colors duration-200" />
@@ -147,11 +133,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
               )}
             </div>
 
-            {/* Password input */}
             <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-200">
-                Mật khẩu
-              </label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-200">Mật khẩu</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                   <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-blue-400 transition-colors duration-200" />
@@ -183,7 +166,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
               )}
             </div>
 
-            {/* Forgot password link */}
             <div className="flex items-center justify-end">
               <Link
                 to={`/${userType.toLowerCase()}/forgot-password`}
@@ -193,7 +175,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
               </Link>
             </div>
 
-            {/* Submit button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -216,7 +197,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
             </button>
           </form>
 
-          {/* Decorative elements */}
           <div className="mt-8 pt-6 border-t border-white/10">
             <div className="flex justify-center space-x-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
@@ -228,4 +208,4 @@ export const LoginForm: React.FC<LoginFormProps> = ({ userType, title, descripti
       </div>
     </div>
   );
-}; 
+};

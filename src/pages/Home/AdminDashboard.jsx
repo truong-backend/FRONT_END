@@ -1,11 +1,10 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Settings, LogOut, User, Mail, Crown, Users, Wrench, BarChart3, Cog } from 'lucide-react';
-import type { AdminLoginResponse } from '../../types/auth';
 
-export const AdminDashboard: React.FC = () => {
+export const AdminDashboard = () => {
   const { user, logout } = useAuth();
-  const adminUser = user as AdminLoginResponse;
+  const adminUser = user;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,4 +104,4 @@ export const AdminDashboard: React.FC = () => {
       </main>
     </div>
   );
-}; 
+};

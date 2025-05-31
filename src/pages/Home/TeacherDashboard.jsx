@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LogOut, Users, FileText, BarChart3 } from 'lucide-react';
 
-export const TeacherDashboard: React.FC = () => {
+export const TeacherDashboard = () => {
   const { user, logout } = useAuth();
 
   return (
@@ -74,13 +74,13 @@ export const TeacherDashboard: React.FC = () => {
               <h3 className="font-medium text-gray-900">Quản lý lớp học</h3>
               <p className="text-sm text-gray-500 mt-1">Xem danh sách lớp và sinh viên</p>
             </button>
-            
+
             <button className="text-left p-4 border border-gray-200 rounded hover:border-gray-300">
               <FileText className="h-5 w-5 text-gray-600 mb-2" />
               <h3 className="font-medium text-gray-900">Điểm danh</h3>
               <p className="text-sm text-gray-500 mt-1">Tạo và quản lý điểm danh</p>
             </button>
-            
+
             <button className="text-left p-4 border border-gray-200 rounded hover:border-gray-300">
               <BarChart3 className="h-5 w-5 text-gray-600 mb-2" />
               <h3 className="font-medium text-gray-900">Báo cáo</h3>
@@ -103,7 +103,7 @@ export const TeacherDashboard: React.FC = () => {
                 <p>Tiết 1-2</p>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 border border-gray-200 rounded">
               <div>
                 <h3 className="font-medium text-gray-900">Lập Trình Web</h3>
@@ -114,7 +114,7 @@ export const TeacherDashboard: React.FC = () => {
                 <p>Tiết 7-8</p>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 border border-gray-200 rounded">
               <div>
                 <h3 className="font-medium text-gray-900">Cơ Sở Dữ Liệu</h3>
@@ -139,7 +139,7 @@ export const TeacherDashboard: React.FC = () => {
                 <p className="text-xs text-gray-500 mt-1">30 phút trước</p>
               </div>
             </div>
-            
+
             <div className="flex items-start p-3 bg-gray-50 rounded">
               <BarChart3 className="h-4 w-4 text-green-600 mt-1 mr-3 flex-shrink-0" />
               <div>
@@ -147,7 +147,7 @@ export const TeacherDashboard: React.FC = () => {
                 <p className="text-xs text-gray-500 mt-1">2 giờ trước</p>
               </div>
             </div>
-            
+
             <div className="flex items-start p-3 bg-gray-50 rounded">
               <Users className="h-4 w-4 text-purple-600 mt-1 mr-3 flex-shrink-0" />
               <div>
@@ -160,4 +160,4 @@ export const TeacherDashboard: React.FC = () => {
       </main>
     </div>
   );
-}; 
+};
