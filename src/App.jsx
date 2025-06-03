@@ -1,15 +1,17 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { LoginForm } from './components/ui/LoginForm';
+import { LoginForm } from './components/login/ui/LoginForm';
 import { StudentDashboard } from './pages/Home/StudentDashboard';
 import { TeacherDashboard } from './pages/Home/TeacherDashboard';
 import { AdminDashboard } from './pages/Home/AdminDashboard';
-import { ProtectedRoute } from './components/Router/ProtectedRoute';
-import { ForgotPasswordForm } from './components/ui/ForgotPasswordForm';
-import { OTPVerificationForm } from './components/ui/OTPVerificationForm';
-import { ResetPasswordForm } from './components/ui/ResetPasswordForm';
+import { ProtectedRoute } from './components/login/Sercurity_login/ProtectedRoute';
+import { ForgotPasswordForm } from './components/forget_pass/ForgotPasswordForm';
+import { OTPVerificationForm } from './components/forget_pass/OTPVerificationForm';
+import { ResetPasswordForm } from './components/forget_pass/ResetPasswordForm';
 import { useAuth } from './contexts/AuthContext';
+
+
 
 // Component để bảo vệ các route đăng nhập
 const PublicRoute = ({ children }) => {
@@ -39,6 +41,9 @@ function App() {
           <Routes>
             {/* Default redirect */}
             <Route path="/" element={<Navigate to="/student/login" replace />} />
+
+            {/* Account Management Routes */}
+
 
             {/* Login Routes */}
             <Route
