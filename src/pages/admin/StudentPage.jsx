@@ -1,13 +1,13 @@
 import React from 'react';
+import StudentList from '../../components/student/StudentList';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import ListAdmin from '../../components/user/ListAdmin';
 
-const AdminPage = () => {
+const StudentPage = () => {
   return (
     <DashboardLayout>
-      <ListAdmin />
+      <StudentList />
     </DashboardLayout>
   );
 };
 
-export default AdminPage; 
+export default StudentPage; 

@@ -1,11 +1,11 @@
 import React from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import ListTeacher from '../../components/user/ListTeacher';
+import AccListTeacher from '../../components/AccTea_Stu/AccListTeacher.jsx';
 
 const TeacherPage = () => {
   return (
     <DashboardLayout>
-      <ListTeacher role="TEACHER" title="Giảng viên" />
+      <AccListTeacher role="TEACHER" title="Giảng viên" />
     </DashboardLayout>
   );
 };

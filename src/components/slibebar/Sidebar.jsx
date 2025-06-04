@@ -23,7 +23,7 @@ import {
 
 const createAccountManageMenu = () => ({
   title: 'Quản Lý Tài Khoản',
-  shortTitle: 'TK',
+  shortTitle: 'TaKh',
   icon: <UserCog2 size={20} />,
   subItems: [
     { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} />, path: '/admin/account-management' },
@@ -44,17 +44,17 @@ const createScheduleMenu = () => ({
 
 const menuItemsByRole = {
   admin: [
-    { title: 'Trang Chủ', shortTitle: 'TC', icon: <LayoutDashboard size={20} />, path: '/admin/dashboard' },
+    { title: 'Trang Chủ', shortTitle: 'TrCh', icon: <LayoutDashboard size={20} />, path: '/admin/dashboard' },
     createAccountManageMenu(),
     createScheduleMenu(),
     // { title: 'Quản Lý Điểm Danh', shortTitle: 'DD', icon: <ClipboardCheck size={20} />, path: '/admin/attendance' },
-    // { title: 'Quản Lý Giáo Viên', shortTitle: 'GV', icon: <Presentation size={20} />, path: '/admin/teachers' },
-    // { title: 'Quản Lý Sinh Viên', shortTitle: 'SV', icon: <GraduationCap size={20} />, path: '/admin/students' },
-    { title: 'Quản Lý Lớp Học', shortTitle: 'LH', icon: <Users size={20} />, path: '/admin/lop' },
-    { title: 'Quản Lý Khoa', shortTitle: 'KH', icon: <Building size={20} />, path: '/admin/khoa' },
-    { title: 'Quản Lý Môn Học', shortTitle: 'MH', icon: <Book size={20} />, path: '/admin/monhoc' },
+    { title: 'Quản Lý Giáo Viên', shortTitle: 'GiVi', icon: <Presentation size={20} />, path: '/admin/teachers' },
+    { title: 'Quản Lý Sinh Viên', shortTitle: 'SV', icon: <GraduationCap size={20} />, path: '/admin/students' },
+    { title: 'Quản Lý Lớp Học', shortTitle: 'LoHo', icon: <Users size={20} />, path: '/admin/lop' },
+    { title: 'Quản Lý Khoa', shortTitle: 'Kh', icon: <Building size={20} />, path: '/admin/khoa' },
+    { title: 'Quản Lý Môn Học', shortTitle: 'MoHo', icon: <Book size={20} />, path: '/admin/monhoc' },
     // { title: 'Xuất Báo Cáo', shortTitle: 'BC', icon: <FileText size={20} />, path: '/admin/reports' },
-    // { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <Settings size={20} />, path: '/admin/profile' }
+    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <Settings size={20} />, path: '/admin/profile' }
   ],
   teacher: [
     { title: 'Trang Chủ', shortTitle: 'TC', icon: <FileText size={20} />, path: '/teacher/dashboard' },

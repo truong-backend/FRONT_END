@@ -4,11 +4,11 @@ import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined } from '@ant
 import { userService } from '../../services/userService';
 import moment from 'moment';
 
-const ListStudent = () => {
-  const [students, setStudents] = useState([]);
+const AccListTeacher = () => {
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingStudent, setEditingStudent] = useState(null);
+  const [editingTeacher, setEditingTeacher] = useState(null);
   const [form] = Form.useForm();
   const [tableParams, setTableParams] = useState({
     pagination: {
@@ -23,19 +23,19 @@ const ListStudent = () => {
     search: ''
   });
 
-  const fetchStudents = async () => {
+  const fetchTeachers = async () => {
     try {
       setLoading(true);
       const { pagination, sorter, search } = tableParams;
       const data = await userService.getUsersByRole(
-        'STUDENT',
+        'TEACHER',
         pagination.current - 1,
         pagination.pageSize,
         sorter.field,
         sorter.order === 'ascend' ? 'asc' : 'desc',
         search
       );
-      setStudents(data.content);
+      setTeachers(data.content);
       setTableParams({
         ...tableParams,
         pagination: {
@@ -44,15 +44,15 @@ const ListStudent = () => {
         }
       });
     } catch (error) {
-      message.error('Lỗi khi tải danh sách sinh viên');
-      console.error('Error fetching students:', error);
+      message.error('Lỗi khi tải danh sách giảng viên');
+      console.error('Error fetching teachers:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStudents();
+    fetchTeachers();
   }, [JSON.stringify(tableParams)]); // Re-fetch when params change
 
   const handleTableChange = (pagination, filters, sorter) => {
@@ -78,7 +78,7 @@ const ListStudent = () => {
   };
 
   const showModal = (record = null) => {
-    setEditingStudent(record);
+    setEditingTeacher(record);
     if (record) {
       form.setFieldsValue({
         username: record.username,
@@ -95,21 +95,21 @@ const ListStudent = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      if (editingStudent) {
-        await userService.updateUser(editingStudent.id, {
+      if (editingTeacher) {
+        await userService.updateUser(editingTeacher.id, {
           ...values,
-          role: 'STUDENT'
+          role: 'TEACHER'
         });
-        message.success('Cập nhật sinh viên thành công');
+        message.success('Cập nhật giảng viên thành công');
       } else {
         await userService.createUser({
           ...values,
-          role: 'STUDENT'
+          role: 'TEACHER'
         });
-        message.success('Thêm sinh viên mới thành công');
+        message.success('Thêm giảng viên mới thành công');
       }
       setModalVisible(false);
-      fetchStudents();
+      fetchTeachers();
     } catch (error) {
       message.error('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
     }
@@ -118,11 +118,11 @@ const ListStudent = () => {
   const handleDelete = async (id) => {
     try {
       await userService.deleteUser(id);
-      message.success('Xóa sinh viên thành công');
-      fetchStudents();
+      message.success('Xóa giảng viên thành công');
+      fetchTeachers();
     } catch (error) {
-      message.error('Lỗi khi xóa sinh viên');
-      console.error('Error deleting student:', error);
+      message.error('Lỗi khi xóa giảng viên');
+      console.error('Error deleting teacher:', error);
     }
   };
 
@@ -130,7 +130,7 @@ const ListStudent = () => {
     try {
       await userService.updateUser(id, { isActive });
       message.success(`${isActive ? 'Kích hoạt' : 'Khóa'} tài khoản thành công`);
-      fetchStudents();
+      fetchTeachers();
     } catch (error) {
       message.error('Lỗi khi thay đổi trạng thái tài khoản');
     }
@@ -211,7 +211,7 @@ const ListStudent = () => {
             onClick={() => showModal(record)}
           />
           <Popconfirm
-            title="Bạn có chắc chắn muốn xóa sinh viên này?"
+            title="Bạn có chắc chắn muốn xóa giảng viên này?"
             onConfirm={() => handleDelete(record.id)}
             okText="Có"
             cancelText="Không"
@@ -226,7 +226,7 @@ const ListStudent = () => {
   return (
     <div className="p-6">
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Danh sách Sinh viên</h2>
+        <h2 className="text-2xl font-semibold">Tài Khoản Giảng Viên</h2>
         <Space>
           <Input.Search
             placeholder="Tìm kiếm..."
@@ -239,14 +239,14 @@ const ListStudent = () => {
             icon={<PlusOutlined />}
             onClick={() => showModal()}
           >
-            Thêm Sinh viên
+            Thêm Giảng viên
           </Button>
         </Space>
       </div>
 
       <Table
         columns={columns}
-        dataSource={students}
+        dataSource={teachers}
         rowKey="id"
         pagination={tableParams.pagination}
         loading={loading}
@@ -255,7 +255,7 @@ const ListStudent = () => {
       />
 
       <Modal
-        title={editingStudent ? "Cập nhật Sinh viên" : "Thêm Sinh viên mới"}
+        title={editingTeacher ? "Cập nhật Giảng viên" : "Thêm Giảng viên mới"}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
@@ -276,7 +276,7 @@ const ListStudent = () => {
             <Input />
           </Form.Item>
 
-          {!editingStudent && (
+          {!editingTeacher && (
             <Form.Item
               name="password"
               label="Mật khẩu"
@@ -327,4 +327,4 @@ const ListStudent = () => {
   );
 };
 
-export default ListStudent;
+export default AccListTeacher;

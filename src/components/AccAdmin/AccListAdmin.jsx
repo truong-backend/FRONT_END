@@ -222,7 +222,7 @@ const ListAdmin = () => {
   return (
     <div className="p-6">
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Danh sách Quản trị viên</h2>
+        <h2 className="text-2xl font-semibold">Tài Khoản Quản Trị Viên</h2>
         <Space>
           <Input.Search
             placeholder="Tìm kiếm..."
