@@ -11,6 +11,8 @@ import { OTPVerificationForm } from './components/forget_pass/OTPVerificationFor
 import { ResetPasswordForm } from './components/forget_pass/ResetPasswordForm';
 import { useAuth } from './contexts/AuthContext';
 import LopPage from './pages/lop/LopPage';
+import KhoaPage from './pages/khoa/KhoaPage';
+import MonHocPage from './pages/monhoc/MonHocPage';
 
 
 
@@ -230,6 +232,22 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   <LopPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/khoa"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <KhoaPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/monhoc"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <MonHocPage />
                 </ProtectedRoute>
               }
             />

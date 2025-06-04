@@ -6,6 +6,7 @@ import {
   Modal,
   Form,
   Input,
+  InputNumber,
   message,
   Popconfirm,
   Typography,
@@ -13,76 +14,77 @@ import {
   Spin,
 } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { khoaService } from '../../services/khoaService';
+import { monHocService } from '../../services/monHocService';
 
 const { Title } = Typography;
 
-const ListKhoa = () => {
-  const [khoas, setKhoas] = useState([]);
+const ListMonHoc = () => {
+  const [monHocs, setMonHocs] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
-  const [editingMaKhoa, setEditingMaKhoa] = useState(null);
+  const [editingMaMh, setEditingMaMh] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
-    sortField: 'maKhoa',
+    sortField: 'maMh',
     sortOrder: 'ascend',
   });
 
-  // Fetch danh sách khoa
-  const fetchKhoas = async () => {
+  // Fetch danh sách môn học
+  const fetchMonHocs = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await khoaService.getKhoas();
-      setKhoas(data);
+      const data = await monHocService.getMonHocs();
+      setMonHocs(data);
       setTotalElements(data.length);
     } catch (error) {
-      console.error('Error fetching khoas:', error);
-      setError('Không thể tải danh sách khoa. Vui lòng thử lại sau.');
-      message.error('Không thể tải danh sách khoa');
+      console.error('Error fetching monhocs:', error);
+      setError('Không thể tải danh sách môn học. Vui lòng thử lại sau.');
+      message.error('Không thể tải danh sách môn học');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchKhoas();
+    fetchMonHocs();
   }, []);
 
   const handleTableChange = (newPagination, filters, sorter) => {
     setPagination({
       ...newPagination,
-      sortField: sorter.field || 'maKhoa',
+      sortField: sorter.field || 'maMh',
       sortOrder: sorter.order || 'ascend',
     });
   };
 
   const handleCreate = () => {
     form.resetFields();
-    setEditingMaKhoa(null);
+    setEditingMaMh(null);
     setModalVisible(true);
   };
 
   const handleEdit = (record) => {
     form.setFieldsValue({
-      maKhoa: record.maKhoa,
-      tenKhoa: record.tenKhoa,
+      maMh: record.maMh,
+      tenMh: record.tenMh,
+      soTiet: record.soTiet,
     });
-    setEditingMaKhoa(record.maKhoa);
+    setEditingMaMh(record.maMh);
     setModalVisible(true);
   };
 
-  const handleDelete = async (maKhoa) => {
+  const handleDelete = async (maMh) => {
     try {
-      await khoaService.deleteKhoa(maKhoa);
-      message.success('Xóa khoa thành công');
-      fetchKhoas();
+      await monHocService.deleteMonHoc(maMh);
+      message.success('Xóa môn học thành công');
+      fetchMonHocs();
     } catch (error) {
-      message.error(error.response?.data || 'Không thể xóa khoa');
+      message.error(error.response?.data || 'Không thể xóa môn học');
     }
   };
 
@@ -90,15 +92,15 @@ const ListKhoa = () => {
     try {
       const values = await form.validateFields();
       
-      if (editingMaKhoa) {
-        await khoaService.updateKhoa(editingMaKhoa, values);
-        message.success('Cập nhật khoa thành công');
+      if (editingMaMh) {
+        await monHocService.updateMonHoc(editingMaMh, values);
+        message.success('Cập nhật môn học thành công');
       } else {
-        await khoaService.createKhoa(values);
-        message.success('Thêm khoa mới thành công');
+        await monHocService.createMonHoc(values);
+        message.success('Thêm môn học mới thành công');
       }
       setModalVisible(false);
-      fetchKhoas();
+      fetchMonHocs();
     } catch (error) {
       message.error(error.response?.data || 'Có lỗi xảy ra');
     }
@@ -106,21 +108,27 @@ const ListKhoa = () => {
 
   const columns = [
     {
-      title: 'Mã khoa',
-      dataIndex: 'maKhoa',
+      title: 'Mã môn học',
+      dataIndex: 'maMh',
       sorter: true,
-      width: '30%',
+      width: '25%',
     },
     {
-      title: 'Tên khoa',
-      dataIndex: 'tenKhoa',
+      title: 'Tên môn học',
+      dataIndex: 'tenMh',
       sorter: true,
-      width: '50%',
+      width: '45%',
+    },
+    {
+      title: 'Số tiết',
+      dataIndex: 'soTiet',
+      sorter: true,
+      width: '15%',
     },
     {
       title: 'Thao tác',
       key: 'action',
-      width: '20%',
+      width: '15%',
       render: (_, record) => (
         <Space size="middle">
           <Button
@@ -132,7 +140,7 @@ const ListKhoa = () => {
           </Button>
           <Popconfirm
             title="Bạn có chắc chắn muốn xóa?"
-            onConfirm={() => handleDelete(record.maKhoa)}
+            onConfirm={() => handleDelete(record.maMh)}
           >
             <Button type="primary" danger icon={<DeleteOutlined />}>
               Xóa
@@ -146,13 +154,13 @@ const ListKhoa = () => {
   return (
     <div style={{ padding: '24px' }}>
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={2}>Quản lý Khoa</Title>
+        <Title level={2}>Quản lý Môn học</Title>
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={handleCreate}
         >
-          Thêm Khoa Mới
+          Thêm Môn học Mới
         </Button>
       </div>
 
@@ -169,8 +177,8 @@ const ListKhoa = () => {
       <Spin spinning={loading}>
         <Table
           columns={columns}
-          dataSource={khoas}
-          rowKey="maKhoa"
+          dataSource={monHocs}
+          rowKey="maMh"
           pagination={{
             ...pagination,
             total: totalElements,
@@ -182,7 +190,7 @@ const ListKhoa = () => {
       </Spin>
 
       <Modal
-        title={editingMaKhoa ? 'Cập nhật Khoa' : 'Thêm Khoa Mới'}
+        title={editingMaMh ? 'Cập nhật Môn học' : 'Thêm Môn học Mới'}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
@@ -193,13 +201,13 @@ const ListKhoa = () => {
           form={form}
           layout="vertical"
         >
-          {!editingMaKhoa && (
+          {!editingMaMh && (
             <Form.Item
-              name="maKhoa"
-              label="Mã khoa"
+              name="maMh"
+              label="Mã môn học"
               rules={[
-                { required: true, message: 'Vui lòng nhập mã khoa' },
-                { max: 50, message: 'Mã khoa không được vượt quá 50 ký tự' }
+                { required: true, message: 'Vui lòng nhập mã môn học' },
+                { max: 50, message: 'Mã môn học không được vượt quá 50 ký tự' }
               ]}
             >
               <Input />
@@ -207,14 +215,25 @@ const ListKhoa = () => {
           )}
 
           <Form.Item
-            name="tenKhoa"
-            label="Tên khoa"
+            name="tenMh"
+            label="Tên môn học"
             rules={[
-              { required: true, message: 'Vui lòng nhập tên khoa' },
-              { max: 255, message: 'Tên khoa không được vượt quá 255 ký tự' }
+              { required: true, message: 'Vui lòng nhập tên môn học' },
+              { max: 255, message: 'Tên môn học không được vượt quá 255 ký tự' }
             ]}
           >
             <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="soTiet"
+            label="Số tiết"
+            rules={[
+              { required: true, message: 'Vui lòng nhập số tiết' },
+              { type: 'number', min: 1, message: 'Số tiết phải lớn hơn 0' }
+            ]}
+          >
+            <InputNumber style={{ width: '100%' }} />
           </Form.Item>
         </Form>
       </Modal>
@@ -222,4 +241,4 @@ const ListKhoa = () => {
   );
 };
 
-export default ListKhoa; 
+export default ListMonHoc; 

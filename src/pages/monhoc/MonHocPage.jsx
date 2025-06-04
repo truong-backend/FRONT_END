@@ -1,13 +1,13 @@
 import React from 'react';
 import { DashboardLayout } from '../../components/layout_dashboard/DashboardLayout';
-import ListKhoa from '../../components/khoa/ListKhoa';
+import ListMonHoc from '../../components/monhoc/ListMonHoc';
 
-const KhoaPage = () => {
+const MonHocPage = () => {
   return (
     <DashboardLayout>
-      <ListKhoa />
+      <ListMonHoc />
     </DashboardLayout>
   );
 };
 
-export default KhoaPage; 
+export default MonHocPage; 

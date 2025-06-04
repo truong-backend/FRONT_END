@@ -52,7 +52,7 @@ const menuItemsByRole = {
     // { title: 'Quản Lý Sinh Viên', shortTitle: 'SV', icon: <GraduationCap size={20} />, path: '/admin/students' },
     { title: 'Quản Lý Lớp Học', shortTitle: 'LH', icon: <Users size={20} />, path: '/admin/lop' },
     { title: 'Quản Lý Khoa', shortTitle: 'KH', icon: <Building size={20} />, path: '/admin/khoa' },
-    // { title: 'Quản Lý Môn Học', shortTitle: 'MH', icon: <Book size={20} />, path: '/admin/subjects' },
+    { title: 'Quản Lý Môn Học', shortTitle: 'MH', icon: <Book size={20} />, path: '/admin/monhoc' },
     // { title: 'Xuất Báo Cáo', shortTitle: 'BC', icon: <FileText size={20} />, path: '/admin/reports' },
     // { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <Settings size={20} />, path: '/admin/profile' }
   ],
