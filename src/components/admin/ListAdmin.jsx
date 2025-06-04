@@ -68,7 +68,7 @@ const ListAdmin = () => {
       ...tableParams,
       pagination: {
         ...tableParams.pagination,
-        current: 1 // Reset to first page
+        current: 1 // Reset to first page Admin
       },
       search: value
     });
