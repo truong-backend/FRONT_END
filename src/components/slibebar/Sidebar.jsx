@@ -38,7 +38,8 @@ const createScheduleMenu = () => ({
   icon: <CalendarDays size={20} />,
   subItems: [
     { title: 'Quản lý thời khóa biểu', icon: <CalendarRange size={18} />, path: '/admin/schedule' },
-    { title: 'Quản lý Lịch Học', icon: <Calendar size={18} />, path: '/admin/calendar' },
+
+    { title: 'Quản lý Lich GD', icon: <Calendar size={18} />, path: '/admin/calendar' },
   ]
 });
 
@@ -54,7 +55,7 @@ const menuItemsByRole = {
     { title: 'Quản Lý Khoa', shortTitle: 'Kh', icon: <Building size={20} />, path: '/admin/khoa' },
     { title: 'Quản Lý Môn Học', shortTitle: 'MoHo', icon: <Book size={20} />, path: '/admin/monhoc' },
     // { title: 'Xuất Báo Cáo', shortTitle: 'BC', icon: <FileText size={20} />, path: '/admin/reports' },
-    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <Settings size={20} />, path: '/admin/profile' }
+    // { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <Settings size={20} />, path: '/admin/profile' }
   ],
   teacher: [
     { title: 'Trang Chủ', shortTitle: 'TC', icon: <FileText size={20} />, path: '/teacher/dashboard' },
