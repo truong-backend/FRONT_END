@@ -10,6 +10,7 @@ import { ForgotPasswordForm } from './components/forget_pass/ForgotPasswordForm'
 import { OTPVerificationForm } from './components/forget_pass/OTPVerificationForm';
 import { ResetPasswordForm } from './components/forget_pass/ResetPasswordForm';
 import { useAuth } from './contexts/AuthContext';
+import LopPage from './pages/lop/LopPage';
 
 
 
@@ -223,7 +224,15 @@ function App() {
               }
             />
 
-
+            {/* Admin Management Routes */}
+            <Route
+              path="/admin/lop"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <LopPage />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </div>
       </Router>

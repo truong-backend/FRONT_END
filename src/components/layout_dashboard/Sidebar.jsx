@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -17,7 +18,7 @@ import {
   CalendarDays,
   CalendarRange,
   Building,
-  Book, 
+  Book,
 } from 'lucide-react';
 
 const createAccountManageMenu = () => ({
@@ -25,9 +26,9 @@ const createAccountManageMenu = () => ({
   shortTitle: 'TK',
   icon: <UserCog2 size={20} />,
   subItems: [
-    { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} /> },
-    { title: 'Tài Khoản Giảng Viên', icon: <Presentation size={18} /> },
-    { title: 'Tài Khoản Sinh Viên', icon: <GraduationCap size={18} /> }
+    { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} />, path: '/admin/account-management' },
+    { title: 'Tài Khoản Giảng Viên', icon: <Presentation size={18} />, path: '/admin/teacher-management' },
+    { title: 'Tài Khoản Sinh Viên', icon: <GraduationCap size={18} />, path: '/admin/student-management' }
   ]
 });
 
@@ -36,87 +37,121 @@ const createScheduleMenu = () => ({
   shortTitle: 'TKB',
   icon: <CalendarDays size={20} />,
   subItems: [
-    { title: 'Quản lý thời khóa biểu', icon: <CalendarRange size={18} /> },
-    { title: 'Quản lý Lịch Học', icon: <Calendar size={18} /> },
+    { title: 'Quản lý thời khóa biểu', icon: <CalendarRange size={18} />, path: '/admin/schedule' },
+    { title: 'Quản lý Lịch Học', icon: <Calendar size={18} />, path: '/admin/calendar' },
   ]
 });
 
 const menuItemsByRole = {
   admin: [
-    { title: 'Trang Chủ', shortTitle: 'TC', icon: <LayoutDashboard size={20} /> },
+    { title: 'Trang Chủ', shortTitle: 'TC', icon: <LayoutDashboard size={20} />, path: '/admin/dashboard' },
     createAccountManageMenu(),
     createScheduleMenu(),
-    { title: 'Quản Lý Điểm Danh', shortTitle: 'DD', icon: <ClipboardCheck size={20} /> },
-    { title: 'Quản Lý Giáo Viên', shortTitle: 'DD', icon: <ClipboardCheck size={20} /> },
-    { title: 'Quản Lý Sinh Viên', shortTitle: 'DD', icon: <ClipboardCheck size={20} /> },
-    { title: 'Quản Lý Lớp Học', shortTitle: 'LH', icon: <Users size={20} /> },
-    { title: 'Quản Lý Khoa', shortTitle: 'KH', icon: <Building  size={20} /> },
-    { title: 'Quản Lý Môn Học', shortTitle: 'MH', icon: <Book size={20} /> },
-    { title: 'Xuất Báo Cáo', shortTitle: 'BC', icon: <FileText size={20} /> },
-    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <Settings size={20} /> }
+    // { title: 'Quản Lý Điểm Danh', shortTitle: 'DD', icon: <ClipboardCheck size={20} />, path: '/admin/attendance' },
+    // { title: 'Quản Lý Giáo Viên', shortTitle: 'GV', icon: <Presentation size={20} />, path: '/admin/teachers' },
+    // { title: 'Quản Lý Sinh Viên', shortTitle: 'SV', icon: <GraduationCap size={20} />, path: '/admin/students' },
+    { title: 'Quản Lý Lớp Học', shortTitle: 'LH', icon: <Users size={20} />, path: '/admin/lop' },
+    { title: 'Quản Lý Khoa', shortTitle: 'KH', icon: <Building size={20} />, path: '/admin/khoa' },
+    // { title: 'Quản Lý Môn Học', shortTitle: 'MH', icon: <Book size={20} />, path: '/admin/subjects' },
+    // { title: 'Xuất Báo Cáo', shortTitle: 'BC', icon: <FileText size={20} />, path: '/admin/reports' },
+    // { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <Settings size={20} />, path: '/admin/profile' }
   ],
   teacher: [
-    { title: 'Trang Chủ', shortTitle: 'TC', icon: <FileText size={20} /> },
-    { title: 'Tạo Mã QR', shortTitle: 'QR', icon: <Calendar size={20} /> },
-    { title: 'Danh Sách Điểm Danh', shortTitle: 'DSDD', icon: <Users size={20} /> },
-    { title: 'Xuất Báo Cáo', shortTitle: 'BC', icon: <FileText size={20} /> },
-    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <MessageSquare size={20} /> },
+    { title: 'Trang Chủ', shortTitle: 'TC', icon: <FileText size={20} />, path: '/teacher/dashboard' },
+    { title: 'Tạo Mã QR', shortTitle: 'QR', icon: <Calendar size={20} />, path: '/teacher/qr' },
+    { title: 'Danh Sách Điểm Danh', shortTitle: 'DSDD', icon: <Users size={20} />, path: '/teacher/attendance' },
+    { title: 'Xuất Báo Cáo', shortTitle: 'BC', icon: <FileText size={20} />, path: '/teacher/reports' },
+    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <MessageSquare size={20} />, path: '/teacher/profile' },
   ],
   student: [
-    { title: 'Trang Chủ', shortTitle: 'TC', icon: <BookOpen size={20} /> },
-    { title: 'Thời Khóa Biểu', shortTitle: 'TKB', icon: <ClipboardList size={20} /> },
-    { title: 'Lịch Học', shortTitle: 'LH', icon: <Calendar size={20} /> },
-    { title: 'Lịch Sử Điểm Danh', shortTitle: 'LSDD', icon: <MessageSquare size={20} /> },
-    { title: 'QR Thông Tin Cá Nhân', shortTitle: 'QR', icon: <Settings size={20} /> },
-    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <MessageSquare size={20} /> },
+    { title: 'Trang Chủ', shortTitle: 'TC', icon: <BookOpen size={20} />, path: '/student/dashboard' },
+    { title: 'Thời Khóa Biểu', shortTitle: 'TKB', icon: <ClipboardList size={20} />, path: '/student/schedule' },
+    { title: 'Lịch Học', shortTitle: 'LH', icon: <Calendar size={20} />, path: '/student/calendar' },
+    { title: 'Lịch Sử Điểm Danh', shortTitle: 'LSDD', icon: <MessageSquare size={20} />, path: '/student/attendance-history' },
+    { title: 'QR Thông Tin Cá Nhân', shortTitle: 'QR', icon: <Settings size={20} />, path: '/student/qr' },
+    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <MessageSquare size={20} />, path: '/student/profile' },
   ]
 };
 
 const MenuItem = ({ item, isExpanded, isOpen, toggleOpen }) => {
+  const location = useLocation();
   const hasSubItems = item.subItems && item.subItems.length > 0;
+  const isActive = location.pathname === item.path || 
+    (hasSubItems && item.subItems.some(subItem => location.pathname === subItem.path));
 
-  return (
-    <div>
-      <a
-        href="#"
+  const renderLink = (content, path) => {
+    if (path) {
+      return (
+        <Link
+          to={path}
+          className={`flex items-center px-4 py-3 transition-colors ${
+            isActive 
+              ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+              : 'text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          {content}
+        </Link>
+      );
+    }
+    return (
+      <div
         onClick={(e) => {
           e.preventDefault();
           if (hasSubItems) toggleOpen();
         }}
-        className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors ${
+        className={`flex items-center px-4 py-3 cursor-pointer transition-colors ${
           isOpen ? 'bg-gray-50' : ''
-        }`}
+        } ${isActive ? 'text-blue-600' : 'text-gray-700'} hover:bg-gray-100`}
       >
-        <span className="text-lg">{item.icon}</span>
-        {isExpanded ? (
-          <>
-            <span className="ml-3 flex-1">{item.title}</span>
-            {hasSubItems && (
-              <ChevronDown
-                size={16}
-                className={`transition-transform duration-200 ${
-                  isOpen ? 'transform rotate-180' : ''
-                }`}
-              />
-            )}
-          </>
-        ) : (
-          <span className="text-sm font-medium ml-1">{item.shortTitle}</span>
-        )}
-      </a>
+        {content}
+      </div>
+    );
+  };
+
+  const content = (
+    <>
+      <span className="text-lg">{item.icon}</span>
+      {isExpanded ? (
+        <>
+          <span className="ml-3 flex-1">{item.title}</span>
+          {hasSubItems && (
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-200 ${
+                isOpen ? 'transform rotate-180' : ''
+              }`}
+            />
+          )}
+        </>
+      ) : (
+        <span className="text-sm font-medium ml-1">{item.shortTitle}</span>
+      )}
+    </>
+  );
+
+  return (
+    <div>
+      {renderLink(content, !hasSubItems ? item.path : null)}
 
       {/* Submenu */}
       {hasSubItems && isExpanded && isOpen && (
         <div className="ml-4 pl-4 border-l border-gray-200">
           {item.subItems.map((subItem, index) => (
-            <a
+            <Link
               key={index}
-              href="#"
-              className="flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition-colors rounded-lg"
+              to={subItem.path}
+              className={`flex items-center px-4 py-2 text-sm transition-colors rounded-lg ${
+                location.pathname === subItem.path
+                  ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              <span className="text-gray-500">{subItem.icon}</span>
+              <span className={location.pathname === subItem.path ? 'text-blue-500' : 'text-gray-500'}>
+                {subItem.icon}
+              </span>
               <span className="ml-2">{subItem.title}</span>
-            </a>
+            </Link>
           ))}
         </div>
       )}

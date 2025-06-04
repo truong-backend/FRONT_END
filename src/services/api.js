@@ -27,8 +27,20 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('accessToken');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.removeItem('user');
-      window.location.href = '/student/login';
+      
+      // Redirect based on user role
+      switch (user.role) {
+        case 'ADMIN':
+          window.location.href = '/admin/login';
+          break;
+        case 'TEACHER':
+          window.location.href = '/teacher/login';
+          break;
+        default:
+          window.location.href = '/student/login';
+      }
     }
     return Promise.reject(error);
   }
