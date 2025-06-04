@@ -13,7 +13,9 @@ import { useAuth } from './contexts/AuthContext';
 import LopPage from './pages/lop/LopPage';
 import KhoaPage from './pages/khoa/KhoaPage';
 import MonHocPage from './pages/monhoc/MonHocPage';
-
+import AdminPage from './pages/admin/AdminPage';
+import TeacherPage from './pages/user/TeacherPage';
+import StudentPage from './pages/user/StudentPage';
 
 
 // Component để bảo vệ các route đăng nhập
@@ -248,6 +250,30 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   <MonHocPage />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="/admin/account-management"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/teacher-management"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <TeacherPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/student-management"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <StudentPage />
                 </ProtectedRoute>
               }
             />
