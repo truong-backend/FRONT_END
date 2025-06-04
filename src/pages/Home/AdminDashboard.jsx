@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LogOut, GraduationCap, Users } from 'lucide-react';
-import { DashboardLayout } from '../../components/layout_dashboard/DashboardLayout';
+import { DashboardLayout } from '../../components/layout/DashboardLayout.jsx';
 import { Link } from 'react-router-dom';
 
 export const AdminDashboard = () => {

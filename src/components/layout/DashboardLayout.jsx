@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import Sidebar from './Sidebar';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import Sidebar from '../slibebar/Sidebar.jsx';
 
 export const DashboardLayout = ({ children }) => {
   const { user } = useAuth();

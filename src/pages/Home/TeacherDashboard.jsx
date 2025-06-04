@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { BookOpen, Calendar, CheckCircle, Bell, LogOut, GraduationCap, TrendingUp, Clock } from 'lucide-react';
-import { DashboardLayout } from '../../components/layout_dashboard/DashboardLayout';
+import { DashboardLayout } from '../../components/layout/DashboardLayout.jsx';
 
 export const TeacherDashboard = () => {
   const { logout } = useAuth();
