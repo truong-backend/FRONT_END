@@ -1,15 +1,14 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LogOut, GraduationCap, Users } from 'lucide-react';
+import { LogOut, GraduationCap } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout_dashboard/DashboardLayout';
-import { Link } from 'react-router-dom';
 
-export const AdminDashboard = () => {
+export const ListAccountAdmin = () => {
   const { logout } = useAuth();
 
   return (
     <DashboardLayout>
-      <div>
+      <div >
         {/* Enhanced Header */}
         <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 py-4 sticky top-0 z-40 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
@@ -31,8 +30,7 @@ export const AdminDashboard = () => {
             </button>
           </div>
         </header>
-
-        {/* Main Content */}
+        <ListAccountAdmin />
 
       </div>
     </DashboardLayout>
