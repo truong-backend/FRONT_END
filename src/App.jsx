@@ -16,6 +16,7 @@ import MonHocPage from './pages/monhoc/MonHocPage';
 import AdminPage from './pages/AccAdmin/AdminPage';
 import TeacherPage from './pages/AccTea_Stu/TeacherPage';
 import StudentPage from './pages/AccTea_Stu/StudentPage';
+import CalendarPage from './pages/calendar/CalendarPage';
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 
@@ -291,6 +292,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   <StudentPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/calendar"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <CalendarPage />
                 </ProtectedRoute>
               }
             />
