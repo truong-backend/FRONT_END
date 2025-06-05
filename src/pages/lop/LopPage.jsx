@@ -1,13 +1,11 @@
 import React from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout.jsx';
-import ListLop from '../../components/lop/ListLop';
+import {ListLop} from '../../components/lop/ListLop';
 
-const LopPage = () => {
+export const LopPage = () => {
   return (
     <DashboardLayout>
       <ListLop />
     </DashboardLayout>
   );
 };
-
-export default LopPage; 

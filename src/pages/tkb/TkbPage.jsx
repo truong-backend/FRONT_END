@@ -1,0 +1,91 @@
+import React from 'react';  
+import { TkbList } from '../../components/tkb/TkbList.jsx';
+import { DashboardLayout } from '../../components/layout/DashboardLayout.jsx';
+
+// Dữ liệu mẫu theo TkbDto
+const sampleTkbData = [
+  { 
+    id: 1,
+    maGd: 101,
+    maGv: "GV001", 
+    tenGv: "Nguyễn Văn A", 
+    maMh: "WEB001",
+    tenMh: "Lập trình Web", 
+    ngayHoc: "2025-06-30", 
+    phongHoc: "A101", 
+    stBd: 1, 
+    stKt: 2, 
+    ghiChu: "Mang laptop"
+  },
+  { 
+    id: 2,
+    maGd: 102,
+    maGv: "GV002", 
+    tenGv: "Trần Thị B", 
+    maMh: "DB001",
+    tenMh: "Cơ sở dữ liệu", 
+    ngayHoc: "2025-07-01", 
+    phongHoc: "B201", 
+    stBd: 3, 
+    stKt: 4, 
+    ghiChu: null
+  }
+];
+
+// Dữ liệu mẫu theo LichGdDto
+const sampleLichGdData = [
+  { 
+    id: 1,
+    maGv: "GV003", 
+    tenGv: "Phạm Văn C", 
+    maMh: "JAVA001",
+    tenMh: "Lập trình Java", 
+    nmh: 3,
+    phongHoc: "C301", 
+    ngayBd: "2025-07-02", 
+    ngayKt: "2025-07-02", 
+    stBd: 7, 
+    stKt: 9, 
+    hocKy: 1
+  },
+  { 
+    id: 2,
+    maGv: "GV004", 
+    tenGv: "Lê Thị D", 
+    maMh: "MATH001",
+    tenMh: "Toán rời rạc", 
+    nmh: 2,
+    phongHoc: "D401", 
+    ngayBd: "2025-07-03", 
+    ngayKt: "2025-07-03", 
+    stBd: 10, 
+    stKt: 11, 
+    hocKy: 1
+  }
+];
+
+export const TkbPage = ({ 
+  tkbData = sampleTkbData, 
+  lichGdData = sampleLichGdData 
+}) => {
+  return (
+    <DashboardLayout>
+      <div className="p-4">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Thời Khóa Biểu</h1>
+          <div className="flex gap-2 text-sm">
+            <span className="inline-block w-4 h-4 bg-green-50 border rounded"></span>
+            <span className="text-gray-600 mr-4">Thời khóa biểu</span>
+            <span className="inline-block w-4 h-4 bg-blue-50 border rounded"></span>
+            <span className="text-gray-600">Lịch giảng dạy</span>
+          </div>
+        </div>
+        
+        <TkbList
+          tkbData={tkbData} 
+          lichGdData={lichGdData} 
+        />
+      </div>
+    </DashboardLayout>
+  );
+};

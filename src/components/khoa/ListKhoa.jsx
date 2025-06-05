@@ -17,7 +17,7 @@ import { khoaService } from '../../services/khoaService';
 
 const { Title } = Typography;
 
-const ListKhoa = () => {
+export const ListKhoa = () => {
   const [khoas, setKhoas] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -221,5 +221,3 @@ const ListKhoa = () => {
     </div>
   );
 };
-
-export default ListKhoa; 

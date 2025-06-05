@@ -20,7 +20,7 @@ import { lopService } from '../../services/lopService';
 const { Option } = Select;
 const { Title } = Typography;
 
-const ListLop = () => {
+export const ListLop = () => {
   const [lops, setLops] = useState([]);
   const [khoas, setKhoas] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -326,5 +326,3 @@ const ListLop = () => {
     </div>
   );
 };
-
-export default ListLop; 

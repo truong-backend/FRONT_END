@@ -4,7 +4,7 @@ import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutline
 import { teacherService } from '../../services/teacherService';
 import moment from 'moment';
 
-const TeacherList = () => {
+export const TeacherList = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -393,5 +393,3 @@ const TeacherList = () => {
     </div>
   );
 };
-
-export default TeacherList; 

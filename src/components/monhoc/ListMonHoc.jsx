@@ -18,7 +18,7 @@ import { monHocService } from '../../services/monHocService';
 
 const { Title } = Typography;
 
-const ListMonHoc = () => {
+export const ListMonHoc = () => {
   const [monHocs, setMonHocs] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -240,5 +240,3 @@ const ListMonHoc = () => {
     </div>
   );
 };
-
-export default ListMonHoc; 

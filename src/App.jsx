@@ -10,13 +10,14 @@ import { ForgotPasswordForm } from './components/forget_pass/ForgotPasswordForm'
 import { OTPVerificationForm } from './components/forget_pass/OTPVerificationForm';
 import { ResetPasswordForm } from './components/forget_pass/ResetPasswordForm';
 import { useAuth } from './contexts/AuthContext';
-import LopPage from './pages/lop/LopPage';
-import KhoaPage from './pages/khoa/KhoaPage';
-import MonHocPage from './pages/monhoc/MonHocPage';
-import AdminPage from './pages/AccAdmin/AdminPage';
-import TeacherPage from './pages/AccTea_Stu/TeacherPage';
-import StudentPage from './pages/AccTea_Stu/StudentPage';
-import CalendarPage from './pages/calendar/CalendarPage';
+import {LopPage} from './pages/lop/LopPage';
+import {KhoaPage} from './pages/khoa/KhoaPage';
+import {MonHocPage} from './pages/monhoc/MonHocPage';
+import {AdminPage} from './pages/AccAdmin/AdminPage';
+import {TeacherPage} from './pages/AccTea_Stu/TeacherPage';
+import {StudentPage} from './pages/AccTea_Stu/StudentPage';
+import {CalendarPage} from './pages/calendar/CalendarPage';
+import {TkbPage} from './pages/tkb/TkbPage'; // Uncomment if you have a SchedulePage component
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 
@@ -46,13 +47,7 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
-            {/* Default redirect */}
             <Route path="/" element={<Navigate to="/student/login" replace />} />
-
-            {/* Account Management Routes */}
-
-
-            {/* Login Routes */}
             <Route
               path="/student/login"
               element={
@@ -90,7 +85,6 @@ function App() {
               }
             />
 
-            {/* Password Reset Routes - Student */}
             <Route
               path="/student/forgot-password"
               element={
@@ -300,6 +294,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   <CalendarPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/schedule"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  < TkbPage/>
                 </ProtectedRoute>
               }
             />

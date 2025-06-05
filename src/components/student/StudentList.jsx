@@ -5,7 +5,7 @@ import { studentService } from '../../services/studentService';
 import { adminService } from '../../services/adminService';
 import moment from 'moment';
 
-const StudentList = () => {
+export const StudentList = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -431,5 +431,3 @@ const StudentList = () => {
     </div>
   );
 };
-
-export default StudentList; 

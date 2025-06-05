@@ -4,7 +4,7 @@ import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined } from '@ant
 import { userService } from '../../services/userService';
 import moment from 'moment';
 
-const AccListTeacher = () => {
+export const AccListTeacher = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -327,4 +327,3 @@ const AccListTeacher = () => {
   );
 };
 
-export default AccListTeacher;
