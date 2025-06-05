@@ -6,6 +6,10 @@ export const monHocService = {
     const response = await api.get('/monhoc');
     return response.data?.content || [];
   },
+  getListMonHocs: async () => {
+    const response = await api.get('/monhoc/all');
+    return response.data?.content || [];
+  },
 
   // Lấy thông tin một môn học
   getMonHoc: async (maMh) => {

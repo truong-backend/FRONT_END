@@ -37,57 +37,55 @@ export const ListCalendar = () => {
   const [sortField, setSortField] = useState('id');
   const [sortOrder, setSortOrder] = useState('ascend');
 
-  // Fetch initial data
   useEffect(() => {
     fetchData();
     fetchMonHocList();
     fetchGiaoVienList();
   }, []);
 
-  // Fetch teaching schedules
   const fetchData = async (params = {}) => {
     setLoading(true);
     try {
       const page = params.current ? params.current - 1 : 0;
       const size = params.pageSize || 10;
-      const sortBy = params.sortField || 'id';
+      const sortBy = params.sortField || sortField;
       const sortDir = params.sortOrder === 'ascend' ? 'asc' : 'desc';
 
       const response = await LichGdService.getAllLichGd(page, size, sortBy, sortDir);
-      setData(response.content);
-      setPagination({
-        ...pagination,
-        total: response.totalElements,
-        current: page + 1,
-        pageSize: size,
-      });
+      
+      if (response) {
+        setData(response.content || []);
+        setPagination({
+          ...pagination,
+          total: response.totalElements || 0,
+          current: page + 1,
+          pageSize: size,
+        });
+      }
     } catch (error) {
       message.error('Lỗi khi tải dữ liệu: ' + error.message);
     }
     setLoading(false);
   };
 
-  // Fetch subject list
   const fetchMonHocList = async () => {
     try {
-      const response = await monHocService.getAllMonHoc();
-      setMonHocList(response.content);
+      const response = await monHocService.getMonHocs();
+      setMonHocList(response || []);
     } catch (error) {
       message.error('Lỗi khi tải danh sách môn học: ' + error.message);
     }
   };
 
-  // Fetch teacher list
   const fetchGiaoVienList = async () => {
     try {
-      const response = await teacherService.getAllGiaoVien();
-      setGiaoVienList(response.content);
+      const response = await teacherService.getListGiaoVien();
+      setGiaoVienList(response || []);
     } catch (error) {
       message.error('Lỗi khi tải danh sách giáo viên: ' + error.message);
     }
   };
 
-  // Handle table change
   const handleTableChange = (newPagination, filters, sorter) => {
     setSortField(sorter.field || 'id');
     setSortOrder(sorter.order || 'ascend');
@@ -98,7 +96,6 @@ export const ListCalendar = () => {
     });
   };
 
-  // Handle form submission
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -128,7 +125,6 @@ export const ListCalendar = () => {
     }
   };
 
-  // Handle edit
   const handleEdit = (record) => {
     setEditingId(record.id);
     form.setFieldsValue({
@@ -138,7 +134,6 @@ export const ListCalendar = () => {
     setModalVisible(true);
   };
 
-  // Handle delete
   const handleDelete = async (id) => {
     try {
       await LichGdService.deleteLichGd(id);
@@ -218,7 +213,7 @@ export const ListCalendar = () => {
   ];
 
   return (
-    <div className="p-6">
+    <>
       <div className="mb-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold">Quản lý Lịch Giảng Dạy</h1>
         <Button
@@ -252,7 +247,6 @@ export const ListCalendar = () => {
           form.resetFields();
           setEditingId(null);
         }}
-        width={800}
       >
         <Form
           form={form}
@@ -295,15 +289,7 @@ export const ListCalendar = () => {
             label="Thời gian"
             rules={[{ required: true, message: 'Vui lòng chọn thời gian!' }]}
           >
-            <RangePicker style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Form.Item
-            name="nmh"
-            label="Nhóm môn học"
-            rules={[{ required: true, message: 'Vui lòng nhập nhóm môn học!' }]}
-          >
-            <InputNumber min={1} style={{ width: '100%' }} />
+            <RangePicker format="DD/MM/YYYY" />
           </Form.Item>
 
           <Form.Item
@@ -311,7 +297,7 @@ export const ListCalendar = () => {
             label="Tiết bắt đầu"
             rules={[{ required: true, message: 'Vui lòng nhập tiết bắt đầu!' }]}
           >
-            <InputNumber min={1} max={12} style={{ width: '100%' }} />
+            <InputNumber min={1} max={15} />
           </Form.Item>
 
           <Form.Item
@@ -319,7 +305,7 @@ export const ListCalendar = () => {
             label="Tiết kết thúc"
             rules={[{ required: true, message: 'Vui lòng nhập tiết kết thúc!' }]}
           >
-            <InputNumber min={1} max={12} style={{ width: '100%' }} />
+            <InputNumber min={1} max={15} />
           </Form.Item>
 
           <Form.Item
@@ -327,11 +313,19 @@ export const ListCalendar = () => {
             label="Học kỳ"
             rules={[{ required: true, message: 'Vui lòng nhập học kỳ!' }]}
           >
-            <InputNumber min={1} max={3} style={{ width: '100%' }} />
+            <InputNumber min={1} max={3} />
+          </Form.Item>
+
+          <Form.Item
+            name="nmh"
+            label="Nhóm môn học"
+            rules={[{ required: true, message: 'Vui lòng nhập nhóm môn học!' }]}
+          >
+            <InputNumber min={1} />
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 

@@ -13,6 +13,10 @@ export const teacherService = {
         return response.data;
     },
 
+    getListGiaoVien: async () => {
+        const response = await api.get(`/giao-vien/all`);
+        return response.data;
+    },
     // Get teacher by ID
     getTeacher: async (maGv) => {
         const response = await api.get(`/giao-vien/${maGv}`);
