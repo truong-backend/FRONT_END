@@ -10,16 +10,16 @@ const periodTimes = [
   "16:10-17:00", "17:00-17:50", "18:00-18:50", "18:50-19:40", "19:50-20:40"
 ];
 
-export const TkbLayout = ({ tkbList = [], lichGdList = [] }) => {
+export const TkbByTabel = ({ tkbList = [], lichGdList = [] }) => {
   const getDayIndex = (dateStr) => {
+    if (!dateStr) return -1;
     const day = new Date(dateStr).getDay();
     return day === 0 ? 6 : day - 1;
   };
 
   const getDateForDay = (dayIdx) => {
-    const startDate = new Date("2025-06-30");
-    const diff = dayIdx - getDayIndex("2025-06-30");
-    startDate.setDate(startDate.getDate() + diff);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - startDate.getDay() + (dayIdx + 1));
     return startDate.toLocaleDateString("vi-VN");
   };
 
@@ -44,6 +44,8 @@ export const TkbLayout = ({ tkbList = [], lichGdList = [] }) => {
     if (!ngayHoc || !stBd || !stKt) return;
     
     const dayIdx = getDayIndex(ngayHoc);
+    if (dayIdx === -1) return;
+
     const span = stKt - stBd + 1;
     const timeRange = `${periodTimes[stBd - 1]?.split("-")[0]}-${periodTimes[stKt - 1]?.split("-")[1]}`;
     
@@ -95,6 +97,8 @@ export const TkbLayout = ({ tkbList = [], lichGdList = [] }) => {
     
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dayIdx = getDayIndex(d.toISOString().split('T')[0]);
+      if (dayIdx === -1) continue;
+
       const span = stKt - stBd + 1;
       const timeRange = `${periodTimes[stBd - 1]?.split("-")[0]}-${periodTimes[stKt - 1]?.split("-")[1]}`;
       
@@ -124,7 +128,7 @@ export const TkbLayout = ({ tkbList = [], lichGdList = [] }) => {
   });
 
   return (
-    <div className="table-auto border border-collapse w-full text-sm">
+    <div className="overflow-x-auto">
       <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 text-sm leading-relaxed">
         <p><strong>Chú thích:</strong></p>
         <ul className="list-disc list-inside">
@@ -136,7 +140,7 @@ export const TkbLayout = ({ tkbList = [], lichGdList = [] }) => {
         </ul>
       </div>
 
-      <table className="table-fixed border border-collapse w-full text-sm">
+      <table className="min-w-full border border-collapse text-sm">
         <thead>
           <tr className="bg-blue-500 text-white">
             <th className="border w-12 text-center">Tiết</th>
@@ -198,24 +202,7 @@ export const TkbLayout = ({ tkbList = [], lichGdList = [] }) => {
             </tr>
           ))}
         </tbody>
-        <tfoot>
-          <tr className="bg-blue-500 text-white">
-            <td className="border text-center font-semibold">Tiết</td>
-            {days.map((day, idx) => (
-              <td key={idx} className="border text-center font-semibold">{day}</td>
-            ))}
-            <td className="border text-center font-semibold">Tiết</td>
-          </tr>
-        </tfoot>
       </table>
-
-      {/* Nút điều hướng tuần */}
-      <div className="flex justify-center gap-4 mt-4">
-        <button className="border px-3 py-1 bg-white hover:bg-gray-100">Tuần Đầu</button>
-        <button className="border px-3 py-1 bg-white hover:bg-gray-100">Tuần Trước</button>
-        <button className="border px-3 py-1 bg-white hover:bg-gray-100">Tuần Kế</button>
-        <button className="border px-3 py-1 bg-white hover:bg-gray-100">Tuần Cuối</button>
-      </div>
     </div>
   );
 };

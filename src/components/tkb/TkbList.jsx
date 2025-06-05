@@ -1,75 +1,67 @@
-// pages/SchedulePage.jsx
-import React, { useState } from "react";
-import { TkbLayout } from "../../components/layout/TkbLayout";
-import { ScheduleFullTable } from "../../components/layout/ScheduleFullTable";
+import React, { useState, useEffect } from "react";
+import { TkbByTabel } from "./layout/TkbByTabel.jsx";
+import { TkbByList } from "./layout/TkbByList.jsx";
+import { tkbService } from "../../services/tkbService.js";
+import { message } from "antd";
 
 export const TkbList = ({ tkbData = [], lichGdData = [] }) => {
-  // Dữ liệu mẫu cho TkbDto
-  const tkbDataSets = {
-    tkbData: tkbData.length > 0 ? tkbData : [
-      {
-        id: 1,
-        maGd: 101,
-        maGv: "GV001",
-        tenGv: "Nguyễn Văn A",
-        maMh: "MH001",
-        tenMh: "Lập trình Web (HK24.3 - ĐOT 01)",
-        ngayHoc: "2025-06-02",
-        phongHoc: "C606",
-        stBd: 1,
-        stKt: 3,
-        ghiChu: "Nhóm 01",
-      },
-      {
-        id: 2,
-        maGd: 102,
-        maGv: "GV001",
-        tenGv: "Nguyễn Văn A",
-        maMh: "MH001",
-        tenMh: "Lập trình Web (HK24.3 - ĐOT 01)",
-        ngayHoc: "2025-06-04",
-        phongHoc: "C606",
-        stBd: 2,
-        stKt: 3,
-        ghiChu: "Nhóm 01",
-      },
-      {
-        id: 3,
-        maGd: 103,
-        maGv: "GV002",
-        tenGv: "Trần Thị B",
-        maMh: "MH002",
-        tenMh: "Cơ sở dữ liệu",
-        ngayHoc: "2025-06-06",
-        phongHoc: "B201",
-        stBd: 2,
-        stKt: 3,
-        ghiChu: "Nhóm 02",
-      },
-    ],
-    lichGdData: lichGdData.length > 0 ? lichGdData : [
-      {
-        id: 4,
-        maGv: "GV003",
-        tenGv: "Lê Văn C",
-        maMh: "MH003", 
-        tenMh: "Trí tuệ nhân tạo",
-        nmh: 3,
-        phongHoc: "C301",
-        ngayBd: "2025-06-03",
-        ngayKt: "2025-08-30",
-        stBd: 1,
-        stKt: 2,
-        hocKy: 1,
-      },
-    ],
-  };
-
   const [selectedDataKey, setSelectedDataKey] = useState("tkbData");
   const [selectedScheduleType, setSelectedScheduleType] = useState("TKB theo tuần");
+  const [loading, setLoading] = useState(false);
+  const [currentData, setCurrentData] = useState(tkbData);
+  const [currentLichGdData, setCurrentLichGdData] = useState(lichGdData);
 
-  const currentData = tkbDataSets[selectedDataKey];
-  const allDataSets = Object.values(tkbDataSets);
+  useEffect(() => {
+    setCurrentData(tkbData);
+    setCurrentLichGdData(lichGdData);
+  }, [tkbData, lichGdData]);
+
+  const handleCreate = async (newData) => {
+    try {
+      setLoading(true);
+      const response = await tkbService.createTkb(newData);
+      message.success('Thêm thời khóa biểu thành công');
+      // Refresh data after creation
+      const updatedData = [...currentData, response];
+      setCurrentData(updatedData);
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async (id, updatedData) => {
+    try {
+      setLoading(true);
+      const response = await tkbService.updateTkb(id, updatedData);
+      message.success('Cập nhật thời khóa biểu thành công');
+      // Update local data
+      const updatedList = currentData.map(item => 
+        item.id === id ? response : item
+      );
+      setCurrentData(updatedList);
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      setLoading(true);
+      await tkbService.deleteTkb(id);
+      message.success('Xóa thời khóa biểu thành công');
+      // Remove from local data
+      const updatedList = currentData.filter(item => item.id !== id);
+      setCurrentData(updatedList);
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="p-4">
@@ -116,16 +108,25 @@ export const TkbList = ({ tkbData = [], lichGdData = [] }) => {
         </div>
       </div>
 
+      {loading && (
+        <div className="text-center py-4">
+          <span className="text-gray-600">Đang xử lý...</span>
+        </div>
+      )}
+
       {/* Table display */}
       {selectedScheduleType === "TKB Toàn Trường" ? (
-        <ScheduleFullTable 
-          tkbLists={allDataSets} 
+        <TkbByList
+          tkbLists={[currentData, currentLichGdData]} 
           dataType={selectedDataKey}
+          onCreate={handleCreate}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
         />
       ) : (
-        <TkbLayout 
-          tkbList={currentData} 
-          dataType={selectedDataKey}
+        <TkbByTabel
+          tkbList={selectedDataKey === 'tkbData' ? currentData : []} 
+          lichGdList={selectedDataKey === 'lichGdData' ? currentLichGdData : []}
         />
       )}
     </div>

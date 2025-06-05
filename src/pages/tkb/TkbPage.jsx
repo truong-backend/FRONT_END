@@ -1,73 +1,52 @@
-import React from 'react';  
+import React, { useState, useEffect } from 'react';  
 import { TkbList } from '../../components/tkb/TkbList.jsx';
 import { DashboardLayout } from '../../components/layout/DashboardLayout.jsx';
+import { tkbService } from '../../services/tkbService.js';
+import { message } from 'antd';
 
-// Dữ liệu mẫu theo TkbDto
-const sampleTkbData = [
-  { 
-    id: 1,
-    maGd: 101,
-    maGv: "GV001", 
-    tenGv: "Nguyễn Văn A", 
-    maMh: "WEB001",
-    tenMh: "Lập trình Web", 
-    ngayHoc: "2025-06-30", 
-    phongHoc: "A101", 
-    stBd: 1, 
-    stKt: 2, 
-    ghiChu: "Mang laptop"
-  },
-  { 
-    id: 2,
-    maGd: 102,
-    maGv: "GV002", 
-    tenGv: "Trần Thị B", 
-    maMh: "DB001",
-    tenMh: "Cơ sở dữ liệu", 
-    ngayHoc: "2025-07-01", 
-    phongHoc: "B201", 
-    stBd: 3, 
-    stKt: 4, 
-    ghiChu: null
-  }
-];
+export const TkbPage = () => {
+  const [tkbData, setTkbData] = useState([]);
+  const [lichGdData, setLichGdData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-// Dữ liệu mẫu theo LichGdDto
-const sampleLichGdData = [
-  { 
-    id: 1,
-    maGv: "GV003", 
-    tenGv: "Phạm Văn C", 
-    maMh: "JAVA001",
-    tenMh: "Lập trình Java", 
-    nmh: 3,
-    phongHoc: "C301", 
-    ngayBd: "2025-07-02", 
-    ngayKt: "2025-07-02", 
-    stBd: 7, 
-    stKt: 9, 
-    hocKy: 1
-  },
-  { 
-    id: 2,
-    maGv: "GV004", 
-    tenGv: "Lê Thị D", 
-    maMh: "MATH001",
-    tenMh: "Toán rời rạc", 
-    nmh: 2,
-    phongHoc: "D401", 
-    ngayBd: "2025-07-03", 
-    ngayKt: "2025-07-03", 
-    stBd: 10, 
-    stKt: 11, 
-    hocKy: 1
-  }
-];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Fetch TKB data
+        const tkbResponse = await tkbService.getAllTkb(
+          0, // page
+          100, // size
+          'ngayHoc', // sortBy
+          'asc' // sortDir
+        );
+        setTkbData(tkbResponse.content || []);
 
-export const TkbPage = ({ 
-  tkbData = sampleTkbData, 
-  lichGdData = sampleLichGdData 
-}) => {
+        // Fetch Lich GD data (assuming it's from the same endpoint with different dates)
+        const today = new Date();
+        const threeMonthsLater = new Date(today.setMonth(today.getMonth() + 3));
+        
+        const lichGdResponse = await tkbService.getAllTkb(
+          0, // page
+          100, // size
+          'ngayHoc', // sortBy
+          'asc', // sortDir
+          null, // maGd
+          null, // ngayHoc
+          today.toISOString().split('T')[0], // startDate
+          threeMonthsLater.toISOString().split('T')[0] // endDate
+        );
+        setLichGdData(lichGdResponse.content || []);
+      } catch (error) {
+        message.error(error.message || 'Lỗi khi tải dữ liệu');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <DashboardLayout>
       <div className="p-4">
@@ -81,10 +60,16 @@ export const TkbPage = ({
           </div>
         </div>
         
-        <TkbList
-          tkbData={tkbData} 
-          lichGdData={lichGdData} 
-        />
+        {loading ? (
+          <div className="text-center py-4">
+            <span className="text-gray-600">Đang tải dữ liệu...</span>
+          </div>
+        ) : (
+          <TkbList
+            tkbData={tkbData} 
+            lichGdData={lichGdData} 
+          />
+        )}
       </div>
     </DashboardLayout>
   );
