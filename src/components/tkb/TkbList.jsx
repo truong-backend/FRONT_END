@@ -221,6 +221,57 @@ export const TkbList = () => {
     }
   };
 
+  // Add new functions for week navigation
+  const goToFirstWeek = () => {
+    if (weeks.length > 0) {
+      const firstWeek = weeks[0];
+      if (selectedSemester && !isWeekValidForSemester(firstWeek.weekNum, selectedSemester)) {
+        message.warning(`Tuần ${firstWeek.weekNum} không nằm trong học kỳ ${selectedSemester}`);
+        return;
+      }
+      setSelectedWeek(firstWeek);
+    }
+  };
+
+  const goToLastWeek = () => {
+    if (weeks.length > 0) {
+      const lastWeek = weeks[weeks.length - 1];
+      if (selectedSemester && !isWeekValidForSemester(lastWeek.weekNum, selectedSemester)) {
+        message.warning(`Tuần ${lastWeek.weekNum} không nằm trong học kỳ ${selectedSemester}`);
+        return;
+      }
+      setSelectedWeek(lastWeek);
+    }
+  };
+
+  const goToPreviousWeek = () => {
+    if (selectedWeek && weeks.length > 0) {
+      const currentIndex = weeks.findIndex(w => w.weekNum === selectedWeek.weekNum);
+      if (currentIndex > 0) {
+        const previousWeek = weeks[currentIndex - 1];
+        if (selectedSemester && !isWeekValidForSemester(previousWeek.weekNum, selectedSemester)) {
+          message.warning(`Tuần ${previousWeek.weekNum} không nằm trong học kỳ ${selectedSemester}`);
+          return;
+        }
+        setSelectedWeek(previousWeek);
+      }
+    }
+  };
+
+  const goToNextWeek = () => {
+    if (selectedWeek && weeks.length > 0) {
+      const currentIndex = weeks.findIndex(w => w.weekNum === selectedWeek.weekNum);
+      if (currentIndex < weeks.length - 1) {
+        const nextWeek = weeks[currentIndex + 1];
+        if (selectedSemester && !isWeekValidForSemester(nextWeek.weekNum, selectedSemester)) {
+          message.warning(`Tuần ${nextWeek.weekNum} không nằm trong học kỳ ${selectedSemester}`);
+          return;
+        }
+        setSelectedWeek(nextWeek);
+      }
+    }
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Thời khóa biểu</h1>
@@ -251,6 +302,23 @@ export const TkbList = () => {
                 </option>
               ))}
             </select>
+                        <select 
+              id="week" 
+              className="border px-2 py-1 rounded text-sm"
+              onChange={handleWeekChange}
+              value={selectedWeek?.weekNum || ''}
+              disabled={!selectedAcademicYear}
+            >
+              <option value="">Chọn tuần</option>
+              {weeks
+                .filter(week => !selectedSemester || isWeekValidForSemester(week.weekNum, selectedSemester))
+                .map(week => (
+                  <option key={week.weekNum} value={week.weekNum}>
+                    {week.label}
+                  </option>
+                ))
+              }
+            </select>
             
             <select 
               id="semester" 
@@ -266,25 +334,7 @@ export const TkbList = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <select 
-              id="week" 
-              className="border px-2 py-1 rounded text-sm"
-              onChange={handleWeekChange}
-              value={selectedWeek?.weekNum || ''}
-              disabled={!selectedSemester}
-            >
-              <option value="">Chọn tuần</option>
-              {weeks
-                .filter(week => !selectedSemester || isWeekValidForSemester(week.weekNum, selectedSemester))
-                .map(week => (
-                  <option key={week.weekNum} value={week.weekNum}>
-                    {week.label}
-                  </option>
-                ))
-              }
-            </select>
-          </div>
+
         </div>
       </div>
 
@@ -306,6 +356,37 @@ export const TkbList = () => {
           tkbList={filteredData}
         />
       )}
+                <div className="flex items-center gap-2">
+            <button
+              onClick={goToFirstWeek}
+              disabled={!selectedAcademicYear || !weeks.length}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
+            >
+              Tuần Đầu
+            </button>
+            <button
+              onClick={goToPreviousWeek}
+              disabled={!selectedWeek || !weeks.length}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
+            >
+              Tuần Trước
+            </button>
+
+            <button
+              onClick={goToNextWeek}
+              disabled={!selectedWeek || !weeks.length}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
+            >
+              Tuần Kế
+            </button>
+            <button
+              onClick={goToLastWeek}
+              disabled={!selectedAcademicYear || !weeks.length}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
+            >
+              Tuần Cuối
+            </button>
+          </div>
     </div>
   );
 };
