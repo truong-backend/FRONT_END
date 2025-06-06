@@ -16,6 +16,8 @@ import {MonHocPage} from './pages/PhanAdmin/danhsachmonhoc/MonHocPage';
 import {AdminPage} from './pages/PhanAdmin/danhsachtaikhoanadmin/AdminPage';
 import {TeacherPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/TeacherPage';
 import {StudentPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/StudentPage';
+import {DanhSachGiangVienPage} from './pages/PhanAdmin/danhsachgiangvien/DanhSachGiangVienPage';
+import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
 
 import {CalendarPage} from './pages/PhanAdmin/Danhsachlich/CalendarPage';
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
@@ -278,7 +280,7 @@ function App() {
               path="/admin/teachers-list"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <TeacherPage />
+                  <DanhSachGiangVienPage />
                 </ProtectedRoute>
               }
             />
@@ -286,7 +288,7 @@ function App() {
               path="/admin/students-list"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <StudentPage />
+                  <DanhSachSinhVienPage />
                 </ProtectedRoute>
               }
             />
