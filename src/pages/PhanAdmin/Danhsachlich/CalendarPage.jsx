@@ -1,11 +1,13 @@
 import React from 'react';
 import {StudentList} from '../../../components/PhanAdmin/danhsachsinhvien/StudentList.jsx';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout.jsx';
+import DanhSachLich from '../../../components/PhanAdmin/Danhsachlich/DanhSachLich.jsx';
 
-export const StudentPage = () => {
+export const CalendarPage = () => {
   return (
     <DashboardLayout>
-      <StudentList />
+      < DanhSachLich/>
     </DashboardLayout>
   );
 };
+ 

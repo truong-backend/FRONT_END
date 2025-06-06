@@ -26,9 +26,9 @@ const createAccountManageMenu = () => ({
   shortTitle: 'TaKh',
   icon: <UserCog2 size={20} />,
   subItems: [
-    { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} />, path: '/admin/account-management' },
-    { title: 'Tài Khoản Giảng Viên', icon: <Presentation size={18} />, path: '/admin/teacher-management' },
-    { title: 'Tài Khoản Sinh Viên', icon: <GraduationCap size={18} />, path: '/admin/student-management' }
+    { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} />, path: '/admin/account-account' },
+    { title: 'Tài Khoản Giảng Viên', icon: <Presentation size={18} />, path: '/admin/teacher-account' },
+    { title: 'Tài Khoản Sinh Viên', icon: <GraduationCap size={18} />, path: '/admin/student-account' }
   ]
 });
 
@@ -49,8 +49,8 @@ const menuItemsByRole = {
     createAccountManageMenu(),
     createScheduleMenu(),
     // { title: 'Quản Lý Điểm Danh', shortTitle: 'DD', icon: <ClipboardCheck size={20} />, path: '/admin/attendance' },
-    { title: 'Quản Lý Giáo Viên', shortTitle: 'GiVi', icon: <Presentation size={20} />, path: '/admin/teachers' },
-    { title: 'Quản Lý Sinh Viên', shortTitle: 'SV', icon: <GraduationCap size={20} />, path: '/admin/students' },
+    { title: 'Quản Lý Giáo Viên', shortTitle: 'GiVi', icon: <Presentation size={20} />, path: '/admin/teachers-list' },
+    { title: 'Quản Lý Sinh Viên', shortTitle: 'SV', icon: <GraduationCap size={20} />, path: '/admin/students-list' },
     { title: 'Quản Lý Lớp Học', shortTitle: 'LoHo', icon: <Users size={20} />, path: '/admin/lop' },
     { title: 'Quản Lý Khoa', shortTitle: 'Kh', icon: <Building size={20} />, path: '/admin/khoa' },
     { title: 'Quản Lý Môn Học', shortTitle: 'MoHo', icon: <Book size={20} />, path: '/admin/monhoc' },
