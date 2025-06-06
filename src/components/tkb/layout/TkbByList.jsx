@@ -29,16 +29,28 @@ export const TkbByList = ({ tkbList = [], lichGdList = [] }) => {
     return day === 0 ? 6 : day - 1;
   };
 
-  const getDateForDay = (dayIdx) => {
-    const startDate = new Date("2025-06-23");
-    const diff = dayIdx - getDayIndex("2025-06-23");
-    startDate.setDate(startDate.getDate() + diff);
+  const getDateForDay = (dayIdx, referenceDate = null) => {
+    // If we have a reference date from tkbList, use it
+    let startDate;
+    if (referenceDate) {
+      startDate = new Date(referenceDate);
+      const currentDayIndex = startDate.getDay() === 0 ? 6 : startDate.getDay() - 1;
+      const diff = dayIdx - currentDayIndex;
+      startDate.setDate(startDate.getDate() + diff);
+    } else {
+      // Fallback to current week if no reference date
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - startDate.getDay() + dayIdx + 1);
+    }
     return startDate.toLocaleDateString("vi-VN");
   };
 
+  // Find the first valid date from tkbList to use as reference
+  const referenceDate = tkbList.find(item => item.ngayHoc)?.ngayHoc;
+
   const groupedByDay = Array.from({ length: 7 }, (_, i) => ({
     day: days[i],
-    date: getDateForDay(i),
+    date: getDateForDay(i, referenceDate),
     classes: [],
   }));
 

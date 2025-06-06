@@ -3,27 +3,150 @@ import { TkbByTabel } from "./layout/TkbByTabel.jsx";
 import { TkbByList } from "./layout/TkbByList.jsx";
 import { tkbService } from "../../services/tkbService.js";
 import { message } from "antd";
+import moment from 'moment';
 
-export const TkbList = ({ tkbData = [], lichGdData = [] }) => {
-  const [selectedDataKey, setSelectedDataKey] = useState("tkbData");
+export const TkbList = () => {
   const [selectedScheduleType, setSelectedScheduleType] = useState("TKB theo tuần");
   const [loading, setLoading] = useState(false);
-  const [currentData, setCurrentData] = useState(tkbData);
-  const [currentLichGdData, setCurrentLichGdData] = useState(lichGdData);
+  const [tkbData, setTkbData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [selectedSemester, setSelectedSemester] = useState(null);
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState(null);
+  const [weeks, setWeeks] = useState([]);
+  const [selectedWeek, setSelectedWeek] = useState(null);
+  const [academicYears, setAcademicYears] = useState([]);
 
+  // Fetch initial data
   useEffect(() => {
-    setCurrentData(tkbData);
-    setCurrentLichGdData(lichGdData);
-  }, [tkbData, lichGdData]);
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const data = await tkbService.getAllTkb();
+      setTkbData(data);
+      
+      // Extract academic years from data
+      const years = extractAcademicYears(data);
+      setAcademicYears(years);
+      
+      if (years.length > 0) {
+        const mostRecentYear = years[0];
+        setSelectedAcademicYear(mostRecentYear);
+        setWeeks(generateWeeks(mostRecentYear));
+      }
+    } catch (error) {
+      message.error('Lỗi khi tải dữ liệu: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to get academic years from data
+  const extractAcademicYears = (data) => {
+    const years = new Set();
+    data.forEach(item => {
+      const date = moment(item.ngayHoc); // Changed from ngay_hoc to ngayHoc
+      const month = date.month() + 1;
+      const year = date.year();
+      
+      if (month >= 9) {
+        years.add(`${year}-${year + 1}`);
+      } else {
+        years.add(`${year - 1}-${year}`);
+      }
+    });
+    return Array.from(years).sort().reverse();
+  };
+
+  // Helper function to generate week options
+  const generateWeeks = (academicYear) => {
+    if (!academicYear) return [];
+    
+    const [startYear] = academicYear.split('-');
+    const weeks = [];
+    let currentDate = moment(`${startYear}-09-01`);
+    const endDate = moment(`${parseInt(startYear) + 1}-08-31`);
+    let weekNum = 1;
+
+    while (currentDate.isSameOrBefore(endDate)) {
+      const weekStart = currentDate.clone();
+      const weekEnd = currentDate.clone().add(6, 'days');
+      
+      weeks.push({
+        weekNum,
+        label: `Tuần ${weekNum} [Từ ${weekStart.format('DD/MM/YYYY')} -- Đến ${weekEnd.format('DD/MM/YYYY')}]`,
+        startDate: weekStart.format('YYYY-MM-DD'),
+        endDate: weekEnd.format('YYYY-MM-DD')
+      });
+      
+      currentDate.add(7, 'days');
+      weekNum++;
+    }
+    
+    return weeks;
+  };
+
+  // Function to check if a week is valid for a semester
+  const isWeekValidForSemester = (weekNum, semester) => {
+    if (!semester) return true;
+    
+    const semesterRanges = {
+      1: { start: 1, end: 15 },    // Học kỳ 1: tuần 1-15
+      2: { start: 16, end: 30 },   // Học kỳ 2: tuần 16-30
+      3: { start: 31, end: 45 }    // Học kỳ 3: tuần 31-45
+    };
+
+    const range = semesterRanges[semester];
+    return weekNum >= range.start && weekNum <= range.end;
+  };
+
+  // Filter data based on selected week and academic year
+  useEffect(() => {
+    if (!tkbData.length) return;
+
+    let filtered = [...tkbData];
+
+    if (selectedAcademicYear) {
+      const [startYear] = selectedAcademicYear.split('-');
+      const yearStart = moment(`${startYear}-09-01`);
+      const yearEnd = moment(`${parseInt(startYear) + 1}-08-31`);
+      
+      filtered = filtered.filter(item => {
+        const itemDate = moment(item.ngayHoc);
+        return itemDate.isBetween(yearStart, yearEnd, 'day', '[]');
+      });
+    }
+
+    if (selectedWeek) {
+      const weekStart = moment(selectedWeek.startDate);
+      const weekEnd = moment(selectedWeek.endDate);
+      
+      filtered = filtered.filter(item => {
+        const itemDate = moment(item.ngayHoc);
+        return itemDate.isBetween(weekStart, weekEnd, 'day', '[]');
+      });
+    }
+
+    setFilteredData(filtered);
+  }, [selectedWeek, selectedAcademicYear, tkbData]);
 
   const handleCreate = async (newData) => {
     try {
       setLoading(true);
-      const response = await tkbService.createTkb(newData);
+      const formattedData = {
+        maGd: newData.maGd,
+        ngayHoc: moment(newData.ngayHoc).format('YYYY-MM-DD'),
+        phongHoc: newData.phongHoc,
+        stBd: parseInt(newData.stBd),
+        stKt: parseInt(newData.stKt),
+        ghiChu: newData.ghiChu || null
+      };
+      
+      const response = await tkbService.createTkb(formattedData);
       message.success('Thêm thời khóa biểu thành công');
-      // Refresh data after creation
-      const updatedData = [...currentData, response];
-      setCurrentData(updatedData);
+      await fetchData(); // Refresh data
     } catch (error) {
       message.error(error.message);
     } finally {
@@ -34,13 +157,18 @@ export const TkbList = ({ tkbData = [], lichGdData = [] }) => {
   const handleUpdate = async (id, updatedData) => {
     try {
       setLoading(true);
-      const response = await tkbService.updateTkb(id, updatedData);
+      const formattedData = {
+        maGd: updatedData.maGd,
+        ngayHoc: moment(updatedData.ngayHoc).format('YYYY-MM-DD'),
+        phongHoc: updatedData.phongHoc,
+        stBd: parseInt(updatedData.stBd),
+        stKt: parseInt(updatedData.stKt),
+        ghiChu: updatedData.ghiChu || null
+      };
+      
+      await tkbService.updateTkb(id, formattedData);
       message.success('Cập nhật thời khóa biểu thành công');
-      // Update local data
-      const updatedList = currentData.map(item => 
-        item.id === id ? response : item
-      );
-      setCurrentData(updatedList);
+      await fetchData(); // Refresh data
     } catch (error) {
       message.error(error.message);
     } finally {
@@ -53,9 +181,7 @@ export const TkbList = ({ tkbData = [], lichGdData = [] }) => {
       setLoading(true);
       await tkbService.deleteTkb(id);
       message.success('Xóa thời khóa biểu thành công');
-      // Remove from local data
-      const updatedList = currentData.filter(item => item.id !== id);
-      setCurrentData(updatedList);
+      await fetchData(); // Refresh data
     } catch (error) {
       message.error(error.message);
     } finally {
@@ -63,11 +189,42 @@ export const TkbList = ({ tkbData = [], lichGdData = [] }) => {
     }
   };
 
+  const handleSemesterChange = (e) => {
+    const semester = e.target.value;
+    setSelectedSemester(semester);
+    setSelectedWeek(null);
+  };
+
+  const handleWeekChange = (e) => {
+    const weekNum = e.target.value;
+    if (weekNum) {
+      const week = weeks.find(w => w.weekNum === parseInt(weekNum));
+      if (selectedSemester && !isWeekValidForSemester(week.weekNum, selectedSemester)) {
+        message.warning(`Tuần ${week.weekNum} không nằm trong học kỳ ${selectedSemester}`);
+        return;
+      }
+      setSelectedWeek(week);
+    } else {
+      setSelectedWeek(null);
+    }
+  };
+
+  const handleAcademicYearChange = (e) => {
+    const year = e.target.value;
+    setSelectedAcademicYear(year);
+    setSelectedWeek(null);
+    setSelectedSemester(null);
+    if (year) {
+      setWeeks(generateWeeks(year));
+    } else {
+      setWeeks([]);
+    }
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Thời khóa biểu</h1>
 
-      {/* Schedule type dropdown */}
       <div className="mb-4">
         <div className="flex flex-wrap items-center gap-4 mb-4">
           <div className="flex items-center gap-2">
@@ -80,29 +237,52 @@ export const TkbList = ({ tkbData = [], lichGdData = [] }) => {
               <option value="TKB theo tuần">TKB theo tuần</option>
               <option value="TKB Toàn Trường">TKB Theo Danh Sách</option>
             </select>
-            
-            <select
-              id="data-type"
-              value={selectedDataKey}
-              onChange={(e) => setSelectedDataKey(e.target.value)}
-              className="border px-2 py-1 rounded"
+
+            <select 
+              id="academic-year" 
+              className="border px-2 py-1 rounded text-sm"
+              onChange={handleAcademicYearChange}
+              value={selectedAcademicYear || ''}
             >
-              <option value="tkbData">Thời khóa biểu (TKB)</option>
-              <option value="lichGdData">Lịch giảng dạy (LGD)</option>
+              <option value="">Chọn năm học</option>
+              {academicYears.map(year => (
+                <option key={year} value={year}>
+                  {`Năm học ${year}`}
+                </option>
+              ))}
             </select>
-         
-            <select id="semester" className="border px-2 py-1 rounded text-sm">
-              <option>Học kỳ 1 - Năm học 2024-2025</option>
-              <option>Học kỳ 2 - Năm học 2024-2025</option>
-              <option>Học kỳ 3 - Năm học 2025-2026</option>
+            
+            <select 
+              id="semester" 
+              className="border px-2 py-1 rounded text-sm"
+              onChange={handleSemesterChange}
+              value={selectedSemester || ''}
+              disabled={!selectedAcademicYear}
+            >
+              <option value="">Chọn học kỳ</option>
+              <option value="1">Học kỳ 1</option>
+              <option value="2">Học kỳ 2</option>
+              <option value="3">Học kỳ 3</option>
             </select>
           </div>
 
           <div className="flex items-center gap-2">
-            <select id="week" className="border px-2 py-1 rounded text-sm">
-              <option>Tuần 44 [Từ 30/06/2025 -- Đến 06/07/2025]</option>
-              <option>Tuần 45 [Từ 07/07/2025 -- Đến 13/07/2025]</option>
-              <option>Tuần 46 [Từ 14/07/2025 -- Đến 20/07/2025]</option>
+            <select 
+              id="week" 
+              className="border px-2 py-1 rounded text-sm"
+              onChange={handleWeekChange}
+              value={selectedWeek?.weekNum || ''}
+              disabled={!selectedSemester}
+            >
+              <option value="">Chọn tuần</option>
+              {weeks
+                .filter(week => !selectedSemester || isWeekValidForSemester(week.weekNum, selectedSemester))
+                .map(week => (
+                  <option key={week.weekNum} value={week.weekNum}>
+                    {week.label}
+                  </option>
+                ))
+              }
             </select>
           </div>
         </div>
@@ -114,19 +294,16 @@ export const TkbList = ({ tkbData = [], lichGdData = [] }) => {
         </div>
       )}
 
-      {/* Table display */}
       {selectedScheduleType === "TKB Toàn Trường" ? (
         <TkbByList
-          tkbLists={[currentData, currentLichGdData]} 
-          dataType={selectedDataKey}
+          tkbList={filteredData}
           onCreate={handleCreate}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
         />
       ) : (
         <TkbByTabel
-          tkbList={selectedDataKey === 'tkbData' ? currentData : []} 
-          lichGdList={selectedDataKey === 'lichGdData' ? currentLichGdData : []}
+          tkbList={filteredData}
         />
       )}
     </div>

@@ -17,11 +17,24 @@ export const TkbByTabel = ({ tkbList = [], lichGdList = [] }) => {
     return day === 0 ? 6 : day - 1;
   };
 
-  const getDateForDay = (dayIdx) => {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - startDate.getDay() + (dayIdx + 1));
+  const getDateForDay = (dayIdx, referenceDate = null) => {
+    // If we have a reference date, use it
+    let startDate;
+    if (referenceDate) {
+      startDate = new Date(referenceDate);
+      const currentDayIndex = startDate.getDay() === 0 ? 6 : startDate.getDay() - 1;
+      const diff = dayIdx - currentDayIndex;
+      startDate.setDate(startDate.getDate() + diff);
+    } else {
+      // Fallback to current week if no reference date
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - startDate.getDay() + dayIdx + 1);
+    }
     return startDate.toLocaleDateString("vi-VN");
   };
+
+  // Find the first valid date from tkbList to use as reference
+  const referenceDate = tkbList.find(item => item.ngayHoc)?.ngayHoc;
 
   const scheduleData = Array.from({ length: 15 }, () => Array(7).fill(null));
 
@@ -59,7 +72,7 @@ export const TkbByTabel = ({ tkbList = [], lichGdList = [] }) => {
             teacher: tenGv || "Chưa xác định",
             teacherCode: maGv,
             subjectCode: maMh,
-            date: getDateForDay(dayIdx),
+            date: getDateForDay(dayIdx, ngayHoc),
             time: timeRange,
             note: ghiChu,
             rowSpan: span,
@@ -114,7 +127,7 @@ export const TkbByTabel = ({ tkbList = [], lichGdList = [] }) => {
               subjectCode: maMh,
               credits: nmh,
               semester: hocKy,
-              date: getDateForDay(dayIdx),
+              date: getDateForDay(dayIdx, ngayBd),
               time: timeRange,
               rowSpan: span,
               type: 'lichgd'
