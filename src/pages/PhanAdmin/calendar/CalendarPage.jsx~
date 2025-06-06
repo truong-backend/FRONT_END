@@ -1,0 +1,13 @@
+import React from 'react';
+import {StudentList} from '../../components/PhanAdmin/student/StudentList';
+import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import ListCalendar from '../../components/PhanAdmin/Calendar/ListCalendar';
+
+export const CalendarPage = () => {
+  return (
+    <DashboardLayout>
+      < ListCalendar/>
+    </DashboardLayout>
+  );
+};
+ 

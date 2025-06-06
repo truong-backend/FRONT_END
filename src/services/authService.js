@@ -1,4 +1,4 @@
-import { authAPI } from './api';
+import { authAPI } from './api.js';
 
 export const requestOTP = async (email, userType) => {
   return authAPI.requestOTP(email, userType);

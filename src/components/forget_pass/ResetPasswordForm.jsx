@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { resetPassword } from '../../services/authService';
+import { resetPassword } from '../../services/authService.js';
 import { KeyRound, ArrowLeft, Save, Eye, EyeOff } from 'lucide-react';
 
 export const ResetPasswordForm = ({ userType, title }) => {

@@ -10,14 +10,14 @@ import { ForgotPasswordForm } from './components/forget_pass/ForgotPasswordForm'
 import { OTPVerificationForm } from './components/forget_pass/OTPVerificationForm';
 import { ResetPasswordForm } from './components/forget_pass/ResetPasswordForm';
 import { useAuth } from './contexts/AuthContext';
-import {LopPage} from './pages/lop/LopPage';
-import {KhoaPage} from './pages/khoa/KhoaPage';
-import {MonHocPage} from './pages/monhoc/MonHocPage';
-import {AdminPage} from './pages/AccAdmin/AdminPage';
-import {TeacherPage} from './pages/AccTea_Stu/TeacherPage';
-import {StudentPage} from './pages/AccTea_Stu/StudentPage';
-import {CalendarPage} from './pages/calendar/CalendarPage';
-import {TkbPage} from './pages/tkb/TkbPage'; // Uncomment if you have a SchedulePage component
+import {LopPage} from './pages/PhanAdmin/lop/LopPage';
+import {KhoaPage} from './pages/PhanAdmin/khoa/KhoaPage';
+import {MonHocPage} from './pages/PhanAdmin/monhoc/MonHocPage';
+import {AdminPage} from './pages/PhanAdmin/AccAdmin/AdminPage';
+import {TeacherPage} from './pages/PhanAdmin/AccTea_Stu/TeacherPage';
+import {StudentPage} from './pages/PhanAdmin/AccTea_Stu/StudentPage';
+import {CalendarPage} from './pages/PhanAdmin/calendar/CalendarPage';
+import {TkbPage} from './pages/PhanAdmin/tkb/TkbPage'; // Uncomment if you have a SchedulePage component
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 

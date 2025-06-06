@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { verifyOTPAndResetPassword, requestOTP } from '../../services/authService';
+import { verifyOTPAndResetPassword, requestOTP } from '../../services/authService.js';
 import { KeyRound, ArrowLeft, Save, Eye, EyeOff, Timer } from 'lucide-react';
 
 export const OTPVerificationForm = ({ userType, title }) => {
