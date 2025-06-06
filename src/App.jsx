@@ -10,16 +10,16 @@ import { QuenMatKhauFORM } from './components/quenmatkhau/QuenMatKhauFORM.jsx';
 import { XacThucOtpFORM } from './components/quenmatkhau/XacThucOtpFORM.jsx';
 import { DatLaiMatKhauFORM } from './components/quenmatkhau/DatLaiMatKhauFORM.jsx';
 import { useAuth } from './contexts/AuthContext';
-import {LopPage} from './pages/PhanAdmin/danhsachlop/LopPage';
-import {KhoaPage} from './pages/PhanAdmin/danhsachkhoa/KhoaPage';
-import {MonHocPage} from './pages/PhanAdmin/danhsachmonhoc/MonHocPage';
-import {AdminPage} from './pages/PhanAdmin/danhsachtaikhoanadmin/AdminPage';
-import {TeacherPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/TeacherPage';
-import {StudentPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/StudentPage';
+import {DanhSachLopPage} from './pages/PhanAdmin/danhsachlop/DanhSachLopPage.jsx';
+import {DanhSachKhoaPage} from './pages/PhanAdmin/danhsachkhoa/DanhSachKhoaPage.jsx';
+import {DanhSachMonHocPage} from './pages/PhanAdmin/danhsachmonhoc/DanhSachMonHocPage.jsx';
+import {DanhSachTaiKhoanQuanTriPage} from './pages/PhanAdmin/danhsachtaikhoanadmin/DanhSachTaiKhoanQuanTriPage.jsx';
+import {DanhSachTaiKhoanGiangVienPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanGiangVienPage.jsx';
+import {DanhSachTaiKhoanSinhVienPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienPage.jsx';
 import {DanhSachGiangVienPage} from './pages/PhanAdmin/danhsachgiangvien/DanhSachGiangVienPage';
 import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
 
-import {CalendarPage} from './pages/PhanAdmin/Danhsachlich/CalendarPage';
+import {DanhSachLichPage} from './pages/PhanAdmin/Danhsachlich/DanhSachLichPage.jsx';
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
@@ -232,7 +232,7 @@ function App() {
               path="/admin/lop"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <LopPage />
+                  <DanhSachLopPage />
                 </ProtectedRoute>
               }
             />
@@ -240,7 +240,7 @@ function App() {
               path="/admin/khoa"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <KhoaPage />
+                  <DanhSachKhoaPage />
                 </ProtectedRoute>
               }
             />
@@ -248,7 +248,7 @@ function App() {
               path="/admin/monhoc"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <MonHocPage />
+                  <DanhSachMonHocPage />
                 </ProtectedRoute>
               }
             />
@@ -256,7 +256,7 @@ function App() {
               path="/admin/account-account"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <AdminPage />
+                  <DanhSachTaiKhoanQuanTriPage />
                 </ProtectedRoute>
               }
             />
@@ -264,7 +264,7 @@ function App() {
               path="/admin/teacher-account"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <TeacherPage />
+                  <DanhSachTaiKhoanGiangVienPage />
                 </ProtectedRoute>
               }
             />
@@ -272,7 +272,7 @@ function App() {
               path="/admin/student-account"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <StudentPage />
+                  <DanhSachTaiKhoanSinhVienPage />
                 </ProtectedRoute>
               }
             />
@@ -296,7 +296,7 @@ function App() {
               path="/admin/calendar"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <CalendarPage />
+                  <DanhSachLichPage />
                 </ProtectedRoute>
               }
             />

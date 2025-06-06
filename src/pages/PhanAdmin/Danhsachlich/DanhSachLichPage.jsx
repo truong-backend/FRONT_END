@@ -3,7 +3,7 @@ import {DanhSachSinhVien} from '../../../components/PhanAdmin/danhsachsinhvien/D
 import { DashboardLayout } from '../../../components/layout/DashboardLayout.jsx';
 import DanhSachLich from '../../../components/PhanAdmin/Danhsachlich/DanhSachLich.jsx';
 
-export const CalendarPage = () => {
+export const DanhSachLichPage = () => {
   return (
     <DashboardLayout>
       < DanhSachLich/>
