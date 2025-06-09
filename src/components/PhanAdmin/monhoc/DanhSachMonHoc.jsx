@@ -20,17 +20,21 @@ const { Title } = Typography;
 
 export const DanhSachMonHoc = () => {
   const [monHocs, setMonHocs] = useState([]);
-  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [editingMaMh, setEditingMaMh] = useState(null);
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
-    sortField: 'maMh',
-    sortOrder: 'ascend',
+  const [tableParams, setTableParams] = useState({
+    pagination: {
+      current: 1,
+      pageSize: 10,
+      total: 0,
+    },
+    sorter: {
+      field: 'maMh',
+      order: 'ascend',
+    },
   });
 
   // Fetch danh sách môn học
@@ -38,9 +42,22 @@ export const DanhSachMonHoc = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await monHocService.getMonHocs();
-      setMonHocs(data);
-      setTotalElements(data.length);
+      const { pagination, sorter } = tableParams;
+      const data = await monHocService.getMonHocs(
+        pagination.current - 1,
+        pagination.pageSize,
+        sorter.field,
+        sorter.order === 'ascend' ? 'asc' : 'desc'
+      );
+      
+      setMonHocs(data.content);
+      setTableParams({
+        ...tableParams,
+        pagination: {
+          ...tableParams.pagination,
+          total: data.totalElements,
+        },
+      });
     } catch (error) {
       console.error('Error fetching monhocs:', error);
       setError('Không thể tải danh sách môn học. Vui lòng thử lại sau.');
@@ -52,13 +69,15 @@ export const DanhSachMonHoc = () => {
 
   useEffect(() => {
     fetchMonHocs();
-  }, []);
+  }, [JSON.stringify(tableParams)]); // Re-fetch when params change
 
-  const handleTableChange = (newPagination, filters, sorter) => {
-    setPagination({
-      ...newPagination,
-      sortField: sorter.field || 'maMh',
-      sortOrder: sorter.order || 'ascend',
+  const handleTableChange = (pagination, filters, sorter) => {
+    setTableParams({
+      pagination,
+      sorter: {
+        field: sorter.field || 'maMh',
+        order: sorter.order || 'ascend',
+      },
     });
   };
 
@@ -82,7 +101,7 @@ export const DanhSachMonHoc = () => {
     try {
       await monHocService.deleteMonHoc(maMh);
       message.success('Xóa môn học thành công');
-      fetchMonHocs();
+      fetchMonHocs(); // Refresh the list after deletion
     } catch (error) {
       message.error(error.response?.data || 'Không thể xóa môn học');
     }
@@ -99,8 +118,22 @@ export const DanhSachMonHoc = () => {
         await monHocService.createMonHoc(values);
         message.success('Thêm môn học mới thành công');
       }
+      
       setModalVisible(false);
-      fetchMonHocs();
+      form.resetFields();
+      
+      // Reset to first page when adding new item
+      if (!editingMaMh) {
+        setTableParams({
+          ...tableParams,
+          pagination: {
+            ...tableParams.pagination,
+            current: 1,
+          },
+        });
+      } else {
+        fetchMonHocs(); // Just refresh current page when editing
+      }
     } catch (error) {
       message.error(error.response?.data || 'Có lỗi xảy ra');
     }
@@ -179,12 +212,7 @@ export const DanhSachMonHoc = () => {
           columns={columns}
           dataSource={monHocs}
           rowKey="maMh"
-          pagination={{
-            ...pagination,
-            total: totalElements,
-            showSizeChanger: true,
-            showQuickJumper: true,
-          }}
+          pagination={tableParams.pagination}
           onChange={handleTableChange}
         />
       </Spin>
@@ -193,7 +221,10 @@ export const DanhSachMonHoc = () => {
         title={editingMaMh ? 'Cập nhật Môn học' : 'Thêm Môn học Mới'}
         open={modalVisible}
         onOk={handleModalOk}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false);
+          form.resetFields();
+        }}
         destroyOnClose
         width={600}
       >
@@ -207,7 +238,7 @@ export const DanhSachMonHoc = () => {
               label="Mã môn học"
               rules={[
                 { required: true, message: 'Vui lòng nhập mã môn học' },
-                { max: 50, message: 'Mã môn học không được vượt quá 50 ký tự' }
+                { max: 20, message: 'Mã môn học không được vượt quá 20 ký tự' }
               ]}
             >
               <Input />
@@ -219,7 +250,7 @@ export const DanhSachMonHoc = () => {
             label="Tên môn học"
             rules={[
               { required: true, message: 'Vui lòng nhập tên môn học' },
-              { max: 255, message: 'Tên môn học không được vượt quá 255 ký tự' }
+              { max: 50, message: 'Tên môn học không được vượt quá 50 ký tự' }
             ]}
           >
             <Input />

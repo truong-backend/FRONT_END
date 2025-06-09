@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, DatePicker, Radio, Upload, Avatar, Select } from 'antd';
 import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined } from '@ant-design/icons';
 import { studentService } from '../../../services/PhanAdmin/studentService.js';
-import { adminService } from '../../../services/PhanAdmin/adminService.js';
+import { lopService } from '../../../services/PhanAdmin/lopService.js';
 import moment from 'moment';
 
 export const DanhSachSinhVien = () => {
@@ -28,7 +28,7 @@ export const DanhSachSinhVien = () => {
   // Fetch classes for dropdown
   const fetchClasses = async () => {
     try {
-      const response = await adminService.getKhoas();
+      const response = await lopService.getLopsKhongPhanTrang();
       setClasses(response);
     } catch (error) {
       message.error('Lỗi khi tải danh sách lớp');
