@@ -20,7 +20,7 @@ import {DanhSachGiangVienPage} from './pages/PhanAdmin/danhsachgiangvien/DanhSac
 import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
 import {DanhSachLichPage} from './pages/PhanAdmin/Danhsachlich/DanhSachLichPage.jsx';
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
-import ProfileGiaoVienPage from './pages/PhanTeacher/profileGiaoVienPage.jsx';
+import ProfileGiaoVienPage from './pages/PhanGiaoVien/ProfileGiaoVienPage';
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 
