@@ -18,9 +18,9 @@ import {DanhSachTaiKhoanGiangVienPage} from './pages/PhanAdmin/danhsachtaikhoang
 import {DanhSachTaiKhoanSinhVienPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienPage.jsx';
 import {DanhSachGiangVienPage} from './pages/PhanAdmin/danhsachgiangvien/DanhSachGiangVienPage';
 import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
-
 import {DanhSachLichPage} from './pages/PhanAdmin/Danhsachlich/DanhSachLichPage.jsx';
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
+import ProfileGiaoVienPage from './pages/PhanTeacher/profileGiaoVienPage.jsx';
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 
@@ -215,6 +215,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['TEACHER']}>
                   <TeacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/profile"
+              element={
+                <ProtectedRoute allowedRoles={['TEACHER']}>
+                  <ProfileGiaoVienPage />
                 </ProtectedRoute>
               }
             />
