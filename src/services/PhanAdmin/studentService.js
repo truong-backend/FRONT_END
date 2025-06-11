@@ -68,5 +68,62 @@ export const studentService = {
     // Delete student
     deleteStudent: async (maSv) => {
         await api.delete(`/sinh-vien/${maSv}`);
+    },
+
+    // Import students from Excel/CSV
+    importStudents: async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+            const response = await api.post('/admin/importExcel-SinhVien', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            
+            // Kiểm tra và trả về response.data
+            if (response.data) {
+                return response.data;
+            }
+            return 'Import thành công. Tài khoản sinh viên đã được tạo tự động với mật khẩu là mã sinh viên.';
+        } catch (error) {
+            console.error('Error importing students:', error);
+            if (error.response?.data) {
+                throw new Error(error.response.data);
+            } else if (error.message) {
+                throw new Error(error.message);
+            } else {
+                throw new Error('Lỗi không xác định khi import sinh viên');
+            }
+        }
+    },
+
+    // Get template file for import
+    getImportTemplate: async () => {
+        try {
+            const response = await api.get('/admin/template-SinhVien', {
+                responseType: 'blob'
+            });
+            
+            if (!response.data) {
+                throw new Error('Không thể tải file mẫu');
+            }
+
+            const fileName = 'mau-import-sinh-vien.xlsx';
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            return true;
+        } catch (error) {
+            console.error('Error downloading template:', error);
+            throw new Error('Lỗi khi tải file mẫu: ' + (error.response?.data || error.message || 'Không xác định'));
+        }
     }
 }; 
