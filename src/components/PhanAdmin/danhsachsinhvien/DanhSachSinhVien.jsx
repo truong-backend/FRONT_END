@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, DatePicker, Radio, Upload, Avatar, Select } from 'antd';
-import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, ImportOutlined, DownloadOutlined, ExportOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, ImportOutlined, DownloadOutlined, ExportOutlined, EyeOutlined } from '@ant-design/icons';
 import { studentService } from '../../../services/PhanAdmin/studentService.js';
 import { lopService } from '../../../services/PhanAdmin/lopService.js';
+import {ChiTietSinhVien} from './ChiTietSinhVien';
 import moment from 'moment';
 
 export const DanhSachSinhVien = () => {
@@ -28,6 +29,8 @@ export const DanhSachSinhVien = () => {
   const [importing, setImporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   // Fetch classes for dropdown
   const fetchClasses = async () => {
@@ -257,6 +260,11 @@ export const DanhSachSinhVien = () => {
     }
   };
 
+  const showDetailModal = (record) => {
+    setSelectedStudent(record);
+    setDetailModalVisible(true);
+  };
+
   const columns = [
     {
       title: 'Mã SV',
@@ -312,11 +320,16 @@ export const DanhSachSinhVien = () => {
     },
     {
       title: 'Thao tác',
-      width: '10%',
+      width: '12%',
       render: (_, record) => (
         <Space>
           <Button
-            type="primary"
+            type="text"
+            icon={<EyeOutlined />}
+            onClick={() => showDetailModal(record)}
+          />
+          <Button
+            type="text"
             icon={<EditOutlined />}
             onClick={() => showModal(record)}
           />
@@ -326,7 +339,7 @@ export const DanhSachSinhVien = () => {
             okText="Có"
             cancelText="Không"
           >
-            <Button type="primary" danger icon={<DeleteOutlined />} />
+            <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       )
@@ -369,11 +382,18 @@ export const DanhSachSinhVien = () => {
       <Table
         columns={columns}
         dataSource={students}
-        rowKey="maSv"
-        pagination={tableParams.pagination}
         loading={loading}
+        pagination={tableParams.pagination}
         onChange={handleTableChange}
+        rowKey="maSv"
         scroll={{ x: 1500 }}
+      />
+
+      {/* Chi tiết sinh viên modal */}
+      <ChiTietSinhVien
+        visible={detailModalVisible}
+        onClose={() => setDetailModalVisible(false)}
+        student={selectedStudent}
       />
 
       {/* Import Modal */}
