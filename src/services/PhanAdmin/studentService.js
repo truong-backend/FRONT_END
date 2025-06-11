@@ -125,5 +125,33 @@ export const studentService = {
             console.error('Error downloading template:', error);
             throw new Error('Lỗi khi tải file mẫu: ' + (error.response?.data || error.message || 'Không xác định'));
         }
+    },
+
+    // Export students to Excel
+    exportStudents: async () => {
+        try {
+            const response = await api.get('/admin/export-sinhvien', {
+                responseType: 'blob'
+            });
+            
+            // Create file name with current date
+            const date = new Date().toISOString().split('T')[0];
+            const fileName = `danh-sach-sinh-vien-${date}.xlsx`;
+            
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            return true;
+        } catch (error) {
+            console.error('Error exporting students:', error);
+            throw new Error('Lỗi khi xuất danh sách sinh viên: ' + (error.response?.data || error.message || 'Không xác định'));
+        }
     }
 }; 

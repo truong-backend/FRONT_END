@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, DatePicker, Radio, Upload, Avatar, Select } from 'antd';
-import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, ImportOutlined, DownloadOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, ImportOutlined, DownloadOutlined, ExportOutlined } from '@ant-design/icons';
 import { studentService } from '../../../services/PhanAdmin/studentService.js';
 import { lopService } from '../../../services/PhanAdmin/lopService.js';
 import moment from 'moment';
@@ -27,6 +27,7 @@ export const DanhSachSinhVien = () => {
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importing, setImporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Fetch classes for dropdown
   const fetchClasses = async () => {
@@ -244,6 +245,18 @@ export const DanhSachSinhVien = () => {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      setExportLoading(true);
+      await studentService.exportStudents();
+      message.success('Xuất danh sách sinh viên thành công');
+    } catch (error) {
+      message.error(error.message || 'Lỗi khi xuất danh sách sinh viên');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const columns = [
     {
       title: 'Mã SV',
@@ -335,6 +348,13 @@ export const DanhSachSinhVien = () => {
             onClick={showImportModal}
           >
             Import Excel/CSV
+          </Button>
+          <Button
+            icon={<ExportOutlined />}
+            onClick={handleExport}
+            loading={exportLoading}
+          >
+            Export Excel
           </Button>
           <Button
             type="primary"
