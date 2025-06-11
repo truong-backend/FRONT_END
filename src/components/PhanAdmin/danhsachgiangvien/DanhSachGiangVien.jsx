@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, DatePicker, Radio, Upload, Avatar } from 'antd';
-import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, EyeOutlined } from '@ant-design/icons';
 import { teacherService } from '../../../services/PhanAdmin/teacherService.js';
 import moment from 'moment';
+import { ChiTietGiangVien } from './ChiTietGiangVien';
 
 export const DanhSachGiangVien = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
+  const [detailsVisible, setDetailsVisible] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [form] = Form.useForm();
   const [tableParams, setTableParams] = useState({
     pagination: {
@@ -146,6 +149,11 @@ export const DanhSachGiangVien = () => {
     }
   };
 
+  const showDetails = (record) => {
+    setSelectedTeacher(record);
+    setDetailsVisible(true);
+  };
+
   const columns = [
     {
       title: 'Mã GV',
@@ -201,9 +209,14 @@ export const DanhSachGiangVien = () => {
     },
     {
       title: 'Thao tác',
-      width: '10%',
+      width: '15%',
       render: (_, record) => (
         <Space>
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
+            onClick={() => showDetails(record)}
+          />
           <Button
             type="primary"
             icon={<EditOutlined />}
@@ -250,15 +263,14 @@ export const DanhSachGiangVien = () => {
         pagination={tableParams.pagination}
         loading={loading}
         onChange={handleTableChange}
-        scroll={{ x: 1500 }}
       />
 
       <Modal
-        title={editingTeacher ? "Cập nhật Giáo viên" : "Thêm Giáo viên mới"}
+        title={editingTeacher ? 'Chỉnh sửa Giáo viên' : 'Thêm Giáo viên mới'}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
-        width={600}
+        width={800}
       >
         <Form
           form={form}
@@ -390,6 +402,12 @@ export const DanhSachGiangVien = () => {
           )}
         </Form>
       </Modal>
+
+      <ChiTietGiangVien
+        visible={detailsVisible}
+        onClose={() => setDetailsVisible(false)}
+        lecturer={selectedTeacher}
+      />
     </div>
   );
 };
