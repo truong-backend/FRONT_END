@@ -21,6 +21,7 @@ import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachS
 import {DanhsachlichhocPage} from './pages/PhanAdmin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
 import ProfileGiaoVienPage from './pages/PhanGiaoVien/ProfileGiaoVienPage';
+import { QrcodePage } from './pages/PhanGiaoVien/QrcodePage.jsx';
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 
@@ -313,6 +314,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   < TkbPage/>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/qr"
+              element={
+                <ProtectedRoute allowedRoles={['TEACHER']}>
+                  <QrcodePage />
                 </ProtectedRoute>
               }
             />
