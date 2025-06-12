@@ -25,7 +25,15 @@ export const LichGdService = {
       throw new Error(error.response?.data || 'Lỗi khi lấy danh sách lịch giảng dạy');
     }
   },
-
+// **Lấy tất cả lịch giảng dạy không phân trang**
+  getAllLichGdNoPaging: async () => {
+    try {
+      const response = await api.get('/lichgd/all');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data || 'Lỗi khi lấy toàn bộ danh sách lịch giảng dạy');
+    }
+  },
   // Lấy thông tin một lịch giảng dạy theo ID
   getLichGdById: async (id) => {
     try {

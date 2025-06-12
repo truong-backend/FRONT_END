@@ -99,6 +99,17 @@ export const studentService = {
         }
     },
 
+    // Get all students without pagination
+    getAllStudentsNoPagination: async () => {
+        try {
+            const response = await api.get('/sinh-vien/all');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching all students:', error);
+            throw new Error('Không thể lấy danh sách sinh viên: ' + (error.response?.data || error.message || 'Không xác định'));
+        }
+    },
+
     // Get template file for import
     getImportTemplate: async () => {
         try {
@@ -154,4 +165,5 @@ export const studentService = {
             throw new Error('Lỗi khi xuất danh sách sinh viên: ' + (error.response?.data || error.message || 'Không xác định'));
         }
     }
+    
 }; 

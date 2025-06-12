@@ -18,7 +18,7 @@ import {DanhSachTaiKhoanGiangVienPage} from './pages/PhanAdmin/danhsachtaikhoang
 import {DanhSachTaiKhoanSinhVienPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienPage.jsx';
 import {DanhSachGiangVienPage} from './pages/PhanAdmin/danhsachgiangvien/DanhSachGiangVienPage';
 import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
-import {DanhSachLichPage} from './pages/PhanAdmin/Danhsachlich/DanhSachLichPage.jsx';
+import {DanhsachlichhocPage} from './pages/PhanAdmin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
 import ProfileGiaoVienPage from './pages/PhanGiaoVien/ProfileGiaoVienPage';
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
@@ -304,7 +304,7 @@ function App() {
               path="/admin/calendar"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <DanhSachLichPage />
+                  <DanhsachlichhocPage />
                 </ProtectedRoute>
               }
             />
