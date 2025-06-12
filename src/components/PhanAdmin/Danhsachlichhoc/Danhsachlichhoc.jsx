@@ -52,7 +52,7 @@ export const Danhsachlichhoc = () => {
     const [form] = Form.useForm();
 
     const [sinhVienOptions, setSinhVienOptions] = useState([]);
-    const [lichGdOptions, setLichGdOptions] = useState([]);  // State danh sách giảng dạy
+    const [lichGdOptions, setLichGdOptions] = useState([]);
 
     useEffect(() => {
         // Load danh sách sinh viên
@@ -62,6 +62,7 @@ export const Danhsachlichhoc = () => {
                 setSinhVienOptions(res || []);
             } catch (error) {
                 message.error('Không thể tải danh sách sinh viên');
+                console.error('Error fetching students:', error);
             }
         };
 
@@ -72,8 +73,10 @@ export const Danhsachlichhoc = () => {
                 setLichGdOptions(res || []);
             } catch (error) {
                 message.error('Không thể tải danh sách giảng dạy');
+                console.error('Error fetching LichGd:', error);
             }
         };
+        
         fetchLichGd();
         fetchStudents();
     }, []);
@@ -84,6 +87,9 @@ export const Danhsachlichhoc = () => {
             setLoading(true);
             const res = await lichHocService.getAllLichHoc();
             const all = res || [];
+            
+            console.log('Fetched schedules:', all); // Debug log
+            
             setFullData(all);
 
             // Lấy danh sách học kỳ và giảng viên duy nhất để lọc
@@ -99,10 +105,13 @@ export const Danhsachlichhoc = () => {
                 total: all.length,
                 current: 1,
             }));
-            setDisplayData(all.slice(0, pagination.pageSize));
+            
+            // Cập nhật displayData với pageSize hiện tại
+            const currentPageSize = pagination.pageSize;
+            setDisplayData(all.slice(0, currentPageSize));
         } catch (error) {
             message.error('Lỗi khi tải danh sách lịch học');
-            console.error(error);
+            console.error('Error fetching schedules:', error);
         } finally {
             setLoading(false);
         }
@@ -130,6 +139,8 @@ export const Danhsachlichhoc = () => {
             return matchSearch && matchHocKy && matchGiangVien;
         });
 
+        console.log('Filtered data:', filtered); // Debug log
+
         setFilteredData(filtered);
         setPagination((prev) => ({
             ...prev,
@@ -137,7 +148,7 @@ export const Danhsachlichhoc = () => {
             total: filtered.length,
         }));
         setDisplayData(filtered.slice(0, pagination.pageSize));
-    }, [searchText, selectedHocKy, selectedGiangVien, fullData]);
+    }, [searchText, selectedHocKy, selectedGiangVien, fullData, pagination.pageSize]);
 
     // Xử lý phân trang
     const handleTableChange = (paginationInfo) => {
@@ -161,12 +172,19 @@ export const Danhsachlichhoc = () => {
 
     // Mở modal chỉnh sửa
     const openEditModal = (record) => {
+        console.log('Editing record:', record); // Debug log
         setEditingRecord(record);
-        form.setFieldsValue({
-            ...record,
-            ngayBd: moment(record.ngayBd),
-            ngayKt: moment(record.ngayKt),
-        });
+        
+        // Set form values với format đúng
+        const formValues = {
+            maSv: record.maSv,
+            maGd: record.maGd,
+            // Chỉ set ngayBd và ngayKt nếu chúng tồn tại
+            ...(record.ngayBd && { ngayBd: moment(record.ngayBd) }),
+            ...(record.ngayKt && { ngayKt: moment(record.ngayKt) }),
+        };
+        
+        form.setFieldsValue(formValues);
         setModalVisible(true);
     };
 
@@ -174,37 +192,57 @@ export const Danhsachlichhoc = () => {
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
+            console.log('Form values:', values); // Debug log
 
-            // const payload = {
-            //     ...values,
-            //     ngayBd: values.ngayBd.format('YYYY-MM-DD'),
-            //     ngayKt: values.ngayKt.format('YYYY-MM-DD'),
-            // };
+            // Chuẩn bị payload
+            const payload = {
+                maSv: values.maSv,
+                maGd: values.maGd,
+                // Format dates nếu có
+                ...(values.ngayBd && { ngayBd: values.ngayBd.format('YYYY-MM-DD') }),
+                ...(values.ngayKt && { ngayKt: values.ngayKt.format('YYYY-MM-DD') }),
+            };
+
+            console.log('Payload:', payload); // Debug log
 
             setModalLoading(true);
+            
             if (editingRecord) {
-                // Update
+                // Update - Sử dụng key từ record gốc
+                console.log('Updating with keys:', editingRecord.maSv, editingRecord.maGd);
                 await lichHocService.updateLichHoc(
                     editingRecord.maSv,
                     editingRecord.maGd,
+                    payload
                 );
                 message.success('Cập nhật lịch học thành công');
             } else {
+                // Create new - Cần implement API tạo mới
+                await lichHocService.createLichHoc(payload);
                 message.success('Thêm lịch học thành công');
             }
 
             setModalVisible(false);
-            fetchSchedules();
+            form.resetFields();
+            await fetchSchedules(); // Reload data
+            
         } catch (error) {
             if (error.errorFields) {
                 // Validation error, không hiện thông báo lỗi
                 return;
             }
-            message.error('Lỗi khi lưu lịch học');
-            console.error(error);
+            console.error('Error saving:', error);
+            message.error(`Lỗi khi ${editingRecord ? 'cập nhật' : 'thêm'} lịch học: ${error.message || 'Unknown error'}`);
         } finally {
             setModalLoading(false);
         }
+    };
+
+    // Đóng modal
+    const handleModalCancel = () => {
+        setModalVisible(false);
+        form.resetFields();
+        setEditingRecord(null);
     };
 
     // Xóa bản ghi
@@ -220,10 +258,10 @@ export const Danhsachlichhoc = () => {
                     setLoading(true);
                     await lichHocService.deleteLichHoc(record.maSv, record.maGd);
                     message.success('Xóa lịch học thành công');
-                    fetchSchedules();
+                    await fetchSchedules(); // Reload data
                 } catch (error) {
                     message.error('Lỗi khi xóa lịch học');
-                    console.error(error);
+                    console.error('Delete error:', error);
                 } finally {
                     setLoading(false);
                 }
@@ -233,8 +271,18 @@ export const Danhsachlichhoc = () => {
 
     // Định nghĩa cột bảng
     const columns = [
-        { title: 'Mã SV', dataIndex: 'maSv', width: 100 },
-        { title: 'Họ và tên', dataIndex: 'tenSv', width: 180 },
+        { 
+            title: 'Mã SV', 
+            dataIndex: 'maSv', 
+            width: 100,
+            fixed: 'left'
+        },
+        { 
+            title: 'Họ và tên', 
+            dataIndex: 'tenSv', 
+            width: 180,
+            fixed: 'left'
+        },
         { title: 'Mã MH', dataIndex: 'maMh', width: 100 },
         { title: 'Tên môn học', dataIndex: 'tenMh', width: 180 },
         { title: 'Giảng viên', dataIndex: 'tenGv', width: 150 },
@@ -243,27 +291,37 @@ export const Danhsachlichhoc = () => {
             title: 'Ngày bắt đầu',
             dataIndex: 'ngayBd',
             width: 120,
-            render: (date) => moment(date).format('DD/MM/YYYY'),
+            render: (date) => date ? moment(date).format('DD/MM/YYYY') : '-',
         },
         {
             title: 'Ngày kết thúc',
             dataIndex: 'ngayKt',
             width: 120,
-            render: (date) => moment(date).format('DD/MM/YYYY'),
+            render: (date) => date ? moment(date).format('DD/MM/YYYY') : '-',
         },
         {
             title: 'Tiết học',
             width: 100,
-            render: (_, record) => `${record.stBd} - ${record.stKt}`,
+            render: (_, record) => `${record.stBd || '-'} - ${record.stKt || '-'}`,
         },
         { title: 'Học kỳ', dataIndex: 'hocKy', width: 80 },
         {
             title: 'Hành động',
             width: 120,
+            fixed: 'right',
             render: (_, record) => (
                 <div className="flex gap-2">
-                    <Button icon={<EditOutlined />} onClick={() => openEditModal(record)} />
-                    <Button icon={<DeleteOutlined />} danger onClick={() => handleDelete(record)} />
+                    {/* <Button 
+                        icon={<EditOutlined />} 
+                        size="small"
+                        onClick={() => openEditModal(record)} 
+                    /> */}
+                    <Button 
+                        icon={<DeleteOutlined />} 
+                        size="small"
+                        danger 
+                        onClick={() => handleDelete(record)} 
+                    />
                 </div>
             ),
         },
@@ -323,7 +381,8 @@ export const Danhsachlichhoc = () => {
                 pagination={pagination}
                 onChange={handleTableChange}
                 rowKey={(record) => `${record.maSv}-${record.maGd}`}
-                scroll={{ x: 1200 }}
+                scroll={{ x: 1400, y: 600 }}
+                size="middle"
             />
 
             <Modal
@@ -331,11 +390,17 @@ export const Danhsachlichhoc = () => {
                 visible={modalVisible}
                 onOk={handleModalOk}
                 confirmLoading={modalLoading}
-                onCancel={() => setModalVisible(false)}
+                onCancel={handleModalCancel}
                 destroyOnClose
                 width={700}
+                maskClosable={false}
             >
-                <Form form={form} layout="vertical" preserve={false}>
+                <Form 
+                    form={form} 
+                    layout="vertical" 
+                    preserve={false}
+                    initialValues={{}}
+                >
                     <Form.Item
                         label="Sinh viên"
                         name="maSv"
@@ -355,7 +420,6 @@ export const Danhsachlichhoc = () => {
                                     {`${sv.maSv} - ${sv.tenSv}`}
                                 </Option>
                             ))}
-
                         </Select>
                     </Form.Item>
 
@@ -375,14 +439,34 @@ export const Danhsachlichhoc = () => {
                         >
                             {lichGdOptions.map((item) => (
                                 <Option key={item.id} value={item.id}>
-                                    {item.maMh} - {item.tenMh} | GV: {item.tenGv} ({item.maGv})
+                                    {`${item.maMh} - ${item.tenMh} | GV: ${item.tenGv} (${item.maGv})`}
                                 </Option>
                             ))}
-
                         </Select>
                     </Form.Item>
 
+                    {/* Thêm các trường khác nếu cần thiết */}
+                    <Form.Item
+                        label="Ngày bắt đầu"
+                        name="ngayBd"
+                    >
+                        <DatePicker 
+                            format="DD/MM/YYYY"
+                            placeholder="Chọn ngày bắt đầu"
+                            style={{ width: '100%' }}
+                        />
+                    </Form.Item>
 
+                    <Form.Item
+                        label="Ngày kết thúc"
+                        name="ngayKt"
+                    >
+                        <DatePicker 
+                            format="DD/MM/YYYY"
+                            placeholder="Chọn ngày kết thúc"
+                            style={{ width: '100%' }}
+                        />
+                    </Form.Item>
                 </Form>
             </Modal>
         </div>
