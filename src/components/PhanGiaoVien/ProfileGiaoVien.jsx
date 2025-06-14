@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { User, Edit3, Mail, Phone, MapPin, Calendar, CreditCard, Rss } from 'lucide-react';
-import { GiaoVienService } from '../../services/PhanGiaoVien/giaoVienService';
+import { GiaoVienService } from '../../services/PhanGiaoVien/GiaoVienService';
 
-const ProfileGiaoVien = () => {
+export const ProfileGiaoVien = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [teacherData, setTeacherData] = useState({
     maGv: '',
@@ -265,5 +265,3 @@ const ProfileGiaoVien = () => {
     </div>
   );
 };
-
-export default ProfileGiaoVien;

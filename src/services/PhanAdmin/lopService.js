@@ -6,7 +6,15 @@ export const lopService = {
     const response = await api.get('/lop', { params });
     return response.data;
   },
-
+    getLopsKhongPhanTrang: async () => {
+    const response = await api.get('/lop/all');
+    return response.data;
+  },
+ // Lấy danh sách lớp không phân trang
+  getAlls: async () => {
+    const response = await api.get(`/lop/}`);
+    return response.data;
+  },
   // Lấy thông tin một lớp
   getLop: async (maLop) => {
     const response = await api.get(`/lop/${maLop}`);

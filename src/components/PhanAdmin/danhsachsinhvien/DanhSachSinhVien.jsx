@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, DatePicker, Radio, Upload, Avatar, Select } from 'antd';
-import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, ImportOutlined, DownloadOutlined, ExportOutlined, EyeOutlined } from '@ant-design/icons';
 import { studentService } from '../../../services/PhanAdmin/studentService.js';
-import { adminService } from '../../../services/PhanAdmin/adminService.js';
+import { lopService } from '../../../services/PhanAdmin/lopService.js';
+import {ChiTietSinhVien} from './ChiTietSinhVien';
 import moment from 'moment';
 
 export const DanhSachSinhVien = () => {
@@ -24,11 +25,17 @@ export const DanhSachSinhVien = () => {
     },
     search: ''
   });
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   // Fetch classes for dropdown
   const fetchClasses = async () => {
     try {
-      const response = await adminService.getKhoas();
+      const response = await lopService.getLopsKhongPhanTrang();
       setClasses(response);
     } catch (error) {
       message.error('Lỗi khi tải danh sách lớp');
@@ -164,6 +171,100 @@ export const DanhSachSinhVien = () => {
     }
   };
 
+  const showImportModal = () => {
+    setImportModalVisible(true);
+    setSelectedFile(null);
+  };
+
+  const handleImportModalCancel = () => {
+    setImportModalVisible(false);
+    setSelectedFile(null);
+  };
+
+  const validateFile = (file) => {
+    const isValidType = ['csv', 'xls', 'xlsx'].includes(file.name.split('.').pop().toLowerCase());
+    if (!isValidType) {
+      message.error('Chỉ hỗ trợ file CSV hoặc Excel (.xls, .xlsx)');
+      return false;
+    }
+
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('File phải nhỏ hơn 2MB!');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleFileSelect = (file) => {
+    if (validateFile(file)) {
+      setSelectedFile(file);
+    }
+    return Upload.LIST_IGNORE;
+  };
+
+  const handleImport = async () => {
+    if (!selectedFile) {
+      message.error('Vui lòng chọn file để import');
+      return;
+    }
+
+    try {
+      setImporting(true);
+      const response = await studentService.importStudents(selectedFile);
+      
+      // Hiển thị thông báo thành công với chi tiết
+      if (response === "Import thành công") {
+        message.success('Import danh sách sinh viên thành công');
+      } else {
+        message.success(response || 'Import danh sách sinh viên thành công');
+      }
+      
+      setImportModalVisible(false);
+      fetchStudents();
+    } catch (error) {
+      // Xử lý các loại lỗi khác nhau
+      if (error.response?.data) {
+        message.error(`Lỗi: ${error.response.data}`);
+      } else if (error.message) {
+        message.error(`Lỗi: ${error.message}`);
+      } else {
+        message.error('Lỗi không xác định khi import danh sách sinh viên');
+      }
+      console.error('Import error:', error);
+    } finally {
+      setImporting(false);
+      setSelectedFile(null);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      await studentService.getImportTemplate();
+      message.success('Tải file mẫu thành công');
+    } catch (error) {
+      message.error('Lỗi khi tải file mẫu');
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setExportLoading(true);
+      await studentService.exportStudents();
+      message.success('Xuất danh sách sinh viên thành công');
+    } catch (error) {
+      message.error(error.message || 'Lỗi khi xuất danh sách sinh viên');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const showDetailModal = (record) => {
+    setSelectedStudent(record);
+    setDetailModalVisible(true);
+  };
+
   const columns = [
     {
       title: 'Mã SV',
@@ -219,11 +320,16 @@ export const DanhSachSinhVien = () => {
     },
     {
       title: 'Thao tác',
-      width: '10%',
+      width: '12%',
       render: (_, record) => (
         <Space>
           <Button
-            type="primary"
+            type="text"
+            icon={<EyeOutlined />}
+            onClick={() => showDetailModal(record)}
+          />
+          <Button
+            type="text"
             icon={<EditOutlined />}
             onClick={() => showModal(record)}
           />
@@ -233,7 +339,7 @@ export const DanhSachSinhVien = () => {
             okText="Có"
             cancelText="Không"
           >
-            <Button type="primary" danger icon={<DeleteOutlined />} />
+            <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       )
@@ -248,9 +354,21 @@ export const DanhSachSinhVien = () => {
           <Input.Search
             placeholder="Tìm kiếm..."
             onSearch={handleSearch}
-            style={{ width: 300 }}
-            allowClear
+            style={{ width: 200 }}
           />
+          <Button 
+            icon={<ImportOutlined />}
+            onClick={showImportModal}
+          >
+            Import Excel/CSV
+          </Button>
+          <Button
+            icon={<ExportOutlined />}
+            onClick={handleExport}
+            loading={exportLoading}
+          >
+            Export Excel
+          </Button>
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -264,12 +382,77 @@ export const DanhSachSinhVien = () => {
       <Table
         columns={columns}
         dataSource={students}
-        rowKey="maSv"
-        pagination={tableParams.pagination}
         loading={loading}
+        pagination={tableParams.pagination}
         onChange={handleTableChange}
+        rowKey="maSv"
         scroll={{ x: 1500 }}
       />
+
+      {/* Chi tiết sinh viên modal */}
+      <ChiTietSinhVien
+        visible={detailModalVisible}
+        onClose={() => setDetailModalVisible(false)}
+        student={selectedStudent}
+      />
+
+      {/* Import Modal */}
+      <Modal
+        title="Import Danh Sách Sinh Viên"
+        open={importModalVisible}
+        onCancel={handleImportModalCancel}
+        footer={[
+          <Button key="template" icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+            Tải file mẫu
+          </Button>,
+          <Button key="cancel" onClick={handleImportModalCancel}>
+            Hủy
+          </Button>,
+          <Button
+            key="import"
+            type="primary"
+            loading={importing}
+            onClick={handleImport}
+            disabled={!selectedFile}
+          >
+            Import
+          </Button>
+        ]}
+      >
+        <div className="my-4">
+          <p className="mb-4">Lưu ý:</p>
+          <ul className="list-disc pl-6 mb-4">
+            <li>Chỉ hỗ trợ file Excel (.xls, .xlsx) hoặc CSV</li>
+            <li>Kích thước file tối đa 2MB</li>
+            <li>Vui lòng sử dụng đúng format mẫu</li>
+            <li>Các trường bắt buộc: Mã SV, Họ tên, Ngày sinh, Giới tính, Mã lớp</li>
+            <li>Ngày sinh phải theo định dạng DD/MM/YYYY</li>
+            <li>Giới tính: 1 (Nam) hoặc 0 (Nữ)</li>
+            <li className="text-blue-600">Hệ thống sẽ tự động tạo tài khoản cho sinh viên với:</li>
+            <ul className="list-circle pl-6">
+              <li>Tên đăng nhập: Mã sinh viên</li>
+              <li>Mật khẩu: Mã sinh viên</li>
+              <li>Email: Email đã nhập</li>
+            </ul>
+          </ul>
+          <Upload.Dragger
+            beforeUpload={handleFileSelect}
+            showUploadList={true}
+            maxCount={1}
+            fileList={selectedFile ? [selectedFile] : []}
+            onRemove={() => setSelectedFile(null)}
+            accept=".csv,.xls,.xlsx"
+          >
+            <p className="ant-upload-drag-icon">
+              <UploadOutlined />
+            </p>
+            <p className="ant-upload-text">Click hoặc kéo thả file vào đây</p>
+            <p className="ant-upload-hint">
+              Hỗ trợ file Excel (.xls, .xlsx) hoặc CSV
+            </p>
+          </Upload.Dragger>
+        </div>
+      </Modal>
 
       <Modal
         title={editingStudent ? "Cập nhật Sinh viên" : "Thêm Sinh viên mới"}
