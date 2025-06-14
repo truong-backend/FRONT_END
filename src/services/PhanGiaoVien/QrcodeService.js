@@ -1,43 +1,84 @@
 import api from "../api";
 
-const API_BASE_URL = '/api/qrcode';
+const API_BASE_URL = 'http://localhost:8080/api';
 
-export const QrcodeService = {
-  /**
-   * Gửi yêu cầu tạo QR Code cho buổi học
-   * @param {Object} data - QrcodeDto: { maTkb, thoiGianHieuLuc }
-   * @returns {Promise} response: QrcodeDto + ảnh QR dạng base64
-   */
-  generateQRCode: async (data) => {
-    try {
-      const response = await api.post(`${API_BASE_URL}/generate`, data);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
+// 1. Lấy danh sách học kỳ
+export const fetchHocKyList = async () => {
+  try {
+    const response = await api.get(`${API_BASE_URL}/lichgd/hoc-ky`);
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách học kỳ:', error);
+    throw error;
+  }
+};
 
-  /**
-   * Gửi yêu cầu xác thực QR code (điểm danh)
-   * @param {string} qrData - chuỗi mã QR đã giải mã
-   * @param {string} maSv - mã sinh viên
-   * @returns {Promise} response: DiemDanhDto nếu thành công
-   */
-  verifyQRCode: async (qrData, maSv) => {
-    try {
-      const response = await api.post(
-        `${API_BASE_URL}/verify`,
-        null,
-        {
-          params: {
-            qrData,
-            maSv,
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
+// 2. Lấy danh sách môn học theo giảng viên
+export const fetchMonHocByGiaoVien = async (maGv, hocKy, namHoc) => {
+  try {
+    const response = await api.get(`${API_BASE_URL}/monhoc/danh-sach-mon-hoc-theo-giao-vien`, {
+      params: {
+        maGv,
+        hocKy,
+        namHoc
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách môn học:', error);
+    throw error;
+  }
+};
+
+// 3. Lấy danh sách nhóm môn học
+export const fetchNhomMonHoc = async (teacherId, subjectId, semester, year) => {
+  try {
+    const response = await api.get(`${API_BASE_URL}/monhoc/danh-sach-nhom-mon-hoc`, {
+      params: {
+        teacherId,
+        subjectId,
+        semester,
+        year
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách nhóm môn học:', error);
+    throw error;
+  }
+};
+
+// 4. Lấy danh sách ngày giảng dạy
+export const fetchNgayGiangDay = async (maGd) => {
+  try {
+    const response = await api.get(`${API_BASE_URL}/tkb/danh-sach-ngay-giang-day`, {
+      params: { maGd }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách ngày giảng dạy:', error);
+    throw error;
+  }
+};
+
+// 5. Lấy danh sách sinh viên cho điểm danh
+export const fetchSinhVienDiemDanh = async (maTkb) => {
+  try {
+    const response = await api.get(`${API_BASE_URL}/sinh-vien/students/${maTkb}`);
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách sinh viên:', error);
+    throw error;
+  }
+};
+
+// 6. Điểm danh thủ công
+export const markAttendanceManual = async (diemDanhData) => {
+  try {
+    const response = await api.post(`${API_BASE_URL}/diemdanh/diem-danh-thu-cong`, diemDanhData);
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi điểm danh thủ công:', error);
+    throw error;
+  }
 };

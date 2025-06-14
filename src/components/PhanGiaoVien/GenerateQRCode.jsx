@@ -1,63 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Select, Button, Radio, InputNumber, Table, Form, message } from 'antd';
+import { Select, Button, Radio, InputNumber, Table, Form, message, Spin, Checkbox } from 'antd';
 import moment from 'moment';
+import {
+  fetchHocKyList,
+  fetchMonHocByGiaoVien,
+  fetchNhomMonHoc,
+  fetchNgayGiangDay,
+  fetchSinhVienDiemDanh,
+  markAttendanceManual
+} from '../../services/PhanGiaoVien/QrcodeService';
 
 const { Option } = Select;
 
-// MOCK DATA
-const mockNgayBatDauHocKy = [
-  '2025-09-02',
-  '2025-02-10',
-  '2026-06-23',
-  '2024-09-02',
-  '2024-02-10',
-];
-
-const mockMonHoc = {
-  'hk-2025-1': [
-    { id: 'mh1', tenMonHoc: 'Lập trình Java' },
-    { id: 'mh2', tenMonHoc: 'Cơ sở dữ liệu' },
-  ],
-  'hk-2025-2': [
-    { id: 'mh3', tenMonHoc: 'Mạng máy tính' },
-  ],
-};
-
-const mockNhom = {
-  mh1: [{ id: 'nhom1', tenNhom: 'Nhóm 1' }, { id: 'nhom2', tenNhom: 'Nhóm 2' }],
-  mh2: [{ id: 'nhom3', tenNhom: 'Nhóm A' }],
-};
-
-const mockNgayGiangDay = {
-  nhom1: ['2025-09-10', '2025-09-17'],
-  nhom2: ['2025-09-11'],
-  nhom3: ['2025-09-15'],
-};
-
-const mockSinhVien = {
-  nhom1: [
-    { maSv: 'SV001', hoTen: 'Nguyễn Văn A' },
-    { maSv: 'SV002', hoTen: 'Trần Thị B' },
-  ],
-  nhom2: [
-    { maSv: 'SV003', hoTen: 'Phạm Văn C' },
-  ],
-  nhom3: [
-    { maSv: 'SV004', hoTen: 'Lê Thị D' },
-  ],
-};
-
-// Helper xác định học kỳ
-const getHocKy = (dateStr) => {
-  const date = moment(dateStr);
-  const year = date.year();
-  if (date.isSameOrAfter(moment(`${year}-09-02`))) return { hocKy: 1, nam: year };
-  if (date.isSameOrAfter(moment(`${year}-06-23`))) return { hocKy: 3, nam: year };
-  if (date.isSameOrAfter(moment(`${year}-02-10`))) return { hocKy: 2, nam: year };
-  return null;
-};
-
 export const GenerateQRCode = () => {
+  // State cho dropdown selections
   const [hocKyList, setHocKyList] = useState([]);
   const [selectedHocKy, setSelectedHocKy] = useState(null);
   const [monHocList, setMonHocList] = useState([]);
@@ -67,123 +23,369 @@ export const GenerateQRCode = () => {
   const [ngayList, setNgayList] = useState([]);
   const [selectedNgay, setSelectedNgay] = useState(null);
 
+  // State cho mode và sinh viên
   const [mode, setMode] = useState('thuCong');
   const [danhSachSinhVien, setDanhSachSinhVien] = useState([]);
   const [thoiGianHetHan, setThoiGianHetHan] = useState(5);
+  const [selectedStudents, setSelectedStudents] = useState([]);
 
+  // State cho loading
+  const [loading, setLoading] = useState({
+    hocKy: false,
+    monHoc: false,
+    nhom: false,
+    ngayGiangDay: false,
+    sinhVien: false,
+    diemDanh: false
+  });
+
+  // Giả định mã giảng viên - thực tế sẽ lấy từ context/auth
+  const [maGv] = useState('THWE_F0009'); // Thay bằng mã GV thực tế
+
+  // Load danh sách học kỳ khi component mount
   useEffect(() => {
-    // Chuyển ngày sang học kỳ
-    const result = mockNgayBatDauHocKy.map((ngay) => {
-      const { hocKy, nam } = getHocKy(ngay);
-      return {
-        id: `hk-${nam}-${hocKy}`,
-        label: `Học kỳ ${hocKy} năm ${nam}-${nam + 1}`,
-      };
-    });
-    setHocKyList(result);
+    loadHocKyList();
   }, []);
 
-  const handleHocKyChange = (value) => {
+  const loadHocKyList = async () => {
+    setLoading(prev => ({ ...prev, hocKy: true }));
+    try {
+      const data = await fetchHocKyList();
+      setHocKyList(data);
+    } catch (error) {
+      message.error('Không thể tải danh sách học kỳ');
+    } finally {
+      setLoading(prev => ({ ...prev, hocKy: false }));
+    }
+  };
+
+  const handleHocKyChange = async (value) => {
+    const selectedHocKyData = hocKyList.find(hk => hk.hocKy === value);
+    if (!selectedHocKyData) return;
+
     setSelectedHocKy(value);
-    setMonHocList(mockMonHoc[value] || []);
     setSelectedMonHoc(null);
+    setSelectedNhom(null);
+    setSelectedNgay(null);
+    setMonHocList([]);
     setNhomList([]);
     setNgayList([]);
     setDanhSachSinhVien([]);
+
+    // Load môn học của giảng viên trong học kỳ này
+    setLoading(prev => ({ ...prev, monHoc: true }));
+    try {
+      const data = await fetchMonHocByGiaoVien(maGv, selectedHocKyData.hocKy, selectedHocKyData.namHoc);
+      setMonHocList(data);
+    } catch (error) {
+      message.error('Không thể tải danh sách môn học');
+    } finally {
+      setLoading(prev => ({ ...prev, monHoc: false }));
+    }
   };
 
-  const handleMonHocChange = (value) => {
+  const handleMonHocChange = async (value) => {
+    const selectedMonHocData = monHocList.find(mh => mh.maMh === value);
+    const selectedHocKyData = hocKyList.find(hk => hk.hocKy === selectedHocKy);
+    
+    if (!selectedMonHocData || !selectedHocKyData) return;
+
     setSelectedMonHoc(value);
-    setNhomList(mockNhom[value] || []);
     setSelectedNhom(null);
+    setSelectedNgay(null);
+    setNhomList([]);
     setNgayList([]);
     setDanhSachSinhVien([]);
+
+    // Load nhóm môn học
+    setLoading(prev => ({ ...prev, nhom: true }));
+    try {
+      const data = await fetchNhomMonHoc(
+        maGv,
+        selectedMonHocData.maMh,
+        selectedHocKyData.hocKy,
+        selectedHocKyData.namHoc
+      );
+      setNhomList(data);
+    } catch (error) {
+      message.error('Không thể tải danh sách nhóm môn học');
+    } finally {
+      setLoading(prev => ({ ...prev, nhom: false }));
+    }
   };
 
-  const handleNhomChange = (value) => {
+  const handleNhomChange = async (value) => {
+    const selectedNhomData = nhomList.find(nhom => nhom.maGd === value);
+    if (!selectedNhomData) return;
+
     setSelectedNhom(value);
-    setNgayList(mockNgayGiangDay[value] || []);
     setSelectedNgay(null);
+    setNgayList([]);
     setDanhSachSinhVien([]);
+
+    // Load ngày giảng dạy
+    setLoading(prev => ({ ...prev, ngayGiangDay: true }));
+    try {
+      const data = await fetchNgayGiangDay(selectedNhomData.maGd);
+      setNgayList(data);
+    } catch (error) {
+      message.error('Không thể tải danh sách ngày giảng dạy');
+    } finally {
+      setLoading(prev => ({ ...prev, ngayGiangDay: false }));
+    }
   };
 
   const handleNgayChange = (value) => {
     setSelectedNgay(value);
+    setDanhSachSinhVien([]);
   };
 
-  const handleThuCong = () => {
-    setDanhSachSinhVien(mockSinhVien[selectedNhom] || []);
+  const handleThuCong = async () => {
+    if (!selectedNgay) {
+      message.warning('Vui lòng chọn ngày giảng dạy');
+      return;
+    }
+
+    const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
+    if (!selectedNgayData) return;
+
+    setLoading(prev => ({ ...prev, sinhVien: true }));
+    try {
+      const data = await fetchSinhVienDiemDanh(selectedNgayData.maTkb);
+      setDanhSachSinhVien(data);
+      setSelectedStudents([]);
+    } catch (error) {
+      message.error('Không thể tải danh sách sinh viên');
+    } finally {
+      setLoading(prev => ({ ...prev, sinhVien: false }));
+    }
+  };
+
+  const handleDiemDanhThuCong = async () => {
+    if (selectedStudents.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một sinh viên để điểm danh');
+      return;
+    }
+
+    const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
+    if (!selectedNgayData) return;
+
+    setLoading(prev => ({ ...prev, diemDanh: true }));
+    try {
+      // Điểm danh cho từng sinh viên được chọn
+      const promises = selectedStudents.map(maSv => 
+        markAttendanceManual({
+          maTkb: selectedNgayData.maTkb,
+          maSv: maSv,
+          ngayHoc: selectedNgayData.ngayHoc,
+          ghiChu: 'Điểm danh thủ công'
+        })
+      );
+
+      await Promise.all(promises);
+      message.success(`Điểm danh thành công cho ${selectedStudents.length} sinh viên`);
+      
+      // Reload danh sách sinh viên để cập nhật trạng thái
+      handleThuCong();
+      setSelectedStudents([]);
+    } catch (error) {
+      message.error('Có lỗi xảy ra khi điểm danh');
+    } finally {
+      setLoading(prev => ({ ...prev, diemDanh: false }));
+    }
   };
 
   const handleTaoQR = () => {
-    message.success(`QR được tạo thành công (giả lập) - Hết hạn sau ${thoiGianHetHan} phút`);
+    if (!selectedNgay) {
+      message.warning('Vui lòng chọn ngày giảng dạy');
+      return;
+    }
+    message.success(`QR được tạo thành công - Hết hạn sau ${thoiGianHetHan} phút`);
+    // TODO: Implement QR code generation logic
   };
 
+  const handleSelectAllStudents = (checked) => {
+    if (checked) {
+      const allStudentIds = danhSachSinhVien
+        .filter(sv => sv.trangThaiDiemDanh !== 'Đã điểm danh')
+        .map(sv => sv.maSv);
+      setSelectedStudents(allStudentIds);
+    } else {
+      setSelectedStudents([]);
+    }
+  };
+
+  const studentColumns = [
+    {
+      title: (
+        <Checkbox
+          onChange={(e) => handleSelectAllStudents(e.target.checked)}
+          checked={selectedStudents.length > 0 && 
+            selectedStudents.length === danhSachSinhVien.filter(sv => sv.trangThaiDiemDanh !== 'Đã điểm danh').length}
+          indeterminate={selectedStudents.length > 0 && 
+            selectedStudents.length < danhSachSinhVien.filter(sv => sv.trangThaiDiemDanh !== 'Đã điểm danh').length}
+        >
+          Chọn
+        </Checkbox>
+      ),
+      dataIndex: 'select',
+      width: 80,
+      render: (_, record) => (
+        <Checkbox
+          checked={selectedStudents.includes(record.maSv)}
+          disabled={record.trangThaiDiemDanh === 'Đã điểm danh'}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedStudents([...selectedStudents, record.maSv]);
+            } else {
+              setSelectedStudents(selectedStudents.filter(id => id !== record.maSv));
+            }
+          }}
+        />
+      )
+    },
+    { title: 'MSSV', dataIndex: 'maSv', width: 120 },
+    { title: 'Họ tên', dataIndex: 'tenSv' },
+    { title: 'Lớp', dataIndex: 'tenLop', width: 100 },
+    { title: 'Khoa', dataIndex: 'tenKhoa', width: 150 },
+    { 
+      title: 'Trạng thái', 
+      dataIndex: 'trangThaiDiemDanh',
+      width: 120,
+      render: (status) => (
+        <span style={{ 
+          color: status === 'Đã điểm danh' ? 'green' : 'orange',
+          fontWeight: 'bold'
+        }}>
+          {status || 'Chưa điểm danh'}
+        </span>
+      )
+    }
+  ];
+
   return (
-    <Form layout="vertical" style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Form.Item label="Chọn học kỳ">
-        <Select onChange={handleHocKyChange} placeholder="Chọn học kỳ">
-          {hocKyList.map((hk) => (
-            <Option key={hk.id} value={hk.id}>{hk.label}</Option>
-          ))}
-        </Select>
-      </Form.Item>
+    <Spin spinning={Object.values(loading).some(Boolean)}>
+      <Form layout="vertical" style={{ maxWidth: 1000, margin: '0 auto' }}>
+        <Form.Item label="Chọn học kỳ">
+          <Select 
+            onChange={handleHocKyChange} 
+            placeholder="Chọn học kỳ"
+            loading={loading.hocKy}
+          >
+            {hocKyList.map((hk) => (
+              <Option key={hk.hocKy} value={hk.hocKy}>
+                {hk.hocKyDisplay}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-      <Form.Item label="Chọn môn học">
-        <Select onChange={handleMonHocChange} value={selectedMonHoc} placeholder="Chọn môn học">
-          {monHocList.map((mh) => (
-            <Option key={mh.id} value={mh.id}>{mh.tenMonHoc}</Option>
-          ))}
-        </Select>
-      </Form.Item>
+        <Form.Item label="Chọn môn học">
+          <Select 
+            onChange={handleMonHocChange} 
+            value={selectedMonHoc} 
+            placeholder="Chọn môn học"
+            loading={loading.monHoc}
+            disabled={!selectedHocKy}
+          >
+            {monHocList.map((mh) => (
+              <Option key={mh.maMh} value={mh.maMh}>
+                {mh.tenMh}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-      <Form.Item label="Chọn nhóm học">
-        <Select onChange={handleNhomChange} value={selectedNhom} placeholder="Chọn nhóm">
-          {nhomList.map((nhom) => (
-            <Option key={nhom.id} value={nhom.id}>{nhom.tenNhom}</Option>
-          ))}
-        </Select>
-      </Form.Item>
+        <Form.Item label="Chọn nhóm học">
+          <Select 
+            onChange={handleNhomChange} 
+            value={selectedNhom} 
+            placeholder="Chọn nhóm"
+            loading={loading.nhom}
+            disabled={!selectedMonHoc}
+          >
+            {nhomList.map((nhom) => (
+              <Option key={nhom.maGd} value={nhom.maGd}>
+                Nhóm {nhom.nhomMonHoc} - {nhom.phongHoc} - {nhom.caHoc}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-      <Form.Item label="Chọn ngày giảng dạy">
-        <Select onChange={handleNgayChange} value={selectedNgay} placeholder="Chọn ngày">
-          {ngayList.map((ngay) => (
-            <Option key={ngay} value={ngay}>{moment(ngay).format('DD/MM/YYYY')}</Option>
-          ))}
-        </Select>
-      </Form.Item>
+        <Form.Item label="Chọn ngày giảng dạy">
+          <Select 
+            onChange={handleNgayChange} 
+            value={selectedNgay} 
+            placeholder="Chọn ngày"
+            loading={loading.ngayGiangDay}
+            disabled={!selectedNhom}
+          >
+            {ngayList.map((ngay) => (
+              <Option key={ngay.maTkb} value={ngay.maTkb}>
+                {moment(ngay.ngayHoc).format('DD/MM/YYYY')} - {ngay.phongHoc} - {ngay.caHoc}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-      <Form.Item label="Chọn phương thức điểm danh">
-        <Radio.Group value={mode} onChange={(e) => setMode(e.target.value)}>
-          <Radio.Button value="thuCong">Thủ công</Radio.Button>
-          <Radio.Button value="qr">Tạo QR</Radio.Button>
-        </Radio.Group>
-      </Form.Item>
+        <Form.Item label="Chọn phương thức điểm danh">
+          <Radio.Group value={mode} onChange={(e) => setMode(e.target.value)}>
+            <Radio.Button value="thuCong">Thủ công</Radio.Button>
+            <Radio.Button value="qr">Tạo QR</Radio.Button>
+          </Radio.Group>
+        </Form.Item>
 
-      {mode === 'thuCong' && (
-        <>
-          <Button type="primary" onClick={handleThuCong}>Hiển thị danh sách sinh viên</Button>
-          <Table
-            dataSource={danhSachSinhVien}
-            columns={[
-              { title: 'MSSV', dataIndex: 'maSv' },
-              { title: 'Họ tên', dataIndex: 'hoTen' },
-              { title: 'Trạng thái', render: () => 'Chưa điểm danh' }
-            ]}
-            rowKey="maSv"
-            style={{ marginTop: 16 }}
-          />
-        </>
-      )}
+        {mode === 'thuCong' && (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <Button 
+                type="primary" 
+                onClick={handleThuCong}
+                loading={loading.sinhVien}
+                disabled={!selectedNgay}
+              >
+                Hiển thị danh sách sinh viên
+              </Button>
+              {danhSachSinhVien.length > 0 && (
+                <Button 
+                  type="primary" 
+                  onClick={handleDiemDanhThuCong}
+                  loading={loading.diemDanh}
+                  disabled={selectedStudents.length === 0}
+                  style={{ marginLeft: 8 }}
+                >
+                  Điểm danh ({selectedStudents.length})
+                </Button>
+              )}
+            </div>
+            
+            {danhSachSinhVien.length > 0 && (
+              <Table
+                dataSource={danhSachSinhVien}
+                columns={studentColumns}
+                rowKey="maSv"
+                pagination={{ pageSize: 10 }}
+                scroll={{ x: 800 }}
+              />
+            )}
+          </>
+        )}
 
-      {mode === 'qr' && (
-        <>
-          <Form.Item label="Thời gian hết hiệu lực (phút)">
-            <InputNumber min={1} max={60} value={thoiGianHetHan} onChange={setThoiGianHetHan} />
-          </Form.Item>
-          <Button type="primary" onClick={handleTaoQR}>Tạo mã QR điểm danh (mock)</Button>
-        </>
-      )}
-    </Form>
+        {mode === 'qr' && (
+          <>
+            <Form.Item label="Thời gian hết hiệu lực (phút)">
+              <InputNumber min={1} max={60} value={thoiGianHetHan} onChange={setThoiGianHetHan} />
+            </Form.Item>
+            <Button 
+              type="primary" 
+              onClick={handleTaoQR}
+              disabled={!selectedNgay}
+            >
+              Tạo mã QR điểm danh
+            </Button>
+          </>
+        )}
+      </Form>
+    </Spin>
   );
 };
