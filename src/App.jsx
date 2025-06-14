@@ -21,6 +21,7 @@ import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachS
 import {DanhSachLichPage} from './pages/PhanAdmin/Danhsachlich/DanhSachLichPage.jsx';
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
 import ProfileGiaoVienPage from './pages/PhanGiaoVien/ProfileGiaoVienPage';
+import ProfileSinhVienPage from './pages/PhanSinhVien/ProfileSinhVienPage.jsx';
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 
@@ -207,6 +208,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['STUDENT']}>
                   <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/student/profile"
+              element ={
+                <ProtectedRoute allowedRoles={['STUDENT']}>
+                    <ProfileSinhVienPage/>
                 </ProtectedRoute>
               }
             />
