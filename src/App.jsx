@@ -329,7 +329,7 @@ function App() {
               }
             />
             <Route
-              path="/teacher/qr"
+              path="/teacher/diemdanh"
               element={
                 <ProtectedRoute allowedRoles={['TEACHER']}>
                   <QrcodePage />
