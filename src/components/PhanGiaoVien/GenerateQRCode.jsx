@@ -9,10 +9,14 @@ import {
   fetchSinhVienDiemDanh,
   markAttendanceManual
 } from '../../services/PhanGiaoVien/QrcodeService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { Option } = Select;
 
 export const GenerateQRCode = () => {
+  // Lấy thông tin user từ AuthContext
+  const { user, isAuthenticated } = useAuth();
+
   // State cho dropdown selections
   const [hocKyList, setHocKyList] = useState([]);
   const [selectedHocKy, setSelectedHocKy] = useState(null);
@@ -39,13 +43,26 @@ export const GenerateQRCode = () => {
     diemDanh: false
   });
 
-  // Giả định mã giảng viên - thực tế sẽ lấy từ context/auth
-  const [maGv] = useState('THWE_F0009'); // Thay bằng mã GV thực tế
+  // Lấy mã giảng viên từ user context
+  // Có thể là user.maGv hoặc user.id hoặc user.username tùy vào cấu trúc response từ API
+  const maGv = user?.maGv || user?.id || user?.username;
 
-  // Load danh sách học kỳ khi component mount
+  // Kiểm tra authentication và mã giảng viên
   useEffect(() => {
+    if (!isAuthenticated) {
+      message.error('Vui lòng đăng nhập để sử dụng chức năng này');
+      return;
+    }
+
+    if (!maGv) {
+      message.error('Không tìm thấy mã giảng viên');
+      console.log('User object:', user); // Debug để xem cấu trúc user
+      return;
+    }
+
+    // Load danh sách học kỳ khi có đầy đủ thông tin
     loadHocKyList();
-  }, []);
+  }, [isAuthenticated, maGv]);
 
   const loadHocKyList = async () => {
     setLoading(prev => ({ ...prev, hocKy: true }));
@@ -54,12 +71,18 @@ export const GenerateQRCode = () => {
       setHocKyList(data);
     } catch (error) {
       message.error('Không thể tải danh sách học kỳ');
+      console.error('Error loading hoc ky list:', error);
     } finally {
       setLoading(prev => ({ ...prev, hocKy: false }));
     }
   };
 
   const handleHocKyChange = async (value) => {
+    if (!maGv) {
+      message.error('Không tìm thấy mã giảng viên');
+      return;
+    }
+
     const selectedHocKyData = hocKyList.find(hk => hk.hocKy === value);
     if (!selectedHocKyData) return;
 
@@ -79,12 +102,18 @@ export const GenerateQRCode = () => {
       setMonHocList(data);
     } catch (error) {
       message.error('Không thể tải danh sách môn học');
+      console.error('Error loading mon hoc:', error);
     } finally {
       setLoading(prev => ({ ...prev, monHoc: false }));
     }
   };
 
   const handleMonHocChange = async (value) => {
+    if (!maGv) {
+      message.error('Không tìm thấy mã giảng viên');
+      return;
+    }
+
     const selectedMonHocData = monHocList.find(mh => mh.maMh === value);
     const selectedHocKyData = hocKyList.find(hk => hk.hocKy === selectedHocKy);
     
@@ -109,6 +138,7 @@ export const GenerateQRCode = () => {
       setNhomList(data);
     } catch (error) {
       message.error('Không thể tải danh sách nhóm môn học');
+      console.error('Error loading nhom mon hoc:', error);
     } finally {
       setLoading(prev => ({ ...prev, nhom: false }));
     }
@@ -130,6 +160,7 @@ export const GenerateQRCode = () => {
       setNgayList(data);
     } catch (error) {
       message.error('Không thể tải danh sách ngày giảng dạy');
+      console.error('Error loading ngay giang day:', error);
     } finally {
       setLoading(prev => ({ ...prev, ngayGiangDay: false }));
     }
@@ -156,6 +187,7 @@ export const GenerateQRCode = () => {
       setSelectedStudents([]);
     } catch (error) {
       message.error('Không thể tải danh sách sinh viên');
+      console.error('Error loading sinh vien:', error);
     } finally {
       setLoading(prev => ({ ...prev, sinhVien: false }));
     }
@@ -190,6 +222,7 @@ export const GenerateQRCode = () => {
       setSelectedStudents([]);
     } catch (error) {
       message.error('Có lỗi xảy ra khi điểm danh');
+      console.error('Error marking attendance:', error);
     } finally {
       setLoading(prev => ({ ...prev, diemDanh: false }));
     }
@@ -263,9 +296,32 @@ export const GenerateQRCode = () => {
     }
   ];
 
+  // Hiển thị loading hoặc thông báo lỗi nếu chưa đăng nhập
+  if (!isAuthenticated) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <p>Vui lòng đăng nhập để sử dụng chức năng này</p>
+      </div>
+    );
+  }
+
+  if (!maGv) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <p>Không tìm thấy thông tin giảng viên</p>
+        <p>Thông tin user: {JSON.stringify(user)}</p>
+      </div>
+    );
+  }
+
   return (
     <Spin spinning={Object.values(loading).some(Boolean)}>
       <Form layout="vertical" style={{ maxWidth: 1000, margin: '0 auto' }}>
+        {/* Hiển thị thông tin giảng viên để debug */}
+        <div style={{ marginBottom: 16, padding: 8, backgroundColor: '#f5f5f5', borderRadius: 4 }}>
+          <small>Mã giảng viên: {maGv}</small>
+        </div>
+
         <Form.Item label="Chọn học kỳ">
           <Select 
             onChange={handleHocKyChange} 
