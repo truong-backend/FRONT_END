@@ -19,6 +19,9 @@ import {
   CalendarRange,
   Building,
   Book,
+  QrCodeIcon,
+  UserCheckIcon,
+  UserIcon,
 } from 'lucide-react';
 
 const createAccountManageMenu = () => ({
@@ -59,10 +62,10 @@ const menuItemsByRole = {
   ],
   teacher: [
     { title: 'Trang Chủ', shortTitle: 'TC', icon: <FileText size={20} />, path: '/teacher/dashboard' },
-    { title: 'Tạo Mã QR', shortTitle: 'QR', icon: <Calendar size={20} />, path: '/teacher/qr' },
-    { title: 'Danh Sách Điểm Danh', shortTitle: 'DSDD', icon: <Users size={20} />, path: '/teacher/attendance' },
-    { title: 'Xuất Báo Cáo', shortTitle: 'BC', icon: <FileText size={20} />, path: '/teacher/reports' },
-    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <MessageSquare size={20} />, path: '/teacher/profile' },
+    { title: 'Điểm Danh', shortTitle: 'DD', icon: <QrCodeIcon size={20} />, path: '/teacher/diemdanh' },
+    { title: 'Kết Quả Điểm Danh', shortTitle: 'KQDD', icon: <UserCheckIcon size={20} />, path: '/teacher/kqdiemdanh' },
+    { title: 'Lịch Giảng Dạy', shortTitle: 'LGD', icon: <Calendar size={20} />, path: '/teacher/lichgd' },
+    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <UserIcon size={20} />, path: '/teacher/profile' },
   ],
   student: [
     { title: 'Trang Chủ', shortTitle: 'TC', icon: <BookOpen size={20} />, path: '/student/dashboard' },
