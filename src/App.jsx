@@ -20,7 +20,9 @@ import {DanhSachGiangVienPage} from './pages/PhanAdmin/danhsachgiangvien/DanhSac
 import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
 import {DanhsachlichhocPage} from './pages/PhanAdmin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
-import ProfileGiaoVienPage from './pages/PhanGiaoVien/ProfileGiaoVienPage';
+//đổi tên ProfileSinhVienPage && ProfileGiaoVien 
+import SinhVienProfilePage from './pages/PhanSinhVien/SinhVienProfilePage.jsx';
+import GiaoVienProfilePage from './pages/PhanGiaoVien/GiaoVienProfilePage.jsx';
 
 import { QrcodePage } from './pages/PhanGiaoVien/QrcodePage.jsx';
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
@@ -216,7 +218,7 @@ function App() {
               path="/student/profile"
               element ={
                 <ProtectedRoute allowedRoles={['STUDENT']}>
-                    <ProfileSinhVienPage/>
+                    <SinhVienProfilePage />
                 </ProtectedRoute>
               }
             />
@@ -232,7 +234,7 @@ function App() {
               path="/teacher/profile"
               element={
                 <ProtectedRoute allowedRoles={['TEACHER']}>
-                  <ProfileGiaoVienPage />
+                  <GiaoVienProfilePage />
                 </ProtectedRoute>
               }
             />
