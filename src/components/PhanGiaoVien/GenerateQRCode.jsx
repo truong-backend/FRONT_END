@@ -40,6 +40,8 @@ export const GenerateQRCode = () => {
   // State cho QR Code
   const [qrCodeData, setQrCodeData] = useState(null);
   const [qrCodeExpired, setQrCodeExpired] = useState(false);
+  const [remainingTime, setRemainingTime] = useState(null); // State riêng cho thời gian còn lại
+
 
   // State cho loading
   const [loading, setLoading] = useState({
@@ -75,21 +77,71 @@ export const GenerateQRCode = () => {
   // Effect để theo dõi thời gian hết hạn QR Code
   useEffect(() => {
     let interval;
-    if (qrCodeData && qrCodeData.thoiGianKt) {
+    
+    if (qrCodeData && qrCodeData.thoiGianKt && !qrCodeExpired) {
+      // Cập nhật thời gian còn lại mỗi giây
       interval = setInterval(() => {
         const now = moment();
         const expireTime = moment(qrCodeData.thoiGianKt);
-        if (now.isAfter(expireTime)) {
+        const duration = moment.duration(expireTime.diff(now));
+        
+        if (duration.asSeconds() <= 0) {
+          // Hết hạn - tự động đóng QR code
           setQrCodeExpired(true);
+          setRemainingTime('Đã hết hạn');
+          setQrCodeData(null); // Tự động đóng QR code
+          message.warning('QR Code đã hết hạn và được đóng tự động!', 3);
           clearInterval(interval);
+        } else {
+          // Cập nhật thời gian còn lại
+          const totalSeconds = Math.floor(duration.asSeconds());
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          
+          const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          setRemainingTime(timeString);
+          
+          // Cảnh báo khi còn 1 phút
+          if (totalSeconds === 60) {
+            message.warning('QR Code sẽ hết hạn trong 1 phút!', 2);
+          }
+          // Cảnh báo khi còn 30 giây
+          else if (totalSeconds === 30) {
+            message.warning('QR Code sẽ hết hạn trong 30 giây!', 2);
+          }
+          // Cảnh báo khi còn 10 giây
+          else if (totalSeconds === 10) {
+            message.error('QR Code sẽ hết hạn trong 10 giây!', 2);
+          }
         }
       }, 1000);
+      
+      // Tính toán thời gian ban đầu
+      const now = moment();
+      const expireTime = moment(qrCodeData.thoiGianKt);
+      const duration = moment.duration(expireTime.diff(now));
+      
+      if (duration.asSeconds() > 0) {
+        const totalSeconds = Math.floor(duration.asSeconds());
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        setRemainingTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      } else {
+        setQrCodeExpired(true);
+        setRemainingTime('Đã hết hạn');
+        setQrCodeData(null);
+      }
+    } else if (!qrCodeData) {
+      // Reset khi không có QR code
+      setRemainingTime(null);
+      setQrCodeExpired(false);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [qrCodeData]);
+  }, [qrCodeData, qrCodeExpired]);
+
 
   const loadHocKyList = async () => {
     setLoading(prev => ({ ...prev, hocKy: true }));
