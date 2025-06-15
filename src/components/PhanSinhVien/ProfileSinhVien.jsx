@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { SinhVienService } from '../../services/PhanSinhVien/SinhVienService.js';
+import { SinhVienService } from '../../services/PhanSinhVien/Profile/SinhVienService.js';
 import { User, Edit3, Mail, Phone, MapPin, Calendar, CreditCard, Rss } from 'lucide-react';
 
 export default function ProfileSinhVien() {

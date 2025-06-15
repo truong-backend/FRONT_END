@@ -21,7 +21,7 @@ import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachS
 import {DanhsachlichhocPage} from './pages/PhanAdmin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
 //đổi tên ProfileSinhVienPage && ProfileGiaoVien 
-import SinhVienProfilePage from './pages/PhanSinhVien/SinhVienProfilePage.jsx';
+import SinhVienProfilePage from './pages/PhanSinhVien/Profile/SinhVienProfilePage.jsx';
 import GiaoVienProfilePage from './pages/PhanGiaoVien/Profile/GiaoVienProfilePage.jsx';
 
 import { QrcodePage } from './pages/PhanGiaoVien/TaoQR/QrcodePage.jsx';
