@@ -69,6 +69,7 @@ const menuItemsByRole = {
   ],
   student: [
     { title: 'Trang Chủ', shortTitle: 'TC', icon: <BookOpen size={20} />, path: '/student/dashboard' },
+    { title: 'Điểm Danh QR', shortTitle: 'ĐD', icon: <Calendar size={20} />, path: '/student/scan-qr' },
     { title: 'Thời Khóa Biểu', shortTitle: 'TKB', icon: <ClipboardList size={20} />, path: '/student/schedule' },
     { title: 'Lịch Học', shortTitle: 'LH', icon: <Calendar size={20} />, path: '/student/calendar' },
     { title: 'Lịch Sử Điểm Danh', shortTitle: 'LSDD', icon: <MessageSquare size={20} />, path: '/student/attendance-history' },

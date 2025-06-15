@@ -23,8 +23,9 @@ import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncom
 //đổi tên ProfileSinhVienPage && ProfileGiaoVien 
 import SinhVienProfilePage from './pages/PhanSinhVien/Profile/SinhVienProfilePage.jsx';
 import GiaoVienProfilePage from './pages/PhanGiaoVien/Profile/GiaoVienProfilePage.jsx';
-
+import { ScanQRPage } from './pages/PhanSinhVien/CameraScanQR/ScanQRPage.jsx';
 import { QrcodePage } from './pages/PhanGiaoVien/TaoQR/QrcodePage.jsx';
+
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 
@@ -333,6 +334,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['TEACHER']}>
                   <QrcodePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/scan-qr"
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT']}>
+                  <ScanQRPage />
                 </ProtectedRoute>
               }
             />
