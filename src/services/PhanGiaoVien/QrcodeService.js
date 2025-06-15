@@ -82,3 +82,21 @@ export const markAttendanceManual = async (diemDanhData) => {
     throw error;
   }
 };
+
+// 7. Tạo QR Code mới
+export const createQRCode = async (maTkb, soPhut) => {
+  if (soPhut == null || isNaN(soPhut)) {
+    throw new Error('Số phút hết hạn (soPhut) là bắt buộc');
+  }
+
+  try {
+    const response = await api.post(`${API_BASE_URL}/qrcode/qr/TaoQRCode`, {
+      maTkb,
+      soPhut
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi tạo QR Code:', error);
+    throw error;
+  }
+};

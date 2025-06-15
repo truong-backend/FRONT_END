@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Select, Button, Radio, InputNumber, Table, Form, message, Spin, Checkbox } from 'antd';
+import { Select, Button, Radio, InputNumber, Table, Form, message, Spin, Checkbox, Card, Typography, Divider } from 'antd';
+import { QrcodeOutlined, ClockCircleOutlined, CheckCircleOutlined, CopyOutlined } from '@ant-design/icons';
+import { QRCodeSVG } from 'qrcode.react';
 import moment from 'moment';
 import {
   fetchHocKyList,
@@ -7,11 +9,13 @@ import {
   fetchNhomMonHoc,
   fetchNgayGiangDay,
   fetchSinhVienDiemDanh,
-  markAttendanceManual
+  markAttendanceManual,
+  createQRCode
 } from '../../services/PhanGiaoVien/QrcodeService';
 import { useAuth } from '../../contexts/AuthContext';
 
 const { Option } = Select;
+const { Text, Title } = Typography;
 
 export const GenerateQRCode = () => {
   // Lấy thông tin user từ AuthContext
@@ -30,8 +34,12 @@ export const GenerateQRCode = () => {
   // State cho mode và sinh viên
   const [mode, setMode] = useState('thuCong');
   const [danhSachSinhVien, setDanhSachSinhVien] = useState([]);
-  const [thoiGianHetHan, setThoiGianHetHan] = useState(5);
+  const [thoiGianHetHan, setThoiGianHetHan] = useState(5); // Giá trị mặc định 5 phút
   const [selectedStudents, setSelectedStudents] = useState([]);
+
+  // State cho QR Code
+  const [qrCodeData, setQrCodeData] = useState(null);
+  const [qrCodeExpired, setQrCodeExpired] = useState(false);
 
   // State cho loading
   const [loading, setLoading] = useState({
@@ -40,11 +48,11 @@ export const GenerateQRCode = () => {
     nhom: false,
     ngayGiangDay: false,
     sinhVien: false,
-    diemDanh: false
+    diemDanh: false,
+    taoQR: false
   });
 
   // Lấy mã giảng viên từ user context
-  // Có thể là user.maGv hoặc user.id hoặc user.username tùy vào cấu trúc response từ API
   const maGv = user?.maGv || user?.id || user?.username;
 
   // Kiểm tra authentication và mã giảng viên
@@ -56,13 +64,32 @@ export const GenerateQRCode = () => {
 
     if (!maGv) {
       message.error('Không tìm thấy mã giảng viên');
-      console.log('User object:', user); // Debug để xem cấu trúc user
+      console.log('User object:', user);
       return;
     }
 
     // Load danh sách học kỳ khi có đầy đủ thông tin
     loadHocKyList();
   }, [isAuthenticated, maGv]);
+
+  // Effect để theo dõi thời gian hết hạn QR Code
+  useEffect(() => {
+    let interval;
+    if (qrCodeData && qrCodeData.thoiGianKt) {
+      interval = setInterval(() => {
+        const now = moment();
+        const expireTime = moment(qrCodeData.thoiGianKt);
+        if (now.isAfter(expireTime)) {
+          setQrCodeExpired(true);
+          clearInterval(interval);
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [qrCodeData]);
 
   const loadHocKyList = async () => {
     setLoading(prev => ({ ...prev, hocKy: true }));
@@ -94,6 +121,8 @@ export const GenerateQRCode = () => {
     setNhomList([]);
     setNgayList([]);
     setDanhSachSinhVien([]);
+    setQrCodeData(null);
+    setQrCodeExpired(false);
 
     // Load môn học của giảng viên trong học kỳ này
     setLoading(prev => ({ ...prev, monHoc: true }));
@@ -125,6 +154,8 @@ export const GenerateQRCode = () => {
     setNhomList([]);
     setNgayList([]);
     setDanhSachSinhVien([]);
+    setQrCodeData(null);
+    setQrCodeExpired(false);
 
     // Load nhóm môn học
     setLoading(prev => ({ ...prev, nhom: true }));
@@ -152,6 +183,8 @@ export const GenerateQRCode = () => {
     setSelectedNgay(null);
     setNgayList([]);
     setDanhSachSinhVien([]);
+    setQrCodeData(null);
+    setQrCodeExpired(false);
 
     // Load ngày giảng dạy
     setLoading(prev => ({ ...prev, ngayGiangDay: true }));
@@ -169,6 +202,12 @@ export const GenerateQRCode = () => {
   const handleNgayChange = (value) => {
     setSelectedNgay(value);
     setDanhSachSinhVien([]);
+    setQrCodeData(null);
+    setQrCodeExpired(false);
+  };
+
+  const handleThoiGianHetHanChange = (value) => {
+    setThoiGianHetHan(value);
   };
 
   const handleThuCong = async () => {
@@ -228,13 +267,46 @@ export const GenerateQRCode = () => {
     }
   };
 
-  const handleTaoQR = () => {
+  const handleTaoQR = async () => {
+    // Kiểm tra ngày giảng dạy
     if (!selectedNgay) {
       message.warning('Vui lòng chọn ngày giảng dạy');
       return;
     }
-    message.success(`QR được tạo thành công - Hết hạn sau ${thoiGianHetHan} phút`);
-    // TODO: Implement QR code generation logic
+
+    // Kiểm tra thời gian hết hạn (bắt buộc)
+    if (!thoiGianHetHan || thoiGianHetHan <= 0) {
+      message.warning('Vui lòng nhập thời gian hết hạn (phút) cho QR Code');
+      return;
+    }
+
+    // Kiểm tra giá trị hợp lệ (từ 1 đến 120 phút)
+    if (thoiGianHetHan < 1 || thoiGianHetHan > 120) {
+      message.warning('Thời gian hết hạn phải từ 1 đến 120 phút');
+      return;
+    }
+
+    const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
+    if (!selectedNgayData) return;
+
+    setLoading(prev => ({ ...prev, taoQR: true }));
+    try {
+      // Truyền thời gian hết hạn vào hàm createQRCode
+      const qrData = await createQRCode(selectedNgayData.maTkb, thoiGianHetHan);
+      setQrCodeData(qrData);
+      setQrCodeExpired(false);
+      
+      const expireTime = moment(qrData.thoiGianKt);
+      const now = moment();
+      const minutesRemaining = expireTime.diff(now, 'minutes', true);
+      
+      message.success(`QR Code đã được tạo thành công! Còn hiệu lực ${Math.round(minutesRemaining)} phút`);
+    } catch (error) {
+      message.error('Không thể tạo QR Code');
+      console.error('Error creating QR code:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, taoQR: false }));
+    }
   };
 
   const handleSelectAllStudents = (checked) => {
@@ -245,6 +317,49 @@ export const GenerateQRCode = () => {
       setSelectedStudents(allStudentIds);
     } else {
       setSelectedStudents([]);
+    }
+  };
+
+  const getRemainingTime = () => {
+    if (!qrCodeData || !qrCodeData.thoiGianKt) return null;
+    
+    const now = moment();
+    const expireTime = moment(qrCodeData.thoiGianKt);
+    const duration = moment.duration(expireTime.diff(now));
+    
+    if (duration.asSeconds() <= 0) return 'Đã hết hạn';
+    
+    const minutes = Math.floor(duration.asMinutes());
+    const seconds = duration.seconds();
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Tạo QR code value từ dữ liệu
+  const generateQRValue = () => {
+    if (!qrCodeData) return '';
+    
+    // Tạo một object chứa thông tin cần thiết cho điểm danh
+    const qrInfo = {
+      id: qrCodeData.id,
+      maTkb: qrCodeData.maTkb,
+      ngayHoc: qrCodeData.ngayHoc,
+      thoiGianKt: qrCodeData.thoiGianKt,
+      type: 'attendance'
+    };
+    
+    // Chuyển đổi thành JSON string
+    return JSON.stringify(qrInfo);
+  };
+
+  // Copy QR code data to clipboard
+  const copyQRData = async () => {
+    try {
+      const qrValue = generateQRValue();
+      await navigator.clipboard.writeText(qrValue);
+      message.success('Đã sao chép dữ liệu QR Code vào clipboard');
+    } catch (error) {
+      message.error('Không thể sao chép dữ liệu');
     }
   };
 
@@ -429,16 +544,166 @@ export const GenerateQRCode = () => {
 
         {mode === 'qr' && (
           <>
-            <Form.Item label="Thời gian hết hiệu lực (phút)">
-              <InputNumber min={1} max={60} value={thoiGianHetHan} onChange={setThoiGianHetHan} />
-            </Form.Item>
-            <Button 
-              type="primary" 
-              onClick={handleTaoQR}
-              disabled={!selectedNgay}
+            {/* Thêm trường nhập thời gian hết hạn (bắt buộc) */}
+            <Form.Item 
+              label="Thời gian hết hạn QR Code (phút)" 
+              required
+              style={{ marginBottom: 16 }}
             >
-              Tạo mã QR điểm danh
-            </Button>
+              <InputNumber
+                min={1}
+                max={120}
+                value={thoiGianHetHan}
+                onChange={handleThoiGianHetHanChange}
+                placeholder="Nhập số phút (1-120)"
+                style={{ width: '100%' }}
+                addonAfter="phút"
+                status={!thoiGianHetHan || thoiGianHetHan <= 0 ? 'error' : ''}
+              />
+              <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
+                * Bắt buộc nhập. QR Code sẽ hết hạn sau {thoiGianHetHan || 0} phút kể từ khi tạo
+              </div>
+            </Form.Item>
+
+            <div style={{ marginBottom: 16 }}>
+              <Button 
+                type="primary" 
+                icon={<QrcodeOutlined />}
+                onClick={handleTaoQR}
+                loading={loading.taoQR}
+                disabled={!selectedNgay || !thoiGianHetHan || thoiGianHetHan <= 0}
+                size="large"
+              >
+                Tạo mã QR điểm danh
+              </Button>
+              {(!thoiGianHetHan || thoiGianHetHan <= 0) && (
+                <div style={{ 
+                  color: '#ff4d4f', 
+                  fontSize: '12px', 
+                  marginTop: 4,
+                  fontStyle: 'italic'
+                }}>
+                  Vui lòng nhập thời gian hết hạn để tạo QR Code
+                </div>
+              )}
+            </div>
+
+            {qrCodeData && (
+              <Card 
+                title={
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <QrcodeOutlined style={{ fontSize: 20 }} />
+                    <span>Thông tin QR Code</span>
+                  </div>
+                }
+                style={{ marginTop: 16 }}
+                extra={
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {qrCodeExpired ? (
+                      <span style={{ color: 'red', fontWeight: 'bold' }}>
+                        <ClockCircleOutlined /> Đã hết hạn
+                      </span>
+                    ) : (
+                      <span style={{ color: 'green', fontWeight: 'bold' }}>
+                        <CheckCircleOutlined /> Còn hiệu lực
+                      </span>
+                    )}
+                  </div>
+                }
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div>
+                    <Text strong>ID QR Code:</Text>
+                    <div>{qrCodeData.id}</div>
+                  </div>
+                  <div>
+                    <Text strong>Mã TKB:</Text>
+                    <div>{qrCodeData.maTkb}</div>
+                  </div>
+                  <div>
+                    <Text strong>Ngày học:</Text>
+                    <div>{moment(qrCodeData.ngayHoc).format('DD/MM/YYYY')}</div>
+                  </div>
+                  <div>
+                    <Text strong>Phòng học:</Text>
+                    <div>{qrCodeData.phongHoc}</div>
+                  </div>
+                  <div>
+                    <Text strong>Thời gian hết hạn:</Text>
+                    <div>{moment(qrCodeData.thoiGianKt).format('DD/MM/YYYY HH:mm:ss')}</div>
+                  </div>
+                  <div>
+                    <Text strong>Thời gian còn lại:</Text>
+                    <div style={{ 
+                      color: qrCodeExpired ? 'red' : 'green',
+                      fontWeight: 'bold',
+                      fontSize: '16px'
+                    }}>
+                      {getRemainingTime()}
+                    </div>
+                  </div>
+                </div>
+                
+                <Divider />
+                
+                <div style={{ textAlign: 'center' }}>
+                  <Title level={4}>QR Code cho điểm danh</Title>
+                  <div style={{ 
+                    padding: 20, 
+                    border: qrCodeExpired ? '2px dashed #ff4d4f' : '2px dashed #1890ff', 
+                    borderRadius: 8,
+                    backgroundColor: qrCodeExpired ? '#fff2f0' : '#f0f8ff',
+                    display: 'inline-block',
+                    position: 'relative'
+                  }}>
+                    <QRCodeSVG
+                      value={generateQRValue()}
+                      size={200}
+                      level="M"
+                      includeMargin={true}
+                      fgColor={qrCodeExpired ? '#ff4d4f' : '#000000'}
+                      bgColor="white"
+                    />
+                    {qrCodeExpired && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: 8,
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: '#ff4d4f'
+                      }}>
+                        ĐÃ HẾT HẠN
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center', gap: 8 }}>
+                    <Button 
+                      icon={<CopyOutlined />}
+                      onClick={copyQRData}
+                      disabled={qrCodeExpired}
+                    >
+                      Sao chép dữ liệu QR
+                    </Button>
+                  </div>
+                  <div style={{ marginTop: 8, color: '#666' }}>
+                    <small>
+                      {qrCodeExpired 
+                        ? 'QR Code đã hết hạn, vui lòng tạo mã mới'
+                        : 'Sinh viên quét mã này để điểm danh'
+                      }
+                    </small>
+                  </div>
+                </div>
+              </Card>
+            )}
           </>
         )}
       </Form>
