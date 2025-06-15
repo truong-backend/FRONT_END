@@ -19,7 +19,7 @@ const periodTimes = [
   "19:25-20:15", // Tiết 15
 ];
 
-export const ThoiKhoaBieuTheoDanhSach = ({ tkbList = [], lichGdList = [] }) => {
+export const ThoiKhoaBieuTheoDanhSachComponents = ({ tkbList = [], lichGdList = [] }) => {
   const getDayIndex = (dateStr) => {
     if (!dateStr || typeof dateStr !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       console.warn(`Invalid date format: ${dateStr}, skipping...`);

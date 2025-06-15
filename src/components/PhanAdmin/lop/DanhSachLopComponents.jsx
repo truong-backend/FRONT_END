@@ -20,7 +20,7 @@ import { lopService } from '../../../services/PhanAdmin/lopService.js';
 const { Option } = Select;
 const { Title } = Typography;
 
-export const DanhSachLop = () => {
+export const DanhSachLopComponents = () => {
   const [lops, setLops] = useState([]);
   const [khoas, setKhoas] = useState([]);
   const [totalElements, setTotalElements] = useState(0);

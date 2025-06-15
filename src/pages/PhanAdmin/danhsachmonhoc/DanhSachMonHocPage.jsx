@@ -1,11 +1,11 @@
 import React from 'react';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout.jsx';
-import {DanhSachMonHoc} from '../../../components/PhanAdmin/monhoc/DanhSachMonHoc.jsx';
+import {DanhSachMonHocComponents} from '../../../components/PhanAdmin/monhoc/DanhSachMonHocComponents.jsx';
 
 export const DanhSachMonHocPage = () => {
   return (
     <DashboardLayout>
-      <DanhSachMonHoc />
+      <DanhSachMonHocComponents />
     </DashboardLayout>
   );
 };

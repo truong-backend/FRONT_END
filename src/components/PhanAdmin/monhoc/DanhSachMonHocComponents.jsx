@@ -18,7 +18,7 @@ import { monHocService } from '../../../services/PhanAdmin/monHocService.js';
 
 const { Title } = Typography;
 
-export const DanhSachMonHoc = () => {
+export const DanhSachMonHocComponents = () => {
   const [monHocs, setMonHocs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

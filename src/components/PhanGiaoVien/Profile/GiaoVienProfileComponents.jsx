@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Edit3, Mail, Phone, MapPin, Calendar, CreditCard, Rss } from 'lucide-react';
 import { GiaoVienService } from '../../../services/PhanGiaoVien/Profile/GiaoVienService.js';
 
-export const GiaoVienProfile = () => {
+export const GiaoVienProfileComponents = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [teacherData, setTeacherData] = useState({
     maGv: '',

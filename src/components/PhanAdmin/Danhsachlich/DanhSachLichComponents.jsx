@@ -21,7 +21,7 @@ import dayjs from "dayjs";
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-export const DanhSachLich = () => {
+export const DanhSachLichComponents = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -329,4 +329,4 @@ export const DanhSachLich = () => {
   );
 };
 
-export default DanhSachLich;
+export default DanhSachLichComponents;

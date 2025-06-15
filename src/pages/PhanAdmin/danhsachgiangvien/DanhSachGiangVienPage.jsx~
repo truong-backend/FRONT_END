@@ -1,12 +1,12 @@
 import React from 'react';
-import {GenerateQRCodeComponents} from '../../../components/PhanGiaoVien/TaoQR/GenerateQRCodeComponents.jsx';
+import {DanhSachGiangVien} from '../../../components/PhanAdmin/danhsachgiangvien/DanhSachGiangVien';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout.jsx';
 import { Card } from 'antd';
 
-export const QrcodePage = () => {
+export const DanhSachGiangVienPage = () => {
   return (
     <DashboardLayout>
-        <GenerateQRCodeComponents />
+        <DanhSachGiangVien />
     </DashboardLayout>
   );
 };

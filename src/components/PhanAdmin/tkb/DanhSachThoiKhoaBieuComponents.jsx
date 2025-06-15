@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { ThoiKhoaBieuTheoBang } from "./layout/ThoiKhoaBieuTheoBang.jsx";
-import { ThoiKhoaBieuTheoDanhSach } from "./layout/ThoiKhoaBieuTheoDanhSach.jsx";
+import { ThoiKhoaBieuTheoBangComponents } from "./layout/ThoiKhoaBieuTheoBangComponents.jsx";
+import { ThoiKhoaBieuTheoDanhSachComponents } from "./layout/ThoiKhoaBieuTheoDanhSachComponents.jsx";
 import { tkbService } from "../../../services/PhanAdmin/tkbService.js";
 import { message } from "antd";
 import moment from 'moment';
 
-export const DanhSachThoiKhoaBieu = () => {
+export const DanhSachThoiKhoaBieuComponents = () => {
   const [selectedScheduleType, setSelectedScheduleType] = useState("TKB theo tuần");
   const [loading, setLoading] = useState(false);
   const [tkbData, setTkbData] = useState([]);
@@ -345,14 +345,14 @@ export const DanhSachThoiKhoaBieu = () => {
       )}
 
       {selectedScheduleType === "TKB Toàn Trường" ? (
-        <ThoiKhoaBieuTheoDanhSach
+        <ThoiKhoaBieuTheoDanhSachComponents
           tkbList={filteredData}
           onCreate={handleCreate}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
         />
       ) : (
-        <ThoiKhoaBieuTheoBang
+        <ThoiKhoaBieuTheoBangComponents
           tkbList={filteredData}
         />
       )}

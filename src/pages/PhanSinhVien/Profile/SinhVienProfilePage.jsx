@@ -1,11 +1,11 @@
 import React from 'react'
 import { DashboardLayout } from '../../../components/layout/DashboardLayout.jsx'
-import SinhVienProfile from '../../../components/PhanSinhVien/SinhVienProfile.jsx'
+import SinhVienProfileComponents from '../../../components/PhanSinhVien/SinhVienProfileComponents.jsx'
 
 export default function SinhVienProfilePage() {
   return (
     <DashboardLayout>
-        <SinhVienProfile/>
+        <SinhVienProfileComponents/>
     </DashboardLayout>
   )
 }

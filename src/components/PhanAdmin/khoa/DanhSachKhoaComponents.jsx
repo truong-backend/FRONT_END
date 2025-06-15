@@ -17,7 +17,7 @@ import { khoaService } from '../../../services/PhanAdmin/khoaService.js';
 
 const { Title } = Typography;
 
-export const DanhSachKhoa = () => {
+export const DanhSachKhoaComponents = () => {
   const [khoas, setKhoas] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);

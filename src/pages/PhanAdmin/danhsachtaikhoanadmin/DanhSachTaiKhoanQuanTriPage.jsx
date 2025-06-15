@@ -1,6 +1,6 @@
 import React from 'react';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout.jsx';
-import AccListAdmin from '../../../components/PhanAdmin/taikhoanadmin/DanhSachTaiKhoanAdmin.jsx';
+import AccListAdmin from '../../../components/PhanAdmin/taikhoanadmin/DanhSachTaiKhoanAdminComponents.jsx';
 
 export const DanhSachTaiKhoanQuanTriPage = () => {
   return (

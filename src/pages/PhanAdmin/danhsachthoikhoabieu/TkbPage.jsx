@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';  
-import { DanhSachThoiKhoaBieu } from '../../../components/PhanAdmin/tkb/DanhSachThoiKhoaBieu.jsx';
+import { DanhSachThoiKhoaBieuComponents } from '../../../components/PhanAdmin/tkb/DanhSachThoiKhoaBieuComponents.jsx';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout.jsx';
 import { tkbService } from '../../../services/PhanAdmin/tkbService.js';
 import { message } from 'antd';
@@ -65,7 +65,7 @@ export const TkbPage = () => {
             <span className="text-gray-600">Đang tải dữ liệu...</span>
           </div>
         ) : (
-          <DanhSachThoiKhoaBieu
+          <DanhSachThoiKhoaBieuComponents
             tkbData={tkbData} 
             lichGdData={lichGdData} 
           />

@@ -4,7 +4,7 @@ import { UserOutlined, LockOutlined, UploadOutlined } from '@ant-design/icons';
 import { profileService } from '../../services/profileService';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
 
-const Profile = () => {
+const ProfileComponents = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);
   const [form] = Form.useForm();
@@ -218,4 +218,4 @@ const Profile = () => {
   );
 };
 
-export default Profile; 
+export default ProfileComponents;

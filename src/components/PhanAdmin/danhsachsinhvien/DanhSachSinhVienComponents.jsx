@@ -3,10 +3,10 @@ import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, DatePick
 import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, ImportOutlined, DownloadOutlined, ExportOutlined, EyeOutlined } from '@ant-design/icons';
 import { studentService } from '../../../services/PhanAdmin/studentService.js';
 import { lopService } from '../../../services/PhanAdmin/lopService.js';
-import {ChiTietSinhVien} from './ChiTietSinhVien';
+import {ChiTietSinhVienComponents} from './ChiTietSinhVienComponents.jsx';
 import moment from 'moment';
 
-export const DanhSachSinhVien = () => {
+export const DanhSachSinhVienComponents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -390,7 +390,7 @@ export const DanhSachSinhVien = () => {
       />
 
       {/* Chi tiết sinh viên modal */}
-      <ChiTietSinhVien
+      <ChiTietSinhVienComponents
         visible={detailModalVisible}
         onClose={() => setDetailModalVisible(false)}
         student={selectedStudent}

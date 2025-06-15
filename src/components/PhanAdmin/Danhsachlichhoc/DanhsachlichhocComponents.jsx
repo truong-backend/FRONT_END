@@ -24,7 +24,7 @@ import moment from 'moment';
 
 const { Option } = Select;
 
-export const Danhsachlichhoc = () => {
+export const DanhsachlichhocComponents = () => {
     const [fullData, setFullData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [displayData, setDisplayData] = useState([]);

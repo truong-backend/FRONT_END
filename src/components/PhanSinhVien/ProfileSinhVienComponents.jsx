@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { SinhVienService } from '../../services/PhanSinhVien/Profile/SinhVienService.js';
 import { User, Edit3, Mail, Phone, MapPin, Calendar, CreditCard, Rss } from 'lucide-react';
 
-export default function SinhVienProfile() {
+export default function ProfileSinhVienComponents() {
     const [isEditing, setIsEditing] = useState(false);
     const [avatarFile, setAvatarFile] = useState(null);
     const [sinhVienData, setSinhVienData] = useState({

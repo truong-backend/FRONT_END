@@ -6,9 +6,9 @@ import { StudentDashboard } from './pages/Home/StudentDashboard';
 import { TeacherDashboard } from './pages/Home/TeacherDashboard';
 import { AdminDashboard } from './pages/Home/AdminDashboard';
 import { ProtectedRoute } from './components/login/baomatdangnhap/ProtectedRoute';
-import { QuenMatKhauFORM } from './components/quenmatkhau/QuenMatKhauFORM.jsx';
-import { XacThucOtpFORM } from './components/quenmatkhau/XacThucOtpFORM.jsx';
-import { DatLaiMatKhauFORM } from './components/quenmatkhau/DatLaiMatKhauFORM.jsx';
+import { QuenMatKhauFORMComponents } from './components/quenmatkhau/QuenMatKhauFORMComponents.jsx';
+import { XacThucOtpFORMComponents } from './components/quenmatkhau/XacThucOtpFORMComponents.jsx';
+import { DatLaiMatKhauFORMComponents } from './components/quenmatkhau/DatLaiMatKhauFORMComponents.jsx';
 import { useAuth } from './contexts/AuthContext';
 import {DanhSachLopPage} from './pages/PhanAdmin/danhsachlop/DanhSachLopPage.jsx';
 import {DanhSachKhoaPage} from './pages/PhanAdmin/danhsachkhoa/DanhSachKhoaPage.jsx';
@@ -96,7 +96,7 @@ function App() {
               path="/student/forgot-password"
               element={
                 <PublicRoute>
-                  <QuenMatKhauFORM
+                  <QuenMatKhauFORMComponents
                     userType="STUDENT"
                     title="Quên mật khẩu"
                     description="Khôi phục mật khẩu tài khoản sinh viên"
@@ -108,7 +108,7 @@ function App() {
               path="/student/verify-otp"
               element={
                 <PublicRoute>
-                  <XacThucOtpFORM
+                  <XacThucOtpFORMComponents
                     userType="STUDENT"
                     title="Xác thực OTP"
                     description="Nhập mã OTP đã được gửi đến email của bạn"
@@ -120,7 +120,7 @@ function App() {
               path="/student/reset-password"
               element={
                 <PublicRoute>
-                  <DatLaiMatKhauFORM
+                  <DatLaiMatKhauFORMComponents
                     userType="STUDENT"
                     title="Đặt lại mật khẩu"
                     description="Tạo mật khẩu mới cho tài khoản sinh viên"
@@ -134,7 +134,7 @@ function App() {
               path="/teacher/forgot-password"
               element={
                 <PublicRoute>
-                  <QuenMatKhauFORM
+                  <QuenMatKhauFORMComponents
                     userType="TEACHER"
                     title="Quên mật khẩu"
                     description="Khôi phục mật khẩu tài khoản giảng viên"
@@ -146,7 +146,7 @@ function App() {
               path="/teacher/verify-otp"
               element={
                 <PublicRoute>
-                  <XacThucOtpFORM
+                  <XacThucOtpFORMComponents
                     userType="TEACHER"
                     title="Xác thực OTP"
                     description="Nhập mã OTP đã được gửi đến email của bạn"
@@ -158,7 +158,7 @@ function App() {
               path="/teacher/reset-password"
               element={
                 <PublicRoute>
-                  <DatLaiMatKhauFORM
+                  <DatLaiMatKhauFORMComponents
                     userType="TEACHER"
                     title="Đặt lại mật khẩu"
                     description="Tạo mật khẩu mới cho tài khoản giảng viên"
@@ -172,7 +172,7 @@ function App() {
               path="/admin/forgot-password"
               element={
                 <PublicRoute>
-                  <QuenMatKhauFORM
+                  <QuenMatKhauFORMComponents
                     userType="ADMIN"
                     title="Quên mật khẩu"
                     description="Khôi phục mật khẩu tài khoản quản trị"
@@ -184,7 +184,7 @@ function App() {
               path="/admin/verify-otp"
               element={
                 <PublicRoute>
-                  <XacThucOtpFORM
+                  <XacThucOtpFORMComponents
                     userType="ADMIN"
                     title="Xác thực OTP"
                     description="Nhập mã OTP đã được gửi đến email của bạn"
@@ -196,7 +196,7 @@ function App() {
               path="/admin/reset-password"
               element={
                 <PublicRoute>
-                  <DatLaiMatKhauFORM
+                  <DatLaiMatKhauFORMComponents
                     userType="ADMIN"
                     title="Đặt lại mật khẩu"
                     description="Tạo mật khẩu mới cho tài khoản quản trị"

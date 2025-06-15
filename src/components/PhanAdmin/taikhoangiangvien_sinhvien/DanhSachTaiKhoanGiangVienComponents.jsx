@@ -4,7 +4,7 @@ import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined } from '@ant
 import { userService } from '../../../services/PhanAdmin/userService.js';
 import moment from 'moment';
 
-export const DanhSachTaiKhoanGiangVien = () => {
+export const DanhSachTaiKhoanGiangVienComponents = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);

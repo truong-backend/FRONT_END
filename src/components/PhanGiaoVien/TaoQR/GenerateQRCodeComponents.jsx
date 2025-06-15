@@ -17,7 +17,7 @@ import { useAuth } from '../../../contexts/AuthContext.jsx';
 const { Option } = Select;
 const { Text, Title } = Typography;
 
-export const GenerateQRCode = () => {
+export const GenerateQRCodeComponents = () => {
   // Lấy thông tin user từ AuthContext
   const { user, isAuthenticated } = useAuth();
 

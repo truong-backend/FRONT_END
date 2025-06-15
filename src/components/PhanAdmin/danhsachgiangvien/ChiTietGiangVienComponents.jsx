@@ -3,7 +3,7 @@ import { Modal, Descriptions, Avatar, Card, Row, Col, Tag, Divider } from 'antd'
 import { UserOutlined, IdcardOutlined, HomeOutlined, PhoneOutlined, MailOutlined, TeamOutlined, BankOutlined, KeyOutlined } from '@ant-design/icons';
 import moment from 'moment';
 
-export const ChiTietGiangVien = ({ visible, onClose, lecturer }) => {
+export const ChiTietGiangVienComponents = ({ visible, onClose, lecturer }) => {
   if (!lecturer) return null;
 
   return (

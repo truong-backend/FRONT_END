@@ -3,9 +3,9 @@ import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, DatePick
 import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, EyeOutlined } from '@ant-design/icons';
 import { teacherService } from '../../../services/PhanAdmin/teacherService.js';
 import moment from 'moment';
-import { ChiTietGiangVien } from './ChiTietGiangVien';
+import { ChiTietGiangVienComponents } from './ChiTietGiangVienComponents.jsx';
 
-export const DanhSachGiangVien = () => {
+export const DanhSachGiangVienComponents = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -403,7 +403,7 @@ export const DanhSachGiangVien = () => {
         </Form>
       </Modal>
 
-      <ChiTietGiangVien
+      <ChiTietGiangVienComponents
         visible={detailsVisible}
         onClose={() => setDetailsVisible(false)}
         lecturer={selectedTeacher}

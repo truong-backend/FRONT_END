@@ -1,11 +1,11 @@
 import React from 'react'
 import { DashboardLayout } from '../../../components/layout/DashboardLayout.jsx'
-import { GiaoVienProfile } from '../../../components/PhanGiaoVien/Profile/GiaoVienProfile.jsx'
+import { GiaoVienProfileComponents } from '../../../components/PhanGiaoVien/Profile/GiaoVienProfileComponents.jsx'
 
 export default function GiaoVienProfilePage() {
   return (
     <DashboardLayout>
-      <GiaoVienProfile/>
+      <GiaoVienProfileComponents/>
     </DashboardLayout>
   )
 }

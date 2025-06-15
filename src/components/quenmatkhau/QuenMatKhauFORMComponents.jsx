@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { requestOTP } from '../../services/authService.js';
 import { Mail, ArrowLeft, Send } from 'lucide-react';
 
-export const QuenMatKhauFORM = ({ userType, title, description }) => {
+export const QuenMatKhauFORMComponents = ({ userType, title, description }) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
