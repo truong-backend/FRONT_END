@@ -22,9 +22,9 @@ import {DanhsachlichhocPage} from './pages/PhanAdmin/Danhsachlichhoc/Danhsachlic
 import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
 //đổi tên ProfileSinhVienPage && ProfileGiaoVien 
 import SinhVienProfilePage from './pages/PhanSinhVien/SinhVienProfilePage.jsx';
-import GiaoVienProfilePage from './pages/PhanGiaoVien/GiaoVienProfilePage.jsx';
+import GiaoVienProfilePage from './pages/PhanGiaoVien/Profile/GiaoVienProfilePage.jsx';
 
-import { QrcodePage } from './pages/PhanGiaoVien/QrcodePage.jsx';
+import { QrcodePage } from './pages/PhanGiaoVien/TaoQR/QrcodePage.jsx';
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 

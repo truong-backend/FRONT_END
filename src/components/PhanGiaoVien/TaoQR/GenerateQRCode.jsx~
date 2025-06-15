@@ -11,8 +11,8 @@ import {
   fetchSinhVienDiemDanh,
   markAttendanceManual,
   createQRCode
-} from '../../../services/PhanGiaoVien/QrcodeService.js';
-import { useAuth } from '../../../contexts/AuthContext.jsx';
+} from '../../services/PhanGiaoVien/QrcodeService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { Option } = Select;
 const { Text, Title } = Typography;

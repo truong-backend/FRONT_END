@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { User, Edit3, Mail, Phone, MapPin, Calendar, CreditCard, Rss } from 'lucide-react';
-import { GiaoVienService } from '../../services/PhanGiaoVien/GiaoVienService';
+import { GiaoVienService } from '../../../services/PhanGiaoVien/GiaoVienService.js';
 
 export const GiaoVienProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
