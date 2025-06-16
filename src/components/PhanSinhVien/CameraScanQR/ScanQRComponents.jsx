@@ -1,215 +1,268 @@
 import React, { useState, useEffect } from 'react';
 import { Scanner } from '@yudiel/react-qr-scanner';
-import { message, Button, Card, Input, Modal, Spin } from 'antd';
-import { CameraOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons';
+import { message, Button, Card, Input, Modal, Spin, Alert } from 'antd';
+import { CameraOutlined, ReloadOutlined, UserOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { ScanQRService } from '../../../services/PhanSinhVien/CameraScanQR/ScanQRService.js';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
 
 export const ScanQRComponents = () => {
     const { user, isAuthenticated } = useAuth();
     const [isScanning, setIsScanning] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [scanResult, setScanResult] = useState(null);
-    const [qrData, setQrData] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [scannedData, setScannedData] = useState('');
+    const [showScanner, setShowScanner] = useState(false);
+    const [attendanceHistory, setAttendanceHistory] = useState([]);
 
-    // Lấy mã sinh viên từ user context
+    // Lấy mã sinh viên từ context
     const maSv = user?.maSv || user?.id || user?.username;
 
-    // Xử lý khi quét thành công
-    const handleScan = async (data) => {
-        if (!data) return;
-        
-        try {
-            setIsScanning(false);
-            setLoading(true);
+    useEffect(() => {
+        if (!isAuthenticated) {
+            message.error('Vui lòng đăng nhập để sử dụng chức năng này');
+        }
+    }, [isAuthenticated]);
+
+    // Xử lý khi scan được QR code
+    const handleScan = async (result) => {
+        if (result && result.length > 0) {
+            const qrData = result[0].rawValue;
+            setScannedData(qrData);
+            setShowScanner(false);
             
-            // Kiểm tra đăng nhập
-            if (!isAuthenticated || !maSv) {
-                message.error('Vui lòng đăng nhập để sử dụng tính năng này');
-                return;
-            }
-            
-            // Phân tích dữ liệu QR
-            const parsedData = ScanQRService.parseQRData(data);
-            setQrData(parsedData);
-            
-            // Thực hiện điểm danh
-            await performAttendance(parsedData.qrId, maSv);
-            
-        } catch (error) {
-            message.error(error.message || 'Lỗi khi xử lý QR Code');
-            setIsScanning(false);
-        } finally {
-            setLoading(false);
+            await processAttendance(qrData);
         }
     };
 
-    // Thực hiện điểm danh
-    const performAttendance = async (qrId, studentId) => {
+// Xử lý điểm danh
+const processAttendance = async (qrData) => {
+    if (!maSv) {
+        message.error('Không tìm thấy thông tin sinh viên');
+        return;
+    }
+
+    setIsLoading(true);
+
+    try {
+        // Tách và kiểm tra dữ liệu QR
+        let parsedData;
+
         try {
-            setLoading(true);
-            
-            await ScanQRService.markAttendanceByQR({
-                qrId: qrId,
-                maSv: studentId
-            });
-            
-            message.success("Điểm danh thành công");
-            setScanResult({
-                success: true,
-                message: "Điểm danh thành công",
-                qrId: qrId,
-                maSv: studentId,
-                time: new Date().toLocaleString()
-            });
-            
-        } catch (error) {
-            message.error(error.message || "Không thể điểm danh");
-            setScanResult({
-                success: false,
-                message: error.message || "Không thể điểm danh",
-                qrId: qrId,
-                maSv: studentId,
-                time: new Date().toLocaleString()
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Xử lý lỗi khi quét
-    const handleError = (error) => {
-        console.error('QR Scanner Error:', error);
-        message.error('Lỗi khi sử dụng camera');
-    };
-
-    // Bắt đầu quét
-    const startScanning = () => {
-        if (!isAuthenticated || !maSv) {
-            message.error('Vui lòng đăng nhập để sử dụng tính năng này');
+            parsedData = JSON.parse(qrData);
+        } catch {
+            message.error('QR Code không hợp lệ (không phải định dạng JSON)');
             return;
         }
-        setScanResult(null);
+
+        const { id: qrId, thoiGianKt, type } = parsedData;
+
+        // Kiểm tra type
+        if (type !== 'attendance') {
+            message.error('QR Code không hợp lệ (không phải điểm danh)');
+            return;
+        }
+
+        // Kiểm tra hết hạn
+        const now = new Date();
+        const expiry = new Date(thoiGianKt);
+        if (now > expiry) {
+            message.error('QR Code đã hết hạn');
+            return;
+        }
+
+        if (!qrId) {
+            message.error('QR Code thiếu ID');
+            return;
+        }
+
+        const requestData = {
+            qrId,
+            maSv
+        };
+
+        const response = await ScanQRService.markAttendanceByQR(requestData);
+
+        message.success('Điểm danh thành công!');
+
+        // Cập nhật lịch sử điểm danh
+        const newAttendance = {
+            id: Date.now(),
+            qrId,
+            time: new Date().toLocaleString('vi-VN'),
+            status: 'Thành công'
+        };
+        setAttendanceHistory(prev => [newAttendance, ...prev.slice(0, 4)]);
+
+    } catch (error) {
+        console.error('Lỗi điểm danh:', error);
+        message.error(error.message || 'Điểm danh thất bại');
+    } finally {
+        setIsLoading(false);
+    }
+};
+
+
+    // Bắt đầu scan
+    const startScanning = () => {
+        setShowScanner(true);
         setIsScanning(true);
+        setScannedData('');
     };
 
-    // Dừng quét
+    // Dừng scan
     const stopScanning = () => {
+        setShowScanner(false);
         setIsScanning(false);
     };
 
-    // Xử lý khi xác nhận mã sinh viên
-    const handleStudentIdConfirm = async () => {
-        if (qrData) {
-            await performAttendance(qrData.qrId, maSv);
-        }
+    // Xử lý lỗi scanner
+    const handleError = (error) => {
+        console.error('Scanner error:', error);
+        message.error('Lỗi camera: ' + error.message);
+        setShowScanner(false);
+        setIsScanning(false);
     };
 
-    // Nếu chưa đăng nhập, hiển thị thông báo
+    // Nhập QR code thủ công
+    const handleManualInput = async () => {
+        if (!scannedData.trim()) {
+            message.warning('Vui lòng nhập mã QR');
+            return;
+        }
+        await processAttendance(scannedData);
+    };
+
     if (!isAuthenticated) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
-                <Card className="w-full max-w-md shadow-lg text-center">
-                    <div className="mb-4">
-                        <UserOutlined style={{ fontSize: 48, color: '#1890ff' }} />
-                    </div>
-                    <h2 className="text-xl font-semibold mb-2">Vui lòng đăng nhập</h2>
-                    <p className="text-gray-600">Bạn cần đăng nhập để sử dụng tính năng điểm danh bằng QR Code</p>
-                </Card>
-            </div>
+            <Card className="max-w-md mx-auto mt-8">
+                <Alert
+                    message="Chưa đăng nhập"
+                    description="Vui lòng đăng nhập để sử dụng chức năng điểm danh QR"
+                    type="warning"
+                    showIcon
+                />
+            </Card>
         );
     }
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
+        <div className="max-w-2xl mx-auto p-4">
             <Card 
-                title="Điểm Danh Bằng QR Code" 
-                className="w-full max-w-md shadow-lg"
-                extra={
-                    <Button 
-                        icon={<ReloadOutlined />} 
-                        onClick={() => window.location.reload()}
-                        size="small"
-                    />
+                title={
+                    <div className="flex items-center gap-2">
+                        <QrcodeOutlined />
+                        <span>Điểm danh bằng QR Code</span>
+                    </div>
                 }
+                className="mb-4"
             >
                 {/* Thông tin sinh viên */}
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center">
-                        <UserOutlined className="mr-2 text-blue-600" />
-                        <div>
-                            <p className="text-sm text-gray-600">Sinh viên đang đăng nhập:</p>
-                            <p className="font-medium text-blue-800">{maSv}</p>
-                            {user?.hoTen && (
-                                <p className="text-sm text-gray-700">{user.hoTen}</p>
-                            )}
-                        </div>
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                        <UserOutlined />
+                        <span className="font-medium">Thông tin sinh viên:</span>
                     </div>
+                    <p className="text-sm text-gray-600">
+                        Mã SV: <span className="font-medium text-blue-600">{maSv}</span>
+                    </p>
                 </div>
 
-                {/* Camera Scanner */}
-                {isScanning ? (
-                    <div className="relative">
-                        <div className="w-full h-64 mb-4 border-2 border-dashed border-blue-300 rounded-lg overflow-hidden">
-                            <Scanner
-                                onDecode={handleScan}
-                                onError={handleError}
-                                style={{ width: '100%', height: '100%' }}
-                                constraints={{
-                                    facingMode: 'environment' // Sử dụng camera sau
-                                }}
-                            />
-                        </div>
-                        <div className="text-center">
-                            <p className="text-sm text-gray-600 mb-2">
-                                Đưa camera vào QR Code để quét
-                            </p>
-                            <Button 
-                                onClick={stopScanning}
-                                type="default"
-                                size="large"
-                            >
-                                Dừng Quét
-                            </Button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="text-center">
-                        <div className="mb-4">
-                            <CameraOutlined style={{ fontSize: 48, color: '#1890ff' }} />
-                        </div>
-                        <Button 
-                            type="primary" 
+                {/* Buttons điều khiển */}
+                <div className="flex gap-3 mb-4">
+                    <Button
+                        type="primary"
+                        icon={<CameraOutlined />}
+                        onClick={startScanning}
+                        disabled={isScanning || isLoading}
+                        size="large"
+                    >
+                        {isScanning ? 'Đang scan...' : 'Bắt đầu scan QR'}
+                    </Button>
+                    
+                    {isScanning && (
+                        <Button
+                            icon={<ReloadOutlined />}
+                            onClick={stopScanning}
                             size="large"
-                            icon={<CameraOutlined />}
-                            onClick={startScanning}
-                            disabled={loading}
-                            block
                         >
-                            {loading ? <Spin size="small" /> : 'Bắt Đầu Quét QR'}
+                            Dừng scan
                         </Button>
-                    </div>
-                )}
+                    )}
+                </div>
 
-                {/* Kết quả điểm danh */}
-                {scanResult && (
-                    <div className={`mt-4 p-3 rounded-lg ${
-                        scanResult.success 
-                            ? 'bg-green-50 border border-green-200' 
-                            : 'bg-red-50 border border-red-200'
-                    }`}>
-                        <p className={`font-medium ${
-                            scanResult.success ? 'text-green-800' : 'text-red-800'
-                        }`}>
-                            {scanResult.message}
-                        </p>
-                        <div className="text-xs text-gray-600 mt-2">
-                            <p>Mã SV: {scanResult.maSv}</p>
-                            <p>Thời gian: {scanResult.time}</p>
-                        </div>
+                {/* Nhập thủ công */}
+                <div className="mb-4">
+                    <Input.Search
+                        placeholder="Hoặc nhập mã QR thủ công"
+                        value={scannedData}
+                        onChange={(e) => setScannedData(e.target.value)}
+                        onSearch={handleManualInput}
+                        enterButton="Điểm danh"
+                        disabled={isLoading}
+                        loading={isLoading}
+                    />
+                </div>
+
+                {/* Loading spinner */}
+                {isLoading && (
+                    <div className="text-center py-4">
+                        <Spin size="large" />
+                        <p className="mt-2 text-gray-600">Đang xử lý điểm danh...</p>
                     </div>
                 )}
             </Card>
+
+            {/* Scanner Modal */}
+            <Modal
+                title="Scan QR Code"
+                open={showScanner}
+                onCancel={stopScanning}
+                footer={null}
+                width={400}
+            >
+                <div className="text-center">
+                    <Scanner
+                        onScan={handleScan}
+                        onError={handleError}
+                        constraints={{
+                            video: {
+                                facingMode: 'environment' // Camera sau
+                            }
+                        }}
+                        components={{
+                            audio: false,
+                            finder: true
+                        }}
+                        styles={{
+                            container: { width: '100%', height: '300px' }
+                        }}
+                    />
+                    <p className="mt-3 text-gray-600">
+                        Đưa QR code vào khung để scan
+                    </p>
+                </div>
+            </Modal>
+
+            {/* Lịch sử điểm danh */}
+            {attendanceHistory.length > 0 && (
+                <Card title="Lịch sử điểm danh gần đây" className="mt-4">
+                    <div className="space-y-2">
+                        {attendanceHistory.map(item => (
+                            <div 
+                                key={item.id}
+                                className="flex justify-between items-center p-3 bg-green-50 rounded-lg border-l-4 border-green-400"
+                            >
+                                <div>
+                                    <p className="font-medium">QR ID: {item.qrId}</p>
+                                    <p className="text-sm text-gray-600">{item.time}</p>
+                                </div>
+                                <span className="text-green-600 font-medium">
+                                    {item.status}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            )}
         </div>
     );
 };
