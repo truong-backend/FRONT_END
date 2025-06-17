@@ -141,11 +141,6 @@ export const GenerateQRCodeComponents = () => {
       if (interval) clearInterval(interval);
     };
   }, [qrCodeData, qrCodeExpired]);
-useEffect(() => {
-  if (mode === 'thuCong' && selectedNgay) {
-    handleThuCong();
-  }
-}, [mode, selectedNgay]);
 
 
   const loadHocKyList = async () => {
@@ -566,7 +561,14 @@ useEffect(() => {
         {mode === 'thuCong' && (
           <>
             <div style={{ marginBottom: 16 }}>
-              
+              <Button 
+                type="primary" 
+                onClick={handleThuCong}
+                loading={loading.sinhVien}
+                disabled={!selectedNgay}
+              >
+                Hiển thị danh sách sinh viên
+              </Button>
               {danhSachSinhVien.length > 0 && (
                 <Button 
                   type="primary" 
