@@ -25,6 +25,7 @@ import SinhVienProfilePage from './pages/PhanSinhVien/Profile/SinhVienProfilePag
 import GiaoVienProfilePage from './pages/PhanGiaoVien/Profile/GiaoVienProfilePage.jsx';
 import { ScanQRPage } from './pages/PhanSinhVien/CameraScanQR/ScanQRPage.jsx';
 import { QrcodePage } from './pages/PhanGiaoVien/TaoQR/QrcodePage.jsx';
+import {DanhSachDiemDanhPage} from './pages/PhanSinhVien/DanhSachDiemDiemSV/DanhSachDiemDanhPage.jsx';
 
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
@@ -342,6 +343,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['STUDENT']}>
                   <ScanQRPage />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="/student/attendance-history"
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT']}>
+                  <DanhSachDiemDanhPage />
                 </ProtectedRoute>
               }
             />

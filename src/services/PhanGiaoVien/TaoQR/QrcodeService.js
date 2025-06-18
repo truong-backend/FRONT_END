@@ -1,11 +1,10 @@
 import api from "../../api.js";
 
-const API_BASE_URL = 'https://he-thong-diem-danh-stu.onrender.com/api';
 
 // 1. Lấy danh sách học kỳ
 export const fetchHocKyList = async () => {
   try {
-    const response = await api.get(`${API_BASE_URL}/lichgd/hoc-ky`);
+    const response = await api.get(`/lichgd/hoc-ky`);
     return response.data;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách học kỳ:', error);
@@ -16,7 +15,7 @@ export const fetchHocKyList = async () => {
 // 2. Lấy danh sách môn học theo giảng viên
 export const fetchMonHocByGiaoVien = async (maGv, hocKy, namHoc) => {
   try {
-    const response = await api.get(`${API_BASE_URL}/monhoc/danh-sach-mon-hoc-theo-giao-vien`, {
+    const response = await api.get(`/monhoc/danh-sach-mon-hoc-theo-giao-vien`, {
       params: {
         maGv,
         hocKy,
@@ -33,7 +32,7 @@ export const fetchMonHocByGiaoVien = async (maGv, hocKy, namHoc) => {
 // 3. Lấy danh sách nhóm môn học
 export const fetchNhomMonHoc = async (teacherId, subjectId, semester, year) => {
   try {
-    const response = await api.get(`${API_BASE_URL}/monhoc/danh-sach-nhom-mon-hoc`, {
+    const response = await api.get(`/monhoc/danh-sach-nhom-mon-hoc`, {
       params: {
         teacherId,
         subjectId,
@@ -51,7 +50,7 @@ export const fetchNhomMonHoc = async (teacherId, subjectId, semester, year) => {
 // 4. Lấy danh sách ngày giảng dạy
 export const fetchNgayGiangDay = async (maGd) => {
   try {
-    const response = await api.get(`${API_BASE_URL}/tkb/danh-sach-ngay-giang-day`, {
+    const response = await api.get(`/tkb/danh-sach-ngay-giang-day`, {
       params: { maGd }
     });
     return response.data;
@@ -64,7 +63,7 @@ export const fetchNgayGiangDay = async (maGd) => {
 // 5. Lấy danh sách sinh viên cho điểm danh
 export const fetchSinhVienDiemDanh = async (maTkb) => {
   try {
-    const response = await api.get(`${API_BASE_URL}/sinh-vien/students/${maTkb}`);
+    const response = await api.get(`/sinh-vien/students/${maTkb}`);
     return response.data;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sinh viên:', error);
@@ -75,7 +74,7 @@ export const fetchSinhVienDiemDanh = async (maTkb) => {
 // 6. Điểm danh thủ công
 export const markAttendanceManual = async (diemDanhData) => {
   try {
-    const response = await api.post(`${API_BASE_URL}/diemdanh/diem-danh-thu-cong`, diemDanhData);
+    const response = await api.post(`/diemdanh/diem-danh-thu-cong`, diemDanhData);
     return response.data;
   } catch (error) {
     console.error('Lỗi khi điểm danh thủ công:', error);
@@ -90,7 +89,7 @@ export const createQRCode = async (maTkb, soPhut) => {
   }
 
   try {
-    const response = await api.post(`${API_BASE_URL}/qrcode/qr/TaoQRCode`, {
+    const response = await api.post(`/qrcode/qr/TaoQRCode`, {
       maTkb,
       soPhut
     });
