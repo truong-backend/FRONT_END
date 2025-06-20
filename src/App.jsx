@@ -26,6 +26,7 @@ import GiaoVienProfilePage from './pages/PhanGiaoVien/Profile/GiaoVienProfilePag
 import { ScanQRPage } from './pages/PhanSinhVien/CameraScanQR/ScanQRPage.jsx';
 import { QrcodePage } from './pages/PhanGiaoVien/TaoQR/QrcodePage.jsx';
 import {DanhSachDiemDanhPage} from './pages/PhanSinhVien/DanhSachDiemDiemSV/DanhSachDiemDanhPage.jsx';
+import {LichHocSVPage} from './pages/PhanSinhVien/LICHHOC/LichHocSVPage.jsx';
 
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
@@ -351,6 +352,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['STUDENT']}>
                   <DanhSachDiemDanhPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/calendar"
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT']}>
+                  <LichHocSVPage />
                 </ProtectedRoute>
               }
             />
