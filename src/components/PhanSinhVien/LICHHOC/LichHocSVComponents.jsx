@@ -26,7 +26,8 @@ const getTenThu = (thuNumber) => {
 };
 
 export const LichHocSVComponents = () => {
-  const [dataLichHoc, setDataLichHoc] = useState([]);
+  const [danhSachHomNay, setDanhSachHomNay] = useState([]);
+  const [thuHomNay, setThuHomNay] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const todayStr = getCurrentDate();
@@ -37,19 +38,22 @@ export const LichHocSVComponents = () => {
         setLoading(true);
         const lichHocData = await LichHocSinhVienService.getLichHocToanTuan();
         
-        // Chuyển đổi dữ liệu từ API thành format phù hợp với component
-        const formattedData = lichHocData.map(item => ({
-          thu: getTenThu(item.thu),
-          danhSachMon: item.danhSachMon.map(mon => ({
-            tenMon: mon.tenMonHoc,
-            tenGiaoVien: mon.tenGiaoVien,
-            ngay: formatDate(mon.ngayHoc),
-            tietBd: mon.tietBatDau,
-            tietKt: mon.tietKetThuc
-          }))
-        }));
+        // Tìm thông tin hôm nay
+        const homNay = lichHocData.find(item =>
+          item.danhSachMon.some(mon => formatDate(mon.ngayHoc) === todayStr)
+        );
 
-        setDataLichHoc(formattedData);
+        if (homNay) {
+          const monHomNay = homNay.danhSachMon.filter(
+            (mon) => formatDate(mon.ngayHoc) === todayStr
+          );
+
+          setThuHomNay(getTenThu(homNay.thu));
+          setDanhSachHomNay(monHomNay);
+        } else {
+          setThuHomNay(getTenThu(new Date().getDay() === 0 ? 7 : new Date().getDay()));
+          setDanhSachHomNay([]);
+        }
       } catch (err) {
         setError("Không thể tải lịch học. Vui lòng thử lại sau.");
         console.error("Lỗi khi tải lịch học:", err);
@@ -91,38 +95,24 @@ export const LichHocSVComponents = () => {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
         <h2 className="text-2xl font-bold text-blue-600 mb-4 text-center">
-          Lịch Học Theo Thứ
+          Lịch Học Hôm Nay ({thuHomNay} - {todayStr})
         </h2>
 
-        {dataLichHoc.map((ngay, idx) => {
-          // Lọc theo ngày hiện tại
-          const danhSachHomNay = ngay.danhSachMon.filter(
-            (mon) => mon.ngay === todayStr
-          );
-
-          return (
-            <div key={idx} className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800">
-                {ngay.thu}
-              </h3>
-              {danhSachHomNay.length > 0 ? (
-                <ul className="ml-4 mt-2 list-disc text-gray-700">
-                  {danhSachHomNay.map((mon, i) => (
-                    <li key={i}>
-                      <span className="font-medium">{mon.tenMon}</span>
-                      {mon.tenGiaoVien && (
-                        <span className="text-gray-600"> - GV: {mon.tenGiaoVien}</span>
-                      )}
-                      <span> - Ngày: {mon.ngay}, Tiết {mon.tietBd} đến {mon.tietKt}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="ml-4 text-gray-400 italic">Không có lịch học.</p>
-              )}
-            </div>
-          );
-        })}
+        {danhSachHomNay.length > 0 ? (
+          <ul className="ml-4 mt-2 list-disc text-gray-700">
+            {danhSachHomNay.map((mon, i) => (
+              <li key={i}>
+                <span className="font-medium">{mon.tenMonHoc}</span>
+                {mon.tenGiaoVien && (
+                  <span className="text-gray-600"> - GV: {mon.tenGiaoVien}</span>
+                )}
+                <span> - Tiết {mon.tietBatDau} đến {mon.tietKetThuc}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="ml-4 text-gray-400 italic">Hôm nay không có lịch học.</p>
+        )}
       </div>
     </div>
   );
