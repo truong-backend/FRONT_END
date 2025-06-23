@@ -59,7 +59,18 @@ export const fetchNgayGiangDay = async (maGd) => {
     throw error;
   }
 };
+/// Điểm danh ngược
 
+export const fetchDiemDanhNguoc = async (maTkb, mssv) => {
+  try {
+    const response = await api.get(`/sinh-vien/diemdanhnguoc/${maTkb, mssv}`);
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách sinh viên:', error);
+    throw error;
+  }
+};
+///
 // 5. Lấy danh sách sinh viên cho điểm danh
 export const fetchSinhVienDiemDanh = async (maTkb) => {
   try {

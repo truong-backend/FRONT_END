@@ -36,6 +36,11 @@ export const adminService = {
     const response = await api.get('/admin', { params });
     return response.data;
   },
+  // Lấy danh sách admin k có phân trang và sắp xếp
+  getAdminsKphanTrang: async () => {
+    const response = await api.get('/admin/all');
+    return response.data;
+  },
 
   // Lấy thông tin một admin
   getAdmin: async (id) => {

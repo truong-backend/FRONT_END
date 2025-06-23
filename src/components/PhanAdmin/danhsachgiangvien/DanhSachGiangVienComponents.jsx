@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, DatePicker, Radio, Upload, Avatar } from 'antd';
-import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, EyeOutlined } from '@ant-design/icons';
-import { teacherService } from '../../../services/PhanAdmin/teacherService.js';
+import {
+  Table, Input, Space, Button, Popconfirm, message, Modal, Form,
+  DatePicker, Radio, Upload, Avatar
+} from 'antd';
+import {
+  EditOutlined, DeleteOutlined, PlusOutlined, UserOutlined,
+  UploadOutlined, EyeOutlined, SearchOutlined
+} from '@ant-design/icons';
 import moment from 'moment';
+import { teacherService } from '../../../services/PhanAdmin/teacherService.js';
 import { ChiTietGiangVienComponents } from './ChiTietGiangVienComponents.jsx';
 
 export const DanhSachGiangVienComponents = () => {
@@ -13,42 +19,16 @@ export const DanhSachGiangVienComponents = () => {
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [form] = Form.useForm();
-  const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 10,
-      total: 0
-    },
-    sorter: {
-      field: 'maGv',
-      order: 'ascend'
-    },
-    search: ''
-  });
+  const [searchText, setSearchText] = useState('');
 
   const fetchTeachers = async () => {
     try {
       setLoading(true);
-      const { pagination, sorter, search } = tableParams;
-      const response = await teacherService.getTeachers(
-        pagination.current - 1,
-        pagination.pageSize,
-        sorter.field,
-        sorter.order === 'ascend' ? 'asc' : 'desc',
-        search
-      );
-      
-      setTeachers(response.content);
-      setTableParams({
-        ...tableParams,
-        pagination: {
-          ...tableParams.pagination,
-          total: response.totalElements
-        }
-      });
+      const data = await teacherService.getListGiaoVien();
+      setTeachers(data);
     } catch (error) {
+      console.error(error);
       message.error('Lỗi khi tải danh sách giáo viên');
-      console.error('Error fetching teachers:', error);
     } finally {
       setLoading(false);
     }
@@ -56,29 +36,17 @@ export const DanhSachGiangVienComponents = () => {
 
   useEffect(() => {
     fetchTeachers();
-  }, [JSON.stringify(tableParams)]);
+  }, []);
 
-  const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      ...tableParams,
-      pagination,
-      sorter: {
-        field: sorter.field || 'maGv',
-        order: sorter.order || 'ascend'
-      }
-    });
+  const handleSearch = (e) => {
+    setSearchText(e.target.value.toLowerCase());
   };
 
-  const handleSearch = (value) => {
-    setTableParams({
-      ...tableParams,
-      pagination: {
-        ...tableParams.pagination,
-        current: 1
-      },
-      search: value
-    });
-  };
+  const filteredData = teachers.filter((teacher) =>
+    teacher.maGv?.toLowerCase().includes(searchText) ||
+    teacher.tenGv?.toLowerCase().includes(searchText) ||
+    teacher.email?.toLowerCase().includes(searchText)
+  );
 
   const showModal = (record = null) => {
     setEditingTeacher(record);
@@ -96,45 +64,28 @@ export const DanhSachGiangVienComponents = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      
+      const formatted = {
+        ...values,
+        tenGv: values.tenGv.trim(),
+        diaChi: values.diaChi.trim(),
+        sdt: values.sdt.trim(),
+        email: values.email.trim(),
+        ngaySinh: values.ngaySinh.format('YYYY-MM-DD')
+      };
+
       if (editingTeacher) {
-        const updateData = {
-          tenGv: values.tenGv.trim(),
-          ngaySinh: values.ngaySinh.format('YYYY-MM-DD'),
-          phai: values.phai,
-          diaChi: values.diaChi.trim(),
-          sdt: values.sdt.trim(),
-          email: values.email.trim()
-        };
-
-        if (values.avatar && values.avatar.length > 0) {
-          updateData.avatar = values.avatar;
-        }
-
-        console.log('Updating teacher with data:', updateData);
-        await teacherService.updateTeacher(editingTeacher.maGv, updateData);
+        await teacherService.updateTeacher(editingTeacher.maGv, formatted);
         message.success('Cập nhật giáo viên thành công');
       } else {
-        const createData = {
-          ...values,
-          ngaySinh: values.ngaySinh.format('YYYY-MM-DD')
-        };
-        await teacherService.createTeacher(createData);
+        await teacherService.createTeacher(formatted);
         message.success('Thêm giáo viên mới thành công');
       }
+
       setModalVisible(false);
       fetchTeachers();
     } catch (error) {
-      console.error('Error in handleModalOk:', error);
-      if (error.response?.data?.message) {
-        message.error(error.response.data.message);
-      } else if (error.errorFields) {
-        error.errorFields.forEach(field => {
-          message.error(field.errors[0]);
-        });
-      } else {
-        message.error('Có lỗi xảy ra khi xử lý yêu cầu');
-      }
+      console.error(error);
+      message.error('Lỗi khi lưu giáo viên');
     }
   };
 
@@ -144,8 +95,8 @@ export const DanhSachGiangVienComponents = () => {
       message.success('Xóa giáo viên thành công');
       fetchTeachers();
     } catch (error) {
+      console.error(error);
       message.error('Lỗi khi xóa giáo viên');
-      console.error('Error deleting teacher:', error);
     }
   };
 
@@ -158,7 +109,6 @@ export const DanhSachGiangVienComponents = () => {
     {
       title: 'Mã GV',
       dataIndex: 'maGv',
-      sorter: true,
       width: '10%'
     },
     {
@@ -166,23 +116,17 @@ export const DanhSachGiangVienComponents = () => {
       dataIndex: 'avatar',
       width: '8%',
       render: (avatar, record) => (
-        <Avatar 
-          src={avatar} 
-          icon={<UserOutlined />}
-          alt={`Avatar của ${record.tenGv}`}
-        />
+        <Avatar src={avatar} icon={<UserOutlined />} />
       )
     },
     {
       title: 'Họ và tên',
       dataIndex: 'tenGv',
-      sorter: true,
       width: '15%'
     },
     {
       title: 'Ngày sinh',
       dataIndex: 'ngaySinh',
-      sorter: true,
       width: '12%',
       render: (date) => moment(date).format('DD/MM/YYYY')
     },
@@ -190,7 +134,7 @@ export const DanhSachGiangVienComponents = () => {
       title: 'Giới tính',
       dataIndex: 'phai',
       width: '8%',
-      render: (phai) => phai === 1 ? 'Nam' : 'Nữ'
+      render: (phai) => (phai === 1 ? 'Nam' : 'Nữ')
     },
     {
       title: 'Địa chỉ',
@@ -212,23 +156,13 @@ export const DanhSachGiangVienComponents = () => {
       width: '15%',
       render: (_, record) => (
         <Space>
-          <Button
-            type="primary"
-            icon={<EyeOutlined />}
-            onClick={() => showDetails(record)}
-          />
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => showModal(record)}
-          />
+          <Button icon={<EyeOutlined />} onClick={() => showDetails(record)} />
+          <Button icon={<EditOutlined />} onClick={() => showModal(record)} />
           <Popconfirm
-            title="Bạn có chắc chắn muốn xóa giáo viên này?"
+            title="Xác nhận xóa giáo viên?"
             onConfirm={() => handleDelete(record.maGv)}
-            okText="Có"
-            cancelText="Không"
           >
-            <Button type="primary" danger icon={<DeleteOutlined />} />
+            <Button danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       )
@@ -240,17 +174,15 @@ export const DanhSachGiangVienComponents = () => {
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Danh sách Giáo viên</h2>
         <Space>
-          <Input.Search
-            placeholder="Tìm kiếm..."
-            onSearch={handleSearch}
-            style={{ width: 300 }}
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder="Tìm theo mã GV, họ tên, email"
+            value={searchText}
+            onChange={handleSearch}
             allowClear
+            style={{ width: 300 }}
           />
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => showModal()}
-          >
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>
             Thêm Giáo viên
           </Button>
         </Space>
@@ -258,148 +190,55 @@ export const DanhSachGiangVienComponents = () => {
 
       <Table
         columns={columns}
-        dataSource={teachers}
+        dataSource={filteredData}
         rowKey="maGv"
-        pagination={tableParams.pagination}
+        pagination={{ pageSize: 10 }}
         loading={loading}
-        onChange={handleTableChange}
       />
 
       <Modal
-        title={editingTeacher ? 'Chỉnh sửa Giáo viên' : 'Thêm Giáo viên mới'}
+        title={editingTeacher ? 'Chỉnh sửa Giáo viên' : 'Thêm Giáo viên'}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
         width={800}
       >
-        <Form
-          form={form}
-          layout="vertical"
-        >
+        <Form form={form} layout="vertical">
           {!editingTeacher && (
             <Form.Item
               name="maGv"
               label="Mã giáo viên"
-              rules={[
-                { required: true, message: 'Vui lòng nhập mã giáo viên' },
-                { min: 3, message: 'Mã giáo viên phải có ít nhất 3 ký tự' }
-              ]}
+              rules={[{ required: true }, { min: 3 }]}
             >
               <Input />
             </Form.Item>
           )}
-
-          <Form.Item
-            name="tenGv"
-            label="Họ và tên"
-            rules={[
-              { required: true, message: 'Tên giáo viên không được để trống' },
-              { max: 150, message: 'Tên giáo viên không được vượt quá 150 ký tự' },
-              { whitespace: true, message: 'Tên giáo viên không được chỉ chứa khoảng trắng' }
-            ]}
-          >
+          <Form.Item name="tenGv" label="Họ và tên" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-
-          <Form.Item
-            name="ngaySinh"
-            label="Ngày sinh"
-            rules={[
-              { required: true, message: 'Ngày sinh không được để trống' },
-              {
-                validator: (_, value) => {
-                  if (value && value.isAfter(moment())) {
-                    return Promise.reject('Ngày sinh phải là ngày trong quá khứ');
-                  }
-                  return Promise.resolve();
-                }
-              }
-            ]}
-          >
+          <Form.Item name="ngaySinh" label="Ngày sinh" rules={[{ required: true }]}>
             <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
           </Form.Item>
-
-          <Form.Item
-            name="phai"
-            label="Giới tính"
-            rules={[
-              { required: true, message: 'Giới tính không được để trống' }
-            ]}
-          >
+          <Form.Item name="phai" label="Giới tính" rules={[{ required: true }]}>
             <Radio.Group>
               <Radio value={1}>Nam</Radio>
               <Radio value={0}>Nữ</Radio>
             </Radio.Group>
           </Form.Item>
-
-          <Form.Item
-            name="diaChi"
-            label="Địa chỉ"
-            rules={[
-              { required: true, message: 'Địa chỉ không được để trống' },
-              { max: 300, message: 'Địa chỉ không được vượt quá 300 ký tự' },
-              { whitespace: true, message: 'Địa chỉ không được chỉ chứa khoảng trắng' }
-            ]}
-          >
+          <Form.Item name="diaChi" label="Địa chỉ" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-
-          <Form.Item
-            name="sdt"
-            label="Số điện thoại"
-            rules={[
-              { required: true, message: 'Số điện thoại không được để trống' },
-              { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại không hợp lệ' }
-            ]}
-          >
+          <Form.Item name="sdt" label="Số điện thoại" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: 'Email không được để trống' },
-              { type: 'email', message: 'Email không hợp lệ' },
-              { max: 50, message: 'Email không được vượt quá 50 ký tự' }
-            ]}
-          >
+          <Form.Item name="email" label="Email" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-
-          <Form.Item
-            name="avatar"
-            label="Avatar"
-            valuePropName="fileList"
-            getValueFromEvent={(e) => {
-              if (Array.isArray(e)) {
-                return e;
-              }
-              return e?.fileList;
-            }}
-          >
-            <Upload
-              name="avatar"
-              listType="picture"
-              maxCount={1}
-              beforeUpload={() => false}
-            >
+          <Form.Item name="avatar" label="Avatar" valuePropName="fileList">
+            <Upload listType="picture" beforeUpload={() => false} maxCount={1}>
               <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
             </Upload>
           </Form.Item>
-
-          {!editingTeacher && (
-            <Form.Item
-              name="createAccount"
-              valuePropName="checked"
-              initialValue={true}
-            >
-              <Radio.Group>
-                <Radio value={true}>Tạo tài khoản</Radio>
-                <Radio value={false}>Không tạo tài khoản</Radio>
-              </Radio.Group>
-            </Form.Item>
-          )}
         </Form>
       </Modal>
 

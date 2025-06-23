@@ -4,7 +4,7 @@ const LichHocSinhVienService = {
   // Lấy lịch học theo thứ (1-7: Thứ 2 đến Chủ nhật)
   getLichHocTheoThu: async (thu) => {
     try {
-      const response = await api.get(`/monhoc/danh-sach-mon-hoc/${thu}`);
+      const response = await api.get(`/monhoc/danh-sach-mon-hoc-theo-thu/${thu}`);
       return response.data;
     } catch (error) {
       console.error("Lỗi khi lấy lịch học theo thứ:", error);

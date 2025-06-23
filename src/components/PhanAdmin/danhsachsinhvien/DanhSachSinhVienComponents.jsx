@@ -3,7 +3,7 @@ import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, DatePick
 import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined, ImportOutlined, DownloadOutlined, ExportOutlined, EyeOutlined } from '@ant-design/icons';
 import { studentService } from '../../../services/PhanAdmin/studentService.js';
 import { lopService } from '../../../services/PhanAdmin/lopService.js';
-import {ChiTietSinhVienComponents} from './ChiTietSinhVienComponents.jsx';
+import { ChiTietSinhVienComponents } from './ChiTietSinhVienComponents.jsx';
 import moment from 'moment';
 
 export const DanhSachSinhVienComponents = () => {
@@ -23,8 +23,11 @@ export const DanhSachSinhVienComponents = () => {
       field: 'maSv',
       order: 'ascend'
     },
-    search: ''
+    search: '',
+    filterLop: null,
+    filterKhoa: null
   });
+
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importing, setImporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -46,21 +49,18 @@ export const DanhSachSinhVienComponents = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const { pagination, sorter, search } = tableParams;
-      const response = await studentService.getStudents(
-        pagination.current - 1,
-        pagination.pageSize,
-        sorter.field,
-        sorter.order === 'ascend' ? 'asc' : 'desc',
-        search
-      );
-      
-      setStudents(response.content);
+      // Gọi API lấy toàn bộ sinh viên không phân trang, không cần truyền tham số
+      const response = await studentService.getAllStudentsNoPagination();
+
+      // Vì API trả về toàn bộ danh sách, giả sử response là mảng students
+      setStudents(response);
+
+      // Ở đây ta có thể set tổng bằng độ dài mảng, dùng cho pagination nếu muốn
       setTableParams({
         ...tableParams,
         pagination: {
           ...tableParams.pagination,
-          total: response.totalElements
+          total: response.length // tổng số sinh viên lấy được
         }
       });
     } catch (error) {
@@ -71,9 +71,10 @@ export const DanhSachSinhVienComponents = () => {
     }
   };
 
-  useEffect(() => {
-    fetchStudents();
-  }, [JSON.stringify(tableParams)]);
+useEffect(() => {
+  fetchStudents();
+}, []); // chỉ gọi 1 lần khi load component
+
 
   useEffect(() => {
     fetchClasses();
@@ -117,7 +118,7 @@ export const DanhSachSinhVienComponents = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      
+
       if (editingStudent) {
         // Validate and transform data for update
         const updateData = {
@@ -213,14 +214,14 @@ export const DanhSachSinhVienComponents = () => {
     try {
       setImporting(true);
       const response = await studentService.importStudents(selectedFile);
-      
+
       // Hiển thị thông báo thành công với chi tiết
       if (response === "Import thành công") {
         message.success('Import danh sách sinh viên thành công');
       } else {
         message.success(response || 'Import danh sách sinh viên thành công');
       }
-      
+
       setImportModalVisible(false);
       fetchStudents();
     } catch (error) {
@@ -277,8 +278,8 @@ export const DanhSachSinhVienComponents = () => {
       dataIndex: 'avatar',
       width: '8%',
       render: (avatar, record) => (
-        <Avatar 
-          src={avatar} 
+        <Avatar
+          src={avatar}
           icon={<UserOutlined />}
           alt={`Avatar của ${record.tenSv}`}
         />
@@ -345,18 +346,64 @@ export const DanhSachSinhVienComponents = () => {
       )
     }
   ];
+const filteredData = students.filter((sv) => {
+  const searchLower = tableParams.search?.toLowerCase() || '';
+  const matchSearch =
+    sv.maSv?.toLowerCase().includes(searchLower) ||
+    sv.tenSv?.toLowerCase().includes(searchLower) ||
+    sv.email?.toLowerCase().includes(searchLower);
+
+  const matchLop = tableParams.filterLop ? sv.tenLop === tableParams.filterLop : true;
+  const matchKhoa = tableParams.filterKhoa ? sv.tenKhoa === tableParams.filterKhoa : true;
+
+  return matchSearch && matchLop && matchKhoa;
+});
 
   return (
     <div className="p-6">
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Danh sách Sinh viên</h2>
         <Space>
-          <Input.Search
-            placeholder="Tìm kiếm..."
-            onSearch={handleSearch}
-            style={{ width: 200 }}
+<Input
+  placeholder="Tìm theo MSSV, Họ tên, Email"
+  allowClear
+  value={tableParams.search}
+  onChange={(e) =>
+    setTableParams((prev) => ({
+      ...prev,
+      search: e.target.value,
+      pagination: { ...prev.pagination, current: 1 }
+    }))
+  }
+  style={{ width: 300 }}
+  prefix={<SearchOutlined />}
+/>
+
+
+          <Select
+            placeholder="Lọc theo lớp"
+            allowClear
+            style={{ width: 180 }}
+            onChange={(value) =>
+              setTableParams((prev) => ({ ...prev, filterLop: value, pagination: { ...prev.pagination, current: 1 } }))
+            }
+            options={classes.map((lop) => ({ value: lop.tenLop, label: lop.tenLop }))}
           />
-          <Button 
+
+          <Select
+            placeholder="Lọc theo khoa"
+            allowClear
+            style={{ width: 180 }}
+            onChange={(value) =>
+              setTableParams((prev) => ({ ...prev, filterKhoa: value, pagination: { ...prev.pagination, current: 1 } }))
+            }
+            options={Array.from(new Set(classes.map((lop) => lop.tenKhoa))).map((khoa) => ({
+              label: khoa,
+              value: khoa
+            }))}
+          />
+          
+          <Button
             icon={<ImportOutlined />}
             onClick={showImportModal}
           >
@@ -381,7 +428,7 @@ export const DanhSachSinhVienComponents = () => {
 
       <Table
         columns={columns}
-        dataSource={students}
+        dataSource={filteredData}
         loading={loading}
         pagination={tableParams.pagination}
         onChange={handleTableChange}

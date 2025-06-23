@@ -13,89 +13,110 @@ import {
   Alert,
   Spin,
 } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { khoaService } from '../../../services/PhanAdmin/khoaService.js';
 import { lopService } from '../../../services/PhanAdmin/lopService.js';
 
 const { Option } = Select;
 const { Title } = Typography;
+const { Search } = Input;
 
 export const DanhSachLopComponents = () => {
-  const [lops, setLops] = useState([]);
+  const [allLops, setAllLops] = useState([]);
+  const [filteredLops, setFilteredLops] = useState([]);
   const [khoas, setKhoas] = useState([]);
-  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [editingMaLop, setEditingMaLop] = useState(null);
   const [selectedKhoa, setSelectedKhoa] = useState(null);
+  const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
-    sortField: 'maLop',
-    sortOrder: 'ascend',
+  });
+  const [sorter, setSorter] = useState({
+    field: 'maLop',
+    order: 'ascend',
   });
 
-  // Fetch danh sách khoa
-  const fetchKhoas = async () => {
-    try {
-      setError(null);
-      const data = await khoaService.getKhoas();
-      setKhoas(data);
-    } catch (error) {
-      console.error('Error fetching khoas:', error);
-      setError('Không thể tải danh sách khoa. Vui lòng thử lại sau.');
-      message.error('Không thể tải danh sách khoa');
-      setKhoas([]);
-    }
-  };
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  // Fetch danh sách lớp
-  const fetchLops = async () => {
+  useEffect(() => {
+    applyFilters();
+  }, [allLops, selectedKhoa, searchText, pagination.current, pagination.pageSize, sorter]);
+
+  const fetchData = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const { current, pageSize, sortField, sortOrder } = pagination;
-      const params = {
-        page: current - 1,
-        size: pageSize,
-        sortBy: sortField,
-        sortDir: sortOrder === 'ascend' ? 'asc' : 'desc',
-      };
-
-      if (selectedKhoa) {
-        params.maKhoa = selectedKhoa;
-      }
-
-      const data = await lopService.getLops(params);
-      if (data && data.content) {
-        setLops(data.content);
-        setTotalElements(data.totalElements);
-      }
-    } catch (error) {
-      console.error('Error fetching lops:', error);
-      setError('Không thể tải danh sách lớp. Vui lòng thử lại sau.');
-      message.error('Không thể tải danh sách lớp');
+      const [lopData, khoaData] = await Promise.all([
+        lopService.getLopsKhongPhanTrang(),
+        khoaService.getKhoas(),
+      ]);
+      setAllLops(lopData);
+      setKhoas(khoaData);
+    } catch (err) {
+      setError('Không thể tải dữ liệu');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchKhoas();
-  }, []);
+  const applyFilters = () => {
+    let data = [...allLops];
 
-  useEffect(() => {
-    fetchLops();
-  }, [pagination, selectedKhoa]);
+    // Lọc theo khoa
+    if (selectedKhoa) {
+      data = data.filter(item => item.maKhoa === selectedKhoa);
+    }
 
-  const handleTableChange = (newPagination, filters, sorter) => {
+    // Tìm kiếm
+    if (searchText) {
+      const lower = searchText.toLowerCase();
+      data = data.filter(item =>
+        item.maLop.toLowerCase().includes(lower) || item.tenLop.toLowerCase().includes(lower)
+      );
+    }
+
+    // Sắp xếp
+    if (sorter?.field && sorter?.order) {
+      data.sort((a, b) => {
+        const valA = a[sorter.field];
+        const valB = b[sorter.field];
+        if (typeof valA === 'string') {
+          return sorter.order === 'ascend'
+            ? valA.localeCompare(valB)
+            : valB.localeCompare(valA);
+        } else {
+          return sorter.order === 'ascend' ? valA - valB : valB - valA;
+        }
+      });
+    }
+
+    // Phân trang
+    const { current, pageSize } = pagination;
+    const start = (current - 1) * pageSize;
+    const paginated = data.slice(start, start + pageSize);
+    setFilteredLops(paginated);
+  };
+
+  const handleTableChange = (newPagination, filters, newSorter) => {
     setPagination({
-      ...newPagination,
-      sortField: sorter.field || 'maLop',
-      sortOrder: sorter.order || 'ascend',
+      current: newPagination.current,
+      pageSize: newPagination.pageSize,
     });
+    setSorter({
+      field: newSorter.field || 'maLop',
+      order: newSorter.order || 'ascend',
+    });
+  };
+
+  const handleSearch = (value) => {
+    setSearchText(value);
+    setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
   const handleCreate = () => {
@@ -105,13 +126,7 @@ export const DanhSachLopComponents = () => {
   };
 
   const handleEdit = (record) => {
-    form.setFieldsValue({
-      maLop: record.maLop,
-      tenLop: record.tenLop,
-      maKhoa: record.maKhoa,
-      gvcn: record.gvcn,
-      sdtGvcn: record.sdtGvcn,
-    });
+    form.setFieldsValue({ ...record });
     setEditingMaLop(record.maLop);
     setModalVisible(true);
   };
@@ -120,16 +135,15 @@ export const DanhSachLopComponents = () => {
     try {
       await lopService.deleteLop(maLop);
       message.success('Xóa lớp thành công');
-      fetchLops();
-    } catch (error) {
-      message.error(error.response?.data || 'Không thể xóa lớp');
+      fetchData();
+    } catch (err) {
+      message.error(err.response?.data || 'Không thể xóa lớp');
     }
   };
 
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      
       if (editingMaLop) {
         await lopService.updateLop(editingMaLop, values);
         message.success('Cập nhật lớp thành công');
@@ -138,9 +152,9 @@ export const DanhSachLopComponents = () => {
         message.success('Thêm lớp mới thành công');
       }
       setModalVisible(false);
-      fetchLops();
-    } catch (error) {
-      message.error(error.response?.data || 'Có lỗi xảy ra');
+      fetchData();
+    } catch (err) {
+      message.error(err.response?.data || 'Có lỗi xảy ra');
     }
   };
 
@@ -178,21 +192,10 @@ export const DanhSachLopComponents = () => {
       key: 'action',
       width: '15%',
       render: (_, record) => (
-        <Space size="middle">
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            Sửa
-          </Button>
-          <Popconfirm
-            title="Bạn có chắc chắn muốn xóa?"
-            onConfirm={() => handleDelete(record.maLop)}
-          >
-            <Button type="primary" danger icon={<DeleteOutlined />}>
-              Xóa
-            </Button>
+        <Space>
+          <Button icon={<EditOutlined />} onClick={() => handleEdit(record)}>Sửa</Button>
+          <Popconfirm title="Bạn có chắc chắn muốn xóa?" onConfirm={() => handleDelete(record.maLop)}>
+            <Button danger icon={<DeleteOutlined />}>Xóa</Button>
           </Popconfirm>
         </Space>
       ),
@@ -208,42 +211,49 @@ export const DanhSachLopComponents = () => {
             style={{ width: 200 }}
             placeholder="Chọn khoa"
             allowClear
-            onChange={setSelectedKhoa}
+            onChange={(value) => {
+              setSelectedKhoa(value);
+              setPagination({ ...pagination, current: 1 });
+            }}
           >
-            {Array.isArray(khoas) && khoas.map(khoa => (
+            {khoas.map(khoa => (
               <Option key={khoa.maKhoa} value={khoa.maKhoa}>
                 {khoa.tenKhoa}
               </Option>
             ))}
           </Select>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreate}
-          >
-            Thêm Lớp Mới
-          </Button>
+<Search
+  placeholder="Tìm mã/tên lớp"
+  allowClear
+  value={searchText}
+  onChange={(e) => {
+    const value = e.target.value;
+    setSearchText(value);
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  }}
+  style={{ width: 250 }}
+  enterButton={<SearchOutlined />}
+/>
+
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>Thêm Lớp Mới</Button>
         </Space>
       </div>
 
       {error && (
-        <Alert
-          message="Lỗi"
-          description={error}
-          type="error"
-          showIcon
-          style={{ marginBottom: '16px' }}
-        />
+        <Alert message="Lỗi" description={error} type="error" showIcon style={{ marginBottom: '16px' }} />
       )}
 
       <Spin spinning={loading}>
         <Table
           columns={columns}
-          dataSource={lops}
+          dataSource={filteredLops}
           rowKey="maLop"
           pagination={{
             ...pagination,
-            total: totalElements,
+            total: allLops.filter(item =>
+              (!selectedKhoa || item.maKhoa === selectedKhoa) &&
+              (!searchText || item.maLop.toLowerCase().includes(searchText.toLowerCase()) || item.tenLop.toLowerCase().includes(searchText.toLowerCase()))
+            ).length,
             showSizeChanger: true,
             showQuickJumper: true,
           }}
@@ -259,39 +269,16 @@ export const DanhSachLopComponents = () => {
         destroyOnClose
         width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-        >
+        <Form form={form} layout="vertical">
           {!editingMaLop && (
-            <Form.Item
-              name="maLop"
-              label="Mã lớp"
-              rules={[
-                { required: true, message: 'Vui lòng nhập mã lớp' },
-              ]}
-            >
+            <Form.Item name="maLop" label="Mã lớp" rules={[{ required: true, message: 'Vui lòng nhập mã lớp' }]}>
               <Input />
             </Form.Item>
           )}
-
-          <Form.Item
-            name="tenLop"
-            label="Tên lớp"
-            rules={[
-              { required: true, message: 'Vui lòng nhập tên lớp' },
-            ]}
-          >
+          <Form.Item name="tenLop" label="Tên lớp" rules={[{ required: true, message: 'Vui lòng nhập tên lớp' }]}>
             <Input />
           </Form.Item>
-
-          <Form.Item
-            name="maKhoa"
-            label="Khoa"
-            rules={[
-              { required: true, message: 'Vui lòng chọn khoa' },
-            ]}
-          >
+          <Form.Item name="maKhoa" label="Khoa" rules={[{ required: true, message: 'Vui lòng chọn khoa' }]}>
             <Select>
               {khoas.map(khoa => (
                 <Option key={khoa.maKhoa} value={khoa.maKhoa}>
@@ -300,23 +287,15 @@ export const DanhSachLopComponents = () => {
               ))}
             </Select>
           </Form.Item>
-
-          <Form.Item
-            name="gvcn"
-            label="Giáo viên chủ nhiệm"
-            rules={[
-              { required: true, message: 'Vui lòng nhập tên GVCN' },
-            ]}
-          >
+          <Form.Item name="gvcn" label="GVCN" rules={[{ required: true, message: 'Vui lòng nhập tên GVCN' }]}>
             <Input />
           </Form.Item>
-
           <Form.Item
             name="sdtGvcn"
-            label="Số điện thoại GVCN"
+            label="SĐT GVCN"
             rules={[
               { required: true, message: 'Vui lòng nhập số điện thoại GVCN' },
-              { pattern: /^[0-9]{10}$/, message: 'Số điện thoại không hợp lệ' }
+              { pattern: /^[0-9]{10}$/, message: 'Số điện thoại không hợp lệ' },
             ]}
           >
             <Input />

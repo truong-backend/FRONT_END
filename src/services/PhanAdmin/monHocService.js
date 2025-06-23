@@ -2,21 +2,21 @@ import api from '../api.js';
 
 export const monHocService = {
   // Lấy danh sách môn học có phân trang
-  getMonHocs: async (page = 0, size = 10, sortBy = 'maMh', sortDir = 'asc', search = '') => {
-    const params = {
-      page,
-      size,
-      sort: `${sortBy},${sortDir}`,
-      ...(search && { search })
-    };
-    const response = await api.get('/monhoc', { params });
-    return response.data;
-  },
+  // getMonHocs: async (page = 0, size = 10, sortBy = 'maMh', sortDir = 'asc', search = '') => {
+  //   const params = {
+  //     page,
+  //     size,
+  //     sort: `${sortBy},${sortDir}`,
+  //     ...(search && { search })
+  //   };
+  //   const response = await api.get('/monhoc', { params });
+  //   return response.data;
+  // },
 
   // Lấy tất cả môn học không phân trang
   getAllMonHocs: async () => {
     const response = await api.get('/monhoc/all');
-    return response.data?.content || [];
+    return response.data;
   },
 
   // Lấy thông tin một môn học

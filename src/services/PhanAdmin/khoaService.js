@@ -3,8 +3,8 @@ import api from '../api.js';
 export const khoaService = {
   // Lấy danh sách khoa có phân trang
   getKhoas: async () => {
-    const response = await api.get('/khoa');
-    return response.data?.content || [];
+    const response = await api.get('/khoa/all');
+    return response.data;
   },
 
   // Lấy thông tin một khoa

@@ -13,10 +13,11 @@ import {
   Alert,
   Spin,
 } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { monHocService } from '../../../services/PhanAdmin/monHocService.js';
 
 const { Title } = Typography;
+const { Search } = Input;
 
 export const DanhSachMonHocComponents = () => {
   const [monHocs, setMonHocs] = useState([]);
@@ -25,39 +26,17 @@ export const DanhSachMonHocComponents = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [editingMaMh, setEditingMaMh] = useState(null);
-  const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 10,
-      total: 0,
-    },
-    sorter: {
-      field: 'maMh',
-      order: 'ascend',
-    },
-  });
+  const [searchText, setSearchText] = useState('');
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch danh sách môn học
   const fetchMonHocs = async () => {
     try {
       setLoading(true);
       setError(null);
-      const { pagination, sorter } = tableParams;
-      const data = await monHocService.getMonHocs(
-        pagination.current - 1,
-        pagination.pageSize,
-        sorter.field,
-        sorter.order === 'ascend' ? 'asc' : 'desc'
-      );
-      
-      setMonHocs(data.content);
-      setTableParams({
-        ...tableParams,
-        pagination: {
-          ...tableParams.pagination,
-          total: data.totalElements,
-        },
-      });
+      const data = await monHocService.getAllMonHocs();
+      setMonHocs(data);
+      setFilteredData(data);
     } catch (error) {
       console.error('Error fetching monhocs:', error);
       setError('Không thể tải danh sách môn học. Vui lòng thử lại sau.');
@@ -69,16 +48,17 @@ export const DanhSachMonHocComponents = () => {
 
   useEffect(() => {
     fetchMonHocs();
-  }, [JSON.stringify(tableParams)]); // Re-fetch when params change
+  }, []);
 
-  const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      pagination,
-      sorter: {
-        field: sorter.field || 'maMh',
-        order: sorter.order || 'ascend',
-      },
-    });
+  const handleSearch = (value) => {
+    setSearchText(value);
+    const filtered = monHocs.filter(
+      (item) =>
+        item.tenMh.toLowerCase().includes(value.toLowerCase()) ||
+        item.maMh.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredData(filtered);
+    setCurrentPage(1);
   };
 
   const handleCreate = () => {
@@ -101,7 +81,7 @@ export const DanhSachMonHocComponents = () => {
     try {
       await monHocService.deleteMonHoc(maMh);
       message.success('Xóa môn học thành công');
-      fetchMonHocs(); // Refresh the list after deletion
+      fetchMonHocs();
     } catch (error) {
       message.error(error.response?.data || 'Không thể xóa môn học');
     }
@@ -110,7 +90,6 @@ export const DanhSachMonHocComponents = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      
       if (editingMaMh) {
         await monHocService.updateMonHoc(editingMaMh, values);
         message.success('Cập nhật môn học thành công');
@@ -118,22 +97,9 @@ export const DanhSachMonHocComponents = () => {
         await monHocService.createMonHoc(values);
         message.success('Thêm môn học mới thành công');
       }
-      
       setModalVisible(false);
       form.resetFields();
-      
-      // Reset to first page when adding new item
-      if (!editingMaMh) {
-        setTableParams({
-          ...tableParams,
-          pagination: {
-            ...tableParams.pagination,
-            current: 1,
-          },
-        });
-      } else {
-        fetchMonHocs(); // Just refresh current page when editing
-      }
+      fetchMonHocs();
     } catch (error) {
       message.error(error.response?.data || 'Có lỗi xảy ra');
     }
@@ -143,25 +109,25 @@ export const DanhSachMonHocComponents = () => {
     {
       title: 'Mã môn học',
       dataIndex: 'maMh',
-      sorter: true,
-      width: '25%',
+      width: '20%',
+      sorter: (a, b) => a.maMh.localeCompare(b.maMh),
     },
     {
       title: 'Tên môn học',
       dataIndex: 'tenMh',
-      sorter: true,
-      width: '45%',
+      width: '40%',
+      sorter: (a, b) => a.tenMh.localeCompare(b.tenMh),
     },
     {
       title: 'Số tiết',
       dataIndex: 'soTiet',
-      sorter: true,
       width: '15%',
+      sorter: (a, b) => a.soTiet - b.soTiet,
     },
     {
       title: 'Thao tác',
       key: 'action',
-      width: '15%',
+      width: '25%',
       render: (_, record) => (
         <Space size="middle">
           <Button
@@ -188,14 +154,20 @@ export const DanhSachMonHocComponents = () => {
     <div style={{ padding: '24px' }}>
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Title level={2}>Quản lý Môn học</Title>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleCreate}
-        >
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
           Thêm Môn học Mới
         </Button>
       </div>
+
+      <Search
+        placeholder="Tìm theo mã hoặc tên môn học"
+        onSearch={handleSearch}
+        onChange={(e) => handleSearch(e.target.value)}
+        value={searchText}
+        allowClear
+        enterButton={<SearchOutlined />}
+        style={{ marginBottom: '16px', width: 400 }}
+      />
 
       {error && (
         <Alert
@@ -210,10 +182,13 @@ export const DanhSachMonHocComponents = () => {
       <Spin spinning={loading}>
         <Table
           columns={columns}
-          dataSource={monHocs}
+          dataSource={filteredData}
           rowKey="maMh"
-          pagination={tableParams.pagination}
-          onChange={handleTableChange}
+          pagination={{
+            pageSize: 10,
+            current: currentPage,
+            onChange: (page) => setCurrentPage(page),
+          }}
         />
       </Spin>
 

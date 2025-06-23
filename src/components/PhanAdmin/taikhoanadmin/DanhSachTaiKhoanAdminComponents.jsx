@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, Avatar, Upload } from 'antd';
-import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined } from '@ant-design/icons';
+import {
+  Table, Input, Space, Button, Popconfirm, message, Modal, Form, Avatar, Upload
+} from 'antd';
+import {
+  EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined
+} from '@ant-design/icons';
 import { adminService } from '../../../services/PhanAdmin/adminService.js';
 import moment from 'moment';
 
@@ -10,38 +14,13 @@ const ListAdmin = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [form] = Form.useForm();
-  const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 10,
-      total: 0
-    },
-    sorter: {
-      field: 'id',
-      order: 'ascend'
-    },
-    search: ''
-  });
+  const [searchText, setSearchText] = useState('');
 
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const { pagination, sorter, search } = tableParams;
-      const data = await adminService.getAdmins(
-        pagination.current - 1,
-        pagination.pageSize,
-        sorter.field,
-        sorter.order === 'ascend' ? 'asc' : 'desc',
-        search
-      );
-      setAdmins(data.content);
-      setTableParams({
-        ...tableParams,
-        pagination: {
-          ...tableParams.pagination,
-          total: data.totalElements
-        }
-      });
+      const data = await adminService.getAdminsKphanTrang();
+      setAdmins(data.content || data); // tùy theo backend trả về object hay array
     } catch (error) {
       message.error('Lỗi khi tải danh sách quản trị viên');
       console.error('Error fetching admins:', error);
@@ -52,29 +31,17 @@ const ListAdmin = () => {
 
   useEffect(() => {
     fetchAdmins();
-  }, [JSON.stringify(tableParams)]);
+  }, []);
 
-  const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      ...tableParams,
-      pagination,
-      sorter: {
-        field: sorter.field || 'id',
-        order: sorter.order || 'ascend'
-      }
-    });
+  const handleSearch = (e) => {
+    setSearchText(e.target.value.toLowerCase());
   };
 
-  const handleSearch = (value) => {
-    setTableParams({
-      ...tableParams,
-      pagination: {
-        ...tableParams.pagination,
-        current: 1
-      },
-      search: value
-    });
-  };
+  const filteredData = admins.filter((admin) =>
+    admin.fullName?.toLowerCase().includes(searchText) ||
+    admin.email?.toLowerCase().includes(searchText) ||
+    admin.username?.toLowerCase().includes(searchText)
+  );
 
   const showModal = (record = null) => {
     setEditingAdmin(record);
@@ -95,15 +62,13 @@ const ListAdmin = () => {
     try {
       const values = await form.validateFields();
       const formData = new FormData();
-      
-      // Append text fields
+
       Object.keys(values).forEach(key => {
         if (key !== 'avatar') {
           formData.append(key, values[key]);
         }
       });
 
-      // Append avatar if exists
       if (values.avatar && values.avatar[0]) {
         formData.append('avatar', values.avatar[0].originFileObj);
       }
@@ -115,6 +80,7 @@ const ListAdmin = () => {
         await adminService.createAdmin(formData);
         message.success('Thêm quản trị viên mới thành công');
       }
+
       setModalVisible(false);
       fetchAdmins();
     } catch (error) {
@@ -145,8 +111,8 @@ const ListAdmin = () => {
       dataIndex: 'avatar',
       width: '8%',
       render: (avatar, record) => (
-        <Avatar 
-          src={avatar} 
+        <Avatar
+          src={avatar}
           icon={<UserOutlined />}
           alt={`Avatar của ${record.fullName}`}
         />
@@ -224,11 +190,13 @@ const ListAdmin = () => {
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Tài Khoản Quản Trị Viên</h2>
         <Space>
-          <Input.Search
-            placeholder="Tìm kiếm..."
-            onSearch={handleSearch}
-            style={{ width: 300 }}
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder="Tìm theo tên, username, email"
+            value={searchText}
+            onChange={handleSearch}
             allowClear
+            style={{ width: 300 }}
           />
           <Button
             type="primary"
@@ -242,11 +210,10 @@ const ListAdmin = () => {
 
       <Table
         columns={columns}
-        dataSource={admins}
+        dataSource={filteredData}
         rowKey="id"
-        pagination={tableParams.pagination}
+        pagination={{ pageSize: 10 }}
         loading={loading}
-        onChange={handleTableChange}
         scroll={{ x: 1500 }}
       />
 
@@ -257,10 +224,7 @@ const ListAdmin = () => {
         onCancel={() => setModalVisible(false)}
         width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-        >
+        <Form form={form} layout="vertical">
           <Form.Item
             name="username"
             label="Username"
@@ -288,9 +252,7 @@ const ListAdmin = () => {
           <Form.Item
             name="fullName"
             label="Họ và tên"
-            rules={[
-              { required: true, message: 'Vui lòng nhập họ và tên' }
-            ]}
+            rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
           >
             <Input />
           </Form.Item>
@@ -309,10 +271,8 @@ const ListAdmin = () => {
           <Form.Item
             name="role"
             label="Vai trò"
-            rules={[
-              { required: true, message: 'Vui lòng chọn vai trò' }
-            ]}
-            initialValue="ADMIN"
+            hidden
+            initialValue="admin"
           >
             <Input disabled />
           </Form.Item>
@@ -338,4 +298,4 @@ const ListAdmin = () => {
   );
 };
 
-export default ListAdmin; 
+export default ListAdmin;

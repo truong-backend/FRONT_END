@@ -12,14 +12,16 @@ import {
   Alert,
   Spin,
 } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { khoaService } from '../../../services/PhanAdmin/khoaService.js';
 
 const { Title } = Typography;
+const { Search } = Input;
 
 export const DanhSachKhoaComponents = () => {
   const [khoas, setKhoas] = useState([]);
-  const [totalElements, setTotalElements] = useState(0);
+  const [filteredKhoas, setFilteredKhoas] = useState([]);
+  const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -28,18 +30,17 @@ export const DanhSachKhoaComponents = () => {
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
-    sortField: 'maKhoa',
-    sortOrder: 'ascend',
+    total: 0,
   });
 
-  // Fetch danh sách khoa
   const fetchKhoas = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await khoaService.getKhoas();
       setKhoas(data);
-      setTotalElements(data.length);
+      setFilteredKhoas(data);
+      setPagination((prev) => ({ ...prev, total: data.length }));
     } catch (error) {
       console.error('Error fetching khoas:', error);
       setError('Không thể tải danh sách khoa. Vui lòng thử lại sau.');
@@ -53,12 +54,33 @@ export const DanhSachKhoaComponents = () => {
     fetchKhoas();
   }, []);
 
+  const handleSearch = (value) => {
+    setSearchText(value);
+    const filtered = khoas.filter(
+      (item) =>
+        item.tenKhoa.toLowerCase().includes(value.toLowerCase()) ||
+        item.maKhoa.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredKhoas(filtered);
+    setPagination((prev) => ({ ...prev, current: 1, total: filtered.length }));
+  };
+
   const handleTableChange = (newPagination, filters, sorter) => {
     setPagination({
-      ...newPagination,
-      sortField: sorter.field || 'maKhoa',
-      sortOrder: sorter.order || 'ascend',
+      ...pagination,
+      current: newPagination.current,
+      pageSize: newPagination.pageSize,
     });
+
+    if (sorter?.field) {
+      const sortedData = [...filteredKhoas].sort((a, b) => {
+        const isAsc = sorter.order === 'ascend';
+        return isAsc
+          ? a[sorter.field].localeCompare(b[sorter.field])
+          : b[sorter.field].localeCompare(a[sorter.field]);
+      });
+      setFilteredKhoas(sortedData);
+    }
   };
 
   const handleCreate = () => {
@@ -89,7 +111,6 @@ export const DanhSachKhoaComponents = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      
       if (editingMaKhoa) {
         await khoaService.updateKhoa(editingMaKhoa, values);
         message.success('Cập nhật khoa thành công');
@@ -147,14 +168,20 @@ export const DanhSachKhoaComponents = () => {
     <div style={{ padding: '24px' }}>
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Title level={2}>Quản lý Khoa</Title>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleCreate}
-        >
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
           Thêm Khoa Mới
         </Button>
       </div>
+
+      <Search
+        placeholder="Tìm kiếm theo mã hoặc tên khoa"
+        onSearch={handleSearch}
+        onChange={(e) => handleSearch(e.target.value)}
+        value={searchText}
+        enterButton={<SearchOutlined />}
+        allowClear
+        style={{ marginBottom: '16px', width: 400 }}
+      />
 
       {error && (
         <Alert
@@ -169,11 +196,10 @@ export const DanhSachKhoaComponents = () => {
       <Spin spinning={loading}>
         <Table
           columns={columns}
-          dataSource={khoas}
+          dataSource={filteredKhoas}
           rowKey="maKhoa"
           pagination={{
             ...pagination,
-            total: totalElements,
             showSizeChanger: true,
             showQuickJumper: true,
           }}
@@ -185,14 +211,14 @@ export const DanhSachKhoaComponents = () => {
         title={editingMaKhoa ? 'Cập nhật Khoa' : 'Thêm Khoa Mới'}
         open={modalVisible}
         onOk={handleModalOk}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false);
+          form.resetFields();
+        }}
         destroyOnClose
         width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-        >
+        <Form form={form} layout="vertical">
           {!editingMaKhoa && (
             <Form.Item
               name="maKhoa"
@@ -205,7 +231,6 @@ export const DanhSachKhoaComponents = () => {
               <Input />
             </Form.Item>
           )}
-
           <Form.Item
             name="tenKhoa"
             label="Tên khoa"

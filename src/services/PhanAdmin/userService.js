@@ -1,18 +1,6 @@
 import api from '../api.js';
 
 export const userService = {
-  // Get users with pagination, sorting, and search
-  getUsers: async (page = 0, size = 10, sortBy = 'id', sortDir = 'asc', search = '') => {
-    const params = {
-      page,
-      size,
-      sortBy,
-      sortDir,
-      ...(search && { search })
-    };
-    const response = await api.get('/users', { params });
-    return response.data;
-  },
 
   // Get users by role with pagination, sorting, and search
   getUsersByRole: async (role, page = 0, size = 10, sortBy = 'id', sortDir = 'asc', search = '') => {
