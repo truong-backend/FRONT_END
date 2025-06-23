@@ -1,31 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Input, Space, Button, Popconfirm, message, Modal, Form, Switch, Tag } from 'antd';
-import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined } from '@ant-design/icons';
+import { Table, Input, Button, Popconfirm, message, Modal, Form, Switch, Tag } from 'antd';
+import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { userService } from '../../../services/PhanAdmin/userService.js';
 import moment from 'moment';
 
 export const DanhSachTaiKhoanGiangVienComponents = () => {
+  // State management
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [form] = Form.useForm();
   const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 10,
-      total: 0
-    },
-    sorter: {
-      field: 'id',
-      order: 'ascend'
-    },
+    pagination: { current: 1, pageSize: 10, total: 0 },
+    sorter: { field: 'id', order: 'ascend' },
     search: ''
   });
 
+  // Data fetching
   const fetchTeachers = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const { pagination, sorter, search } = tableParams;
       const data = await userService.getUsersByRole(
         'TEACHER',
@@ -35,14 +30,12 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
         sorter.order === 'ascend' ? 'asc' : 'desc',
         search
       );
+      
       setTeachers(data.content);
-      setTableParams({
-        ...tableParams,
-        pagination: {
-          ...tableParams.pagination,
-          total: data.totalElements
-        }
-      });
+      setTableParams(prev => ({
+        ...prev,
+        pagination: { ...prev.pagination, total: data.totalElements }
+      }));
     } catch (error) {
       message.error('Lỗi khi tải danh sách giảng viên');
       console.error('Error fetching teachers:', error);
@@ -53,8 +46,9 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
 
   useEffect(() => {
     fetchTeachers();
-  }, [JSON.stringify(tableParams)]); // Re-fetch when params change
+  }, [JSON.stringify(tableParams)]);
 
+  // Table handlers
   const handleTableChange = (pagination, filters, sorter) => {
     setTableParams({
       ...tableParams,
@@ -67,24 +61,22 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
   };
 
   const handleSearch = (value) => {
-    setTableParams({
-      ...tableParams,
-      pagination: {
-        ...tableParams.pagination,
-        current: 1 // Reset to first page
-      },
+    setTableParams(prev => ({
+      ...prev,
+      pagination: { ...prev.pagination, current: 1 },
       search: value
-    });
+    }));
   };
 
-  const showModal = (record = null) => {
-    setEditingTeacher(record);
-    if (record) {
+  // Modal handlers
+  const openModal = (teacher = null) => {
+    setEditingTeacher(teacher);
+    if (teacher) {
       form.setFieldsValue({
-        username: record.username,
-        email: record.email,
-        fullName: record.fullName,
-        isActive: record.isActive,
+        username: teacher.username,
+        email: teacher.email,
+        fullName: teacher.fullName,
+        isActive: teacher.isActive,
       });
     } else {
       form.resetFields();
@@ -92,29 +84,34 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
     setModalVisible(true);
   };
 
-  const handleModalOk = async () => {
+  const closeModal = () => {
+    setModalVisible(false);
+    setEditingTeacher(null);
+    form.resetFields();
+  };
+
+  // Form submission
+  const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      const payload = { ...values, role: 'TEACHER' };
+
       if (editingTeacher) {
-        await userService.updateUser(editingTeacher.id, {
-          ...values,
-          role: 'TEACHER'
-        });
+        await userService.updateUser(editingTeacher.id, payload);
         message.success('Cập nhật giảng viên thành công');
       } else {
-        await userService.createUser({
-          ...values,
-          role: 'TEACHER'
-        });
+        await userService.createUser(payload);
         message.success('Thêm giảng viên mới thành công');
       }
-      setModalVisible(false);
+
+      closeModal();
       fetchTeachers();
     } catch (error) {
       message.error('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
     }
   };
 
+  // Delete handler
   const handleDelete = async (id) => {
     try {
       await userService.deleteUser(id);
@@ -126,6 +123,7 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
     }
   };
 
+  // Status change handler
   const handleStatusChange = async (id, isActive) => {
     try {
       await userService.updateUser(id, { isActive });
@@ -136,79 +134,69 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
     }
   };
 
+  // Table columns
   const columns = [
     {
       title: 'ID',
       dataIndex: 'id',
+      width: 60,
       sorter: true,
-      width: '5%'
     },
     {
       title: 'Họ và tên',
       dataIndex: 'fullName',
       sorter: true,
-      width: '15%'
     },
     {
       title: 'Username',
       dataIndex: 'username',
+      width: 120,
       sorter: true,
-      width: '10%'
     },
     {
       title: 'Email',
       dataIndex: 'email',
       sorter: true,
-      width: '15%'
     },
     {
       title: 'Trạng thái',
       dataIndex: 'isActive',
-      width: '8%',
+      width: 120,
       render: (isActive, record) => (
         <Switch
           checked={isActive}
           onChange={(checked) => handleStatusChange(record.id, checked)}
-          checkedChildren="Hoạt động"
-          unCheckedChildren="Khóa"
+          size="small"
         />
       )
     },
     {
       title: 'Email xác thực',
       dataIndex: 'emailVerifiedAt',
-      width: '12%',
+      width: 120,
       render: (date) => (
-        date ? (
-          <Tag color="success">Đã xác thực</Tag>
-        ) : (
-          <Tag color="error">Chưa xác thực</Tag>
-        )
+        <Tag color={date ? 'success' : 'error'}>
+          {date ? 'Đã xác thực' : 'Chưa xác thực'}
+        </Tag>
       )
     },
     {
       title: 'Ngày tạo',
       dataIndex: 'createdAt',
+      width: 140,
       sorter: true,
-      width: '12%',
-      render: (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A'
-    },
-    {
-      title: 'Cập nhật',
-      dataIndex: 'updatedAt',
-      sorter: true,
-      width: '12%',
       render: (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A'
     },
     {
       title: 'Thao tác',
-      width: '10%',
+      width: 120,
       render: (_, record) => (
-        <Space>
+        <div className="flex gap-2">
           <Button
             type="primary"
+            size="small"
             icon={<EditOutlined />}
-            onClick={() => showModal(record)}
+            onClick={() => openModal(record)}
           />
           <Popconfirm
             title="Bạn có chắc chắn muốn xóa giảng viên này?"
@@ -216,20 +204,26 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
             okText="Có"
             cancelText="Không"
           >
-            <Button type="primary" danger icon={<DeleteOutlined />} />
+            <Button 
+              type="primary" 
+              danger 
+              size="small"
+              icon={<DeleteOutlined />} 
+            />
           </Popconfirm>
-        </Space>
+        </div>
       )
     }
   ];
 
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Tài Khoản Giảng Viên</h2>
-        <Space>
+        <div className="flex gap-3">
           <Input.Search
-            placeholder="Tìm kiếm..."
+            placeholder="Tìm kiếm giảng viên..."
             onSearch={handleSearch}
             style={{ width: 300 }}
             allowClear
@@ -237,34 +231,41 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => showModal()}
+            onClick={() => openModal()}
           >
             Thêm Giảng viên
           </Button>
-        </Space>
+        </div>
       </div>
 
+      {/* Table */}
       <Table
         columns={columns}
         dataSource={teachers}
         rowKey="id"
-        pagination={tableParams.pagination}
+        pagination={{
+          ...tableParams.pagination,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => 
+            `${range[0]}-${range[1]} của ${total} giảng viên`
+        }}
         loading={loading}
         onChange={handleTableChange}
-        scroll={{ x: 1500 }}
+        scroll={{ x: 1200 }}
       />
 
+      {/* Modal */}
       <Modal
         title={editingTeacher ? "Cập nhật Giảng viên" : "Thêm Giảng viên mới"}
         open={modalVisible}
-        onOk={handleModalOk}
-        onCancel={() => setModalVisible(false)}
+        onOk={handleSubmit}
+        onCancel={closeModal}
         width={600}
+        okText={editingTeacher ? "Cập nhật" : "Thêm"}
+        cancelText="Hủy"
       >
-        <Form
-          form={form}
-          layout="vertical"
-        >
+        <Form form={form} layout="vertical">
           <Form.Item
             name="username"
             label="Username"
@@ -273,7 +274,7 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
               { min: 3, message: 'Username phải có ít nhất 3 ký tự' }
             ]}
           >
-            <Input />
+            <Input placeholder="Nhập username" />
           </Form.Item>
 
           {!editingTeacher && (
@@ -285,18 +286,16 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
                 { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' }
               ]}
             >
-              <Input.Password />
+              <Input.Password placeholder="Nhập mật khẩu" />
             </Form.Item>
           )}
 
           <Form.Item
             name="fullName"
             label="Họ và tên"
-            rules={[
-              { required: true, message: 'Vui lòng nhập họ và tên' }
-            ]}
+            rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
           >
-            <Input />
+            <Input placeholder="Nhập họ và tên" />
           </Form.Item>
 
           <Form.Item
@@ -307,12 +306,12 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
               { type: 'email', message: 'Email không hợp lệ' }
             ]}
           >
-            <Input />
+            <Input placeholder="Nhập email" />
           </Form.Item>
 
           <Form.Item
             name="isActive"
-            label="Trạng thái"
+            label="Trạng thái tài khoản"
             valuePropName="checked"
             initialValue={true}
           >
@@ -326,4 +325,3 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
     </div>
   );
 };
-

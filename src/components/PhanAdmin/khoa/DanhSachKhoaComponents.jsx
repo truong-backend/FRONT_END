@@ -19,32 +19,35 @@ const { Title } = Typography;
 const { Search } = Input;
 
 export const DanhSachKhoaComponents = () => {
+  // State management
   const [khoas, setKhoas] = useState([]);
   const [filteredKhoas, setFilteredKhoas] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [form] = Form.useForm();
   const [editingMaKhoa, setEditingMaKhoa] = useState(null);
+  const [form] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
   });
 
+  // Data fetching
   const fetchKhoas = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
       const data = await khoaService.getKhoas();
       setKhoas(data);
       setFilteredKhoas(data);
-      setPagination((prev) => ({ ...prev, total: data.length }));
-    } catch (error) {
-      console.error('Error fetching khoas:', error);
-      setError('Không thể tải danh sách khoa. Vui lòng thử lại sau.');
+      setPagination(prev => ({ ...prev, total: data.length }));
+    } catch (err) {
+      const errorMessage = 'Không thể tải danh sách khoa. Vui lòng thử lại sau.';
+      setError(errorMessage);
       message.error('Không thể tải danh sách khoa');
+      console.error('Error fetching khoas:', err);
     } finally {
       setLoading(false);
     }
@@ -54,17 +57,18 @@ export const DanhSachKhoaComponents = () => {
     fetchKhoas();
   }, []);
 
+  // Search functionality
   const handleSearch = (value) => {
     setSearchText(value);
-    const filtered = khoas.filter(
-      (item) =>
-        item.tenKhoa.toLowerCase().includes(value.toLowerCase()) ||
-        item.maKhoa.toLowerCase().includes(value.toLowerCase())
+    const filtered = khoas.filter(item =>
+      item.tenKhoa.toLowerCase().includes(value.toLowerCase()) ||
+      item.maKhoa.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredKhoas(filtered);
-    setPagination((prev) => ({ ...prev, current: 1, total: filtered.length }));
+    setPagination(prev => ({ ...prev, current: 1, total: filtered.length }));
   };
 
+  // Table handlers
   const handleTableChange = (newPagination, filters, sorter) => {
     setPagination({
       ...pagination,
@@ -83,19 +87,41 @@ export const DanhSachKhoaComponents = () => {
     }
   };
 
-  const handleCreate = () => {
-    form.resetFields();
-    setEditingMaKhoa(null);
+  // Modal handlers
+  const openModal = (record = null) => {
+    if (record) {
+      form.setFieldsValue(record);
+      setEditingMaKhoa(record.maKhoa);
+    } else {
+      form.resetFields();
+      setEditingMaKhoa(null);
+    }
     setModalVisible(true);
   };
 
-  const handleEdit = (record) => {
-    form.setFieldsValue({
-      maKhoa: record.maKhoa,
-      tenKhoa: record.tenKhoa,
-    });
-    setEditingMaKhoa(record.maKhoa);
-    setModalVisible(true);
+  const closeModal = () => {
+    setModalVisible(false);
+    form.resetFields();
+  };
+
+  // CRUD operations
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      
+      if (editingMaKhoa) {
+        await khoaService.updateKhoa(editingMaKhoa, values);
+        message.success('Cập nhật khoa thành công');
+      } else {
+        await khoaService.createKhoa(values);
+        message.success('Thêm khoa mới thành công');
+      }
+      
+      closeModal();
+      fetchKhoas();
+    } catch (error) {
+      message.error(error.response?.data || 'Có lỗi xảy ra');
+    }
   };
 
   const handleDelete = async (maKhoa) => {
@@ -108,23 +134,7 @@ export const DanhSachKhoaComponents = () => {
     }
   };
 
-  const handleModalOk = async () => {
-    try {
-      const values = await form.validateFields();
-      if (editingMaKhoa) {
-        await khoaService.updateKhoa(editingMaKhoa, values);
-        message.success('Cập nhật khoa thành công');
-      } else {
-        await khoaService.createKhoa(values);
-        message.success('Thêm khoa mới thành công');
-      }
-      setModalVisible(false);
-      fetchKhoas();
-    } catch (error) {
-      message.error(error.response?.data || 'Có lỗi xảy ra');
-    }
-  };
-
+  // Table columns configuration
   const columns = [
     {
       title: 'Mã khoa',
@@ -143,11 +153,11 @@ export const DanhSachKhoaComponents = () => {
       key: 'action',
       width: '20%',
       render: (_, record) => (
-        <Space size="middle">
+        <Space>
           <Button
             type="primary"
             icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
+            onClick={() => openModal(record)}
           >
             Sửa
           </Button>
@@ -164,15 +174,34 @@ export const DanhSachKhoaComponents = () => {
     },
   ];
 
+  // Form validation rules
+  const validationRules = {
+    maKhoa: [
+      { required: true, message: 'Vui lòng nhập mã khoa' },
+      { max: 50, message: 'Mã khoa không được vượt quá 50 ký tự' }
+    ],
+    tenKhoa: [
+      { required: true, message: 'Vui lòng nhập tên khoa' },
+      { max: 255, message: 'Tên khoa không được vượt quá 255 ký tự' }
+    ]
+  };
+
   return (
     <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Header */}
+      <div style={{ 
+        marginBottom: '16px', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center' 
+      }}>
         <Title level={2}>Quản lý Khoa</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
           Thêm Khoa Mới
         </Button>
       </div>
 
+      {/* Search */}
       <Search
         placeholder="Tìm kiếm theo mã hoặc tên khoa"
         onSearch={handleSearch}
@@ -183,6 +212,7 @@ export const DanhSachKhoaComponents = () => {
         style={{ marginBottom: '16px', width: 400 }}
       />
 
+      {/* Error Alert */}
       {error && (
         <Alert
           message="Lỗi"
@@ -193,6 +223,7 @@ export const DanhSachKhoaComponents = () => {
         />
       )}
 
+      {/* Data Table */}
       <Spin spinning={loading}>
         <Table
           columns={columns}
@@ -207,38 +238,22 @@ export const DanhSachKhoaComponents = () => {
         />
       </Spin>
 
+      {/* Modal Form */}
       <Modal
         title={editingMaKhoa ? 'Cập nhật Khoa' : 'Thêm Khoa Mới'}
         open={modalVisible}
-        onOk={handleModalOk}
-        onCancel={() => {
-          setModalVisible(false);
-          form.resetFields();
-        }}
+        onOk={handleSubmit}
+        onCancel={closeModal}
         destroyOnClose
         width={600}
       >
         <Form form={form} layout="vertical">
           {!editingMaKhoa && (
-            <Form.Item
-              name="maKhoa"
-              label="Mã khoa"
-              rules={[
-                { required: true, message: 'Vui lòng nhập mã khoa' },
-                { max: 50, message: 'Mã khoa không được vượt quá 50 ký tự' }
-              ]}
-            >
+            <Form.Item name="maKhoa" label="Mã khoa" rules={validationRules.maKhoa}>
               <Input />
             </Form.Item>
           )}
-          <Form.Item
-            name="tenKhoa"
-            label="Tên khoa"
-            rules={[
-              { required: true, message: 'Vui lòng nhập tên khoa' },
-              { max: 255, message: 'Tên khoa không được vượt quá 255 ký tự' }
-            ]}
-          >
+          <Form.Item name="tenKhoa" label="Tên khoa" rules={validationRules.tenKhoa}>
             <Input />
           </Form.Item>
         </Form>

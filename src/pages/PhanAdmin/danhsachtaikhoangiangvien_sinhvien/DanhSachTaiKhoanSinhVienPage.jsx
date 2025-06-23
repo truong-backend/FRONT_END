@@ -1,6 +1,6 @@
 import React from 'react';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout.jsx';
-import DanhSachTaiKhoanSinhVienComponents from '../../../components/PhanAdmin/taikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienComponents.jsx';
+import {DanhSachTaiKhoanSinhVienComponents} from '../../../components/PhanAdmin/taikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienComponents.jsx';
 
 export const DanhSachTaiKhoanSinhVienPage = () => {
   return (
