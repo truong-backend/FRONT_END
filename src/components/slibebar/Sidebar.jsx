@@ -40,7 +40,7 @@ const createScheduleMenu = () => ({
   shortTitle: 'TKB',
   icon: <CalendarDays size={20} />,
   subItems: [
-    { title: 'Quản lý thời khóa biểu', icon: <CalendarRange size={18} />, path: '/admin/schedule' },
+    // { title: 'Quản lý thời khóa biểu', icon: <CalendarRange size={18} />, path: '/admin/schedule' },
 
     { title: 'Quản lý Lich GD', icon: <Calendar size={18} />, path: '/admin/calendar' },
   ]

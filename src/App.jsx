@@ -19,7 +19,7 @@ import {DanhSachTaiKhoanSinhVienPage} from './pages/PhanAdmin/danhsachtaikhoangi
 import {DanhSachGiangVienPage} from './pages/PhanAdmin/danhsachgiangvien/DanhSachGiangVienPage';
 import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
 import {DanhsachlichhocPage} from './pages/PhanAdmin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
-import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage'; // Uncomment if you have a SchedulePage component
+// import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage';
 //đổi tên ProfileSinhVienPage && ProfileGiaoVien 
 import SinhVienProfilePage from './pages/PhanSinhVien/Profile/SinhVienProfilePage.jsx';
 import GiaoVienProfilePage from './pages/PhanGiaoVien/Profile/GiaoVienProfilePage.jsx';
@@ -324,14 +324,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/admin/schedule"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   < TkbPage/>
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path="/teacher/diemdanh"
               element={
