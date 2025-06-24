@@ -1,390 +1,442 @@
 import React, { useState, useEffect } from 'react';
 
 import {
-    Table,
-    Input,
-    Select,
-    message,
-    Modal,
-    Button,
-    Form,
-    DatePicker,
-    InputNumber,
+  Table,
+  Input,
+  Select,
+  message,
+  Modal,
+  Button,
+  Form,
+  DatePicker,
+  InputNumber,
 } from 'antd';
 import {
-    SearchOutlined,
-    PlusOutlined,
-    EditOutlined,
-    DeleteOutlined,
+  SearchOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
-import { lichHocService } from '../../../services/PhanAdmin/lichHocService';
-import { studentService } from '../../../services/PhanAdmin/studentService';
-import { LichGdService } from '../../../services/PhanAdmin/LichGdService';
 import moment from 'moment';
+import { LichGdService } from '../../../services/PhanAdmin/LichGdService';
+import { monHocService } from "../../../services/PhanAdmin/monHocService.js";
+import { teacherService } from "../../../services/PhanAdmin/teacherService.js"
 
 const { Option } = Select;
 
 export const DanhsachlichhocComponents = () => {
-    const [fullData, setFullData] = useState([]);
-    const [filteredData, setFilteredData] = useState([]);
-    const [displayData, setDisplayData] = useState([]);
-    const [loading, setLoading] = useState(false);
+  const [data, setData] = useState([]);
+  const [monHocList, setMonHocList] = useState([]);
+  const [teacherList, setTeacherList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [form] = Form.useForm();
 
-    const [searchText, setSearchText] = useState('');
-    const [selectedHocKy, setSelectedHocKy] = useState('');
-    const [selectedGiangVien, setSelectedGiangVien] = useState('');
-
-    const [pagination, setPagination] = useState({
-        current: 1,
-        pageSize: 10,
-        total: 0,
-    });
-
-    const [hocKyOptions, setHocKyOptions] = useState([]);
-    const [giangVienOptions, setGiangVienOptions] = useState([]);
-
-    // Modal state
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalLoading, setModalLoading] = useState(false);
-    const [editingRecord, setEditingRecord] = useState(null);
-
-    // Form instance
-    const [form] = Form.useForm();
-
-    const [sinhVienOptions, setSinhVienOptions] = useState([]);
-    const [lichGdOptions, setLichGdOptions] = useState([]);  // State danh sách giảng dạy
-
-    useEffect(() => {
-        // Load danh sách sinh viên
-        const fetchStudents = async () => {
-            try {
-                const res = await studentService.getAllStudentsNoPagination();
-                setSinhVienOptions(res || []);
-            } catch (error) {
-                message.error('Không thể tải danh sách sinh viên');
-            }
-        };
-
-        // Load danh sách giảng dạy
-        const fetchLichGd = async () => {
-            try {
-                const res = await LichGdService.getAllLichGdNoPaging();
-                setLichGdOptions(res || []);
-            } catch (error) {
-                message.error('Không thể tải danh sách giảng dạy');
-            }
-        };
-        fetchLichGd();
-        fetchStudents();
-    }, []);
-
-    // Lấy dữ liệu lịch học từ API
-    const fetchSchedules = async () => {
-        try {
-            setLoading(true);
-            const res = await lichHocService.getAllLichHoc();
-            const all = res || [];
-            setFullData(all);
-
-            // Lấy danh sách học kỳ và giảng viên duy nhất để lọc
-            const hocKySet = new Set(all.map((item) => item.hocKy));
-            const gvSet = new Set(all.map((item) => item.tenGv));
-
-            setHocKyOptions([...hocKySet].filter(Boolean));
-            setGiangVienOptions([...gvSet].filter(Boolean));
-
-            setFilteredData(all);
-            setPagination((prev) => ({
-                ...prev,
-                total: all.length,
-                current: 1,
-            }));
-            setDisplayData(all.slice(0, pagination.pageSize));
-        } catch (error) {
-            message.error('Lỗi khi tải danh sách lịch học');
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchSchedules();
-    }, []);
-
-    // Lọc dữ liệu khi thay đổi tìm kiếm hoặc bộ lọc
-    useEffect(() => {
-        const search = searchText.trim().toLowerCase();
-        const filtered = fullData.filter((item) => {
-            const matchSearch =
-                item.maSv?.toLowerCase().includes(search) ||
-                item.tenSv?.toLowerCase().includes(search) ||
-                item.maMh?.toLowerCase().includes(search) ||
-                item.tenMh?.toLowerCase().includes(search);
-
-            const matchHocKy = selectedHocKy ? item.hocKy === selectedHocKy : true;
-            const matchGiangVien = selectedGiangVien
-                ? item.tenGv === selectedGiangVien
-                : true;
-
-            return matchSearch && matchHocKy && matchGiangVien;
-        });
-
-        setFilteredData(filtered);
-        setPagination((prev) => ({
-            ...prev,
-            current: 1,
-            total: filtered.length,
-        }));
-        setDisplayData(filtered.slice(0, pagination.pageSize));
-    }, [searchText, selectedHocKy, selectedGiangVien, fullData]);
-
-    // Xử lý phân trang
-    const handleTableChange = (paginationInfo) => {
-        const { current, pageSize } = paginationInfo;
-        const startIdx = (current - 1) * pageSize;
-        const endIdx = startIdx + pageSize;
-
-        setPagination({
-            ...paginationInfo,
-            total: filteredData.length,
-        });
-        setDisplayData(filteredData.slice(startIdx, endIdx));
-    };
-
-    // Mở modal thêm mới
-    const openAddModal = () => {
-        setEditingRecord(null);
-        form.resetFields();
-        setModalVisible(true);
-    };
-
-    // Mở modal chỉnh sửa
-    const openEditModal = (record) => {
-        setEditingRecord(record);
-        form.setFieldsValue({
-            ...record,
-            ngayBd: moment(record.ngayBd),
-            ngayKt: moment(record.ngayKt),
-        });
-        setModalVisible(true);
-    };
-
-    // Xử lý lưu thêm/sửa
-    const handleModalOk = async () => {
-        try {
-            const values = await form.validateFields();
-
-            const payload = {
-                ...values,
-
-            };
-
-            setModalLoading(true);
-            if (editingRecord) {
-                // Update
-                await lichHocService.updateLichHoc(
-                    editingRecord.maSv,
-                    editingRecord.maGd,
-                    payload
-                );
-                message.success('Cập nhật lịch học thành công');
-            } else {
-                message.success('Thêm lịch học thành công');
-            }
-
-            setModalVisible(false);
-            fetchSchedules();
-        } catch (error) {
-            if (error.errorFields) {
-                // Validation error, không hiện thông báo lỗi
-                return;
-            }
-            message.error('Lỗi khi lưu lịch học');
-            console.error(error);
-        } finally {
-            setModalLoading(false);
-        }
-    };
-
-    // Xóa bản ghi
-    const handleDelete = (record) => {
-        Modal.confirm({
-            title: 'Xác nhận xóa',
-            content: `Bạn có chắc muốn xóa lịch học của sinh viên ${record.tenSv} - môn ${record.tenMh}?`,
-            okText: 'Xóa',
-            okType: 'danger',
-            cancelText: 'Hủy',
-            onOk: async () => {
-                try {
-                    setLoading(true);
-                    await lichHocService.deleteLichHoc(record.maSv, record.maGd);
-                    message.success('Xóa lịch học thành công');
-                    fetchSchedules();
-                } catch (error) {
-                    message.error('Lỗi khi xóa lịch học');
-                    console.error(error);
-                } finally {
-                    setLoading(false);
-                }
-            },
-        });
-    };
-
-    // Định nghĩa cột bảng
-    const columns = [
-        { title: 'Mã SV', dataIndex: 'maSv', width: 100 },
-        { title: 'Họ và tên', dataIndex: 'tenSv', width: 180 },
-        { title: 'Mã MH', dataIndex: 'maMh', width: 100 },
-        { title: 'Tên môn học', dataIndex: 'tenMh', width: 180 },
-        { title: 'Giảng viên', dataIndex: 'tenGv', width: 150 },
-        { title: 'Phòng học', dataIndex: 'phongHoc', width: 100 },
-        {
-            title: 'Ngày bắt đầu',
-            dataIndex: 'ngayBd',
-            width: 120,
-            render: (date) => moment(date).format('DD/MM/YYYY'),
-        },
-        {
-            title: 'Ngày kết thúc',
-            dataIndex: 'ngayKt',
-            width: 120,
-            render: (date) => moment(date).format('DD/MM/YYYY'),
-        },
-        {
-            title: 'Tiết học',
-            width: 100,
-            render: (_, record) => `${record.stBd} - ${record.stKt}`,
-        },
-        { title: 'Học kỳ', dataIndex: 'hocKy', width: 80 },
-        {
-            title: 'Hành động',
-            width: 120,
-            render: (_, record) => (
-                <div className="flex gap-2">
-                    {/* <Button icon={<EditOutlined />} onClick={() => openEditModal(record)} /> */}
-                    <Button icon={<DeleteOutlined />} danger onClick={() => handleDelete(record)} />
-                </div>
-            ),
-        },
-    ];
-
-    return (
-        <div className="p-6">
-            <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <h2 className="text-2xl font-semibold">Danh sách Lịch học</h2>
-                <div className="flex flex-wrap gap-2">
-                    <Input
-                        prefix={<SearchOutlined />}
-                        placeholder="Tìm kiếm SV, môn học..."
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                        style={{ width: 240 }}
-                        allowClear
-                    />
-                    <Select
-                        placeholder="Chọn học kỳ"
-                        value={selectedHocKy || undefined}
-                        onChange={setSelectedHocKy}
-                        allowClear
-                        style={{ width: 150 }}
-                    >
-                        {hocKyOptions.map((hk) => (
-                            <Option key={hk} value={hk}>
-                                {hk}
-                            </Option>
-                        ))}
-                    </Select>
-                    <Select
-                        placeholder="Chọn giảng viên"
-                        value={selectedGiangVien || undefined}
-                        onChange={setSelectedGiangVien}
-                        allowClear
-                        style={{ width: 180 }}
-                        showSearch
-                        optionFilterProp="children"
-                    >
-                        {giangVienOptions.map((gv) => (
-                            <Option key={gv} value={gv}>
-                                {gv}
-                            </Option>
-                        ))}
-                    </Select>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-                        Thêm mới
-                    </Button>
-                </div>
-            </div>
-
-            <Table
-                columns={columns}
-                dataSource={displayData}
-                loading={loading}
-                pagination={pagination}
-                onChange={handleTableChange}
-                rowKey={(record) => `${record.maSv}-${record.maGd}`}
-                scroll={{ x: 1200 }}
-            />
-
-            <Modal
-                title={editingRecord ? 'Chỉnh sửa Lịch học' : 'Thêm mới Lịch học'}
-                visible={modalVisible}
-                onOk={handleModalOk}
-                confirmLoading={modalLoading}
-                onCancel={() => setModalVisible(false)}
-                destroyOnClose
-                width={700}
-            >
-                <Form form={form} layout="vertical" preserve={false}>
-                    <Form.Item
-                        label="Sinh viên"
-                        name="maSv"
-                        rules={[{ required: true, message: 'Vui lòng chọn sinh viên' }]}
-                    >
-                        <Select
-                            showSearch
-                            placeholder="Chọn sinh viên"
-                            optionFilterProp="children"
-                            filterOption={(input, option) =>
-                                option?.children?.toLowerCase().includes(input.toLowerCase())
-                            }
-                            disabled={!!editingRecord} // Khóa không cho đổi sinh viên khi chỉnh sửa
-                        >
-                            {sinhVienOptions.map((sv) => (
-                                <Option key={sv.maSv} value={sv.maSv}>
-                                    {`${sv.maSv} - ${sv.tenSv}`}
-                                </Option>
-                            ))}
-
-                        </Select>
-                    </Form.Item>
-
-                    <Form.Item
-                        label="Mã giảng dạy"
-                        name="maGd"
-                        rules={[{ required: true, message: 'Vui lòng chọn mã giảng dạy' }]}
-                    >
-                        <Select
-                            showSearch
-                            placeholder="Chọn mã giảng dạy"
-                            optionFilterProp="children"
-                            filterOption={(input, option) =>
-                                option?.children?.toLowerCase().includes(input.toLowerCase())
-                            }
-                            disabled={!!editingRecord} // Khóa không cho đổi khi chỉnh sửa
-                        >
-                            {lichGdOptions.map((item) => (
-                                <Option key={item.id} value={item.id}>
-                                    {item.maMh} - {item.tenMh} | GV: {item.tenGv} ({item.maGv})
-                                </Option>
-                            ))}
-
-                        </Select>
-                    </Form.Item>
+  const fetchLichGdList = async () => {
+    setLoading(true);
+    try {
+      const result = await LichGdService.getAllLichGdNoPaging();
+      setData(result);
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchMonHocList = async () => {
+    try {
+      const response = await monHocService.getAllMonHocs();
+      setMonHocList(response || []);
+    } catch (error) {
+      message.error('Lỗi khi tải danh sách môn học: ' + error.message);
+    }
+  };
+  const fetchTeacherList = async () => {
+    try {
+      const response = await teacherService.getListGiaoVien();
+      setTeacherList(response || []);
+    } catch (error) {
+      message.error('Lỗi khi tải danh sách giáo viên: ' + error.message);
+    }
+  };
+  useEffect(() => {
+    fetchTeacherList();
+    fetchMonHocList();
+    fetchLichGdList();
+  }, []);
 
 
-                </Form>
-            </Modal>
-        </div>
+  // Tìm kiếm theo tên giáo viên hoặc tên môn học
+  const handleSearch = (e) => {
+    const value = e.target.value.toLowerCase();
+    setSearchText(value);
+    const filtered = data.filter(
+      (item) =>
+        item.tenGv.toLowerCase().includes(value) ||
+        item.tenMh.toLowerCase().includes(value)
     );
+    setData(filtered);
+  };
+
+  // Mở modal tạo mới hoặc sửa
+  const openModal = (record) => {
+    setEditingRecord(record || null);
+    if (record) {
+      form.setFieldsValue({
+        ...record,
+        ngayBd: moment(record.ngayBd),
+        ngayKt: moment(record.ngayKt),
+        cacBuoiHoc: record.cacBuoiHoc,
+      });
+    } else {
+      form.resetFields();
+    }
+    setModalVisible(true);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await LichGdService.deleteLichGd(id);
+      message.success('✅ Xóa lịch giảng dạy thành công!');
+      fetchLichGdList(); // Cập nhật lại danh sách
+    } catch (error) {
+      // Lấy thông báo lỗi trả về từ BE (nếu có)
+      const errorMsg =
+        error.response?.data || error.message || 'Đã xảy ra lỗi khi xóa!';
+      message.error(`❌ ${errorMsg}`);
+    }
+  };
+
+
+  // Lưu tạo hoặc sửa
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+
+      const newRecord = {
+        ...values,
+        ngayBd: values.ngayBd.format('YYYY-MM-DD'),
+        ngayKt: values.ngayKt.format('YYYY-MM-DD'),
+      };
+
+      if (editingRecord) {
+        // Gọi API cập nhật
+        await LichGdService.updateLichGd(editingRecord.id, newRecord);
+        message.success('✅ Cập nhật thành công');
+      } else {
+        // Gọi API tạo mới
+        await LichGdService.createLichGd(newRecord);
+        message.success('✅ Tạo mới thành công');
+      }
+
+      setModalVisible(false);
+      setEditingRecord(null);
+      form.resetFields();
+      fetchLichGdList(); // Cập nhật lại danh sách từ backend
+    } catch (error) {
+      message.error(`❌ ${error.message}`);
+    }
+  };
+
+  const handleMonHocChange = (value) => {
+    const selectedMonHoc = monHocList.find((mh) => mh.maMh === value);
+    if (selectedMonHoc) {
+      form.setFieldsValue({ tenMh: selectedMonHoc.tenMh });
+    }
+  };
+  const handleGiaoVienChange = (value) => {
+    const selectedGiaoVien = teacherList.find((gv) => gv.maGv === value);
+    if (selectedGiaoVien) {
+      form.setFieldsValue({ tenGv: selectedGiaoVien.tenGv });
+    }
+  };
+
+  const columns = [
+    {
+      title: 'Mã GV',
+      dataIndex: 'maGv',
+      key: 'maGv',
+      width: 100,
+    },
+    {
+      title: 'Tên GV',
+      dataIndex: 'tenGv',
+      key: 'tenGv',
+      width: 150,
+    },
+    {
+      title: 'Mã MH',
+      dataIndex: 'maMh',
+      key: 'maMh',
+      width: 100,
+    },
+    {
+      title: 'Tên MH',
+      dataIndex: 'tenMh',
+      key: 'tenMh',
+      width: 150,
+    },
+    {
+      title: 'Số tiết MH',
+      dataIndex: 'nmh',
+      key: 'nmh',
+      width: 90,
+    },
+    {
+      title: 'Phòng học',
+      dataIndex: 'phongHoc',
+      key: 'phongHoc',
+      width: 100,
+    },
+    {
+      title: 'Ngày bắt đầu',
+      dataIndex: 'ngayBd',
+      key: 'ngayBd',
+      width: 120,
+      render: (text) => moment(text).format('DD/MM/YYYY'),
+    },
+    {
+      title: 'Ngày kết thúc',
+      dataIndex: 'ngayKt',
+      key: 'ngayKt',
+      width: 120,
+      render: (text) => moment(text).format('DD/MM/YYYY'),
+    },
+    {
+      title: 'Tiết bắt đầu',
+      dataIndex: 'stBd',
+      key: 'stBd',
+      width: 90,
+    },
+    {
+      title: 'Tiết kết thúc',
+      dataIndex: 'stKt',
+      key: 'stKt',
+      width: 90,
+    },
+    {
+      title: 'Học kỳ',
+      dataIndex: 'hocKy',
+      key: 'hocKy',
+      width: 80,
+    },
+
+    {
+      title: 'Hành động',
+      key: 'action',
+      width: 130,
+      fixed: 'right',
+      render: (_, record) => (
+        <>
+          <Button
+            icon={<EditOutlined />}
+            type="primary"
+            size="small"
+            onClick={() => openModal(record)}
+            style={{ marginRight: 8 }}
+          />
+          <Button
+            icon={<DeleteOutlined />}
+            type="danger"
+            size="small"
+            onClick={() => handleDelete(record.id)}
+
+          />
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <h2>Danh sách lịch giảng dạy</h2>
+
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+        <Input
+          placeholder="Tìm kiếm theo tên GV hoặc tên MH"
+          prefix={<SearchOutlined />}
+          value={searchText}
+          onChange={handleSearch}
+          style={{ width: 300 }}
+          allowClear
+        />
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => openModal(null)}
+        >
+          Thêm lịch Giảng dạy
+        </Button>
+      </div>
+
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={data}
+        loading={loading}
+        scroll={{ x: 1300 }}
+        pagination={{ pageSize: 5 }}
+      />
+
+      <Modal
+        title={editingRecord ? 'Sửa lịch Giảng dạy' : 'Thêm lịch Giảng dạy'}
+        visible={modalVisible}
+        onOk={handleSave}
+        onCancel={() => {
+          setModalVisible(false);
+          setEditingRecord(null);
+          form.resetFields();
+        }}
+        okText="Lưu"
+        cancelText="Hủy"
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ hocKy: 1, nmh: 1, stBd: 1, stKt: 1 }}
+        >
+          <Form.Item
+            label="Giáo viên"
+            name="maGv"
+            rules={[{ required: true, message: 'Vui lòng nhập mã giáo viên' }]}
+          >
+            <Select placeholder="Chọn giáo viên" onChange={handleGiaoVienChange}>
+              {teacherList.map(teacher => (
+                <Option key={teacher.maGv} value={teacher.maGv}>{teacher.maGv} - {teacher.tenGv}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Tên giáo viên"
+            name="tenGv"
+            rules={[{ required: true, message: 'Vui lòng nhập tên giáo viên' }]}
+            hidden
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Môn học"
+            name="maMh"
+            rules={[{ required: true, message: 'Vui lòng chọn môn học' }]}
+          >
+            <Select placeholder="Chọn môn học" onChange={handleMonHocChange}>
+              {monHocList.map(mh => (
+                <Option key={mh.maMh} value={mh.maMh}>
+                  {mh.maMh} - {mh.tenMh}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+
+          <Form.Item
+            label="Tên môn học"
+            name="tenMh"
+            rules={[{ required: true, message: 'Vui lòng nhập tên môn học' }]}
+            hidden
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Số tiết môn học"
+            name="nmh"
+            rules={[
+              { required: true, type: 'number', min: 1, message: 'Số tiết phải lớn hơn 0' },
+            ]}
+          >
+            <InputNumber min={1} />
+          </Form.Item>
+
+          <Form.Item
+            label="Phòng học"
+            name="phongHoc"
+            rules={[{ required: true, message: 'Vui lòng nhập phòng học' }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Ngày bắt đầu"
+            name="ngayBd"
+            rules={[{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }]}
+          >
+            <DatePicker format="DD/MM/YYYY" />
+          </Form.Item>
+
+          <Form.Item
+            label="Ngày kết thúc"
+            name="ngayKt"
+            rules={[{ required: true, message: 'Vui lòng chọn ngày kết thúc' }]}
+          >
+            <DatePicker format="DD/MM/YYYY" />
+          </Form.Item>
+
+          <Form.Item
+            label="Tiết bắt đầu"
+            name="stBd"
+            rules={[
+              { required: true, type: 'number', min: 1, message: 'Tiết bắt đầu >=1' },
+            ]}
+          >
+            <InputNumber min={1} max={20} />
+          </Form.Item>
+
+          <Form.Item
+            label="Tiết kết thúc"
+            name="stKt"
+            rules={[
+              { required: true, type: 'number', min: 1, message: 'Tiết kết thúc >=1' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('stBd') <= value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error('Tiết kết thúc phải lớn hơn hoặc bằng tiết bắt đầu')
+                  );
+                },
+              }),
+            ]}
+          >
+            <InputNumber min={1} max={20} />
+          </Form.Item>
+
+          <Form.Item
+            label="Học kỳ"
+            name="hocKy"
+            rules={[
+              { required: true, message: 'Vui lòng chọn học kỳ' },
+            ]}
+          >
+            <Select>
+              <Option value={1}>Học kỳ 1</Option>
+              <Option value={2}>Học kỳ 2</Option>
+              <Option value={3}>Học kỳ 3</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Thứ trong tuần"
+            name="cacBuoiHoc"
+            rules={[{ required: true, message: 'Vui lòng nhập các buổi học' }]}
+          >
+            <Select mode="multiple">
+              <Option value={1}>Thứ 2</Option>
+              <Option value={2}>Thứ 3</Option>
+              <Option value={3}>Thứ 4</Option>
+              <Option value={4}>Thứ 5</Option>
+              <Option value={5}>Thứ 6</Option>
+              <Option value={6}>Thứ 7</Option>
+              <Option value={7}>Chủ nhật</Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
 };
