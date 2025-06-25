@@ -20,7 +20,7 @@ const { Text, Title } = Typography;
 
 export const GenerateQRCodeComponents = () => {
   const { user, isAuthenticated } = useAuth();
-  
+
   // Form state
   const [hocKyList, setHocKyList] = useState([]);
   const [selectedHocKy, setSelectedHocKy] = useState(null);
@@ -30,18 +30,18 @@ export const GenerateQRCodeComponents = () => {
   const [selectedNhom, setSelectedNhom] = useState(null);
   const [ngayList, setNgayList] = useState([]);
   const [selectedNgay, setSelectedNgay] = useState(null);
-  
+
   // Mode and data
   const [mode, setMode] = useState('thuCong');
   const [danhSachSinhVien, setDanhSachSinhVien] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [thoiGianHetHan, setThoiGianHetHan] = useState(5);
-  
+
   // QR Code state
   const [qrCodeData, setQrCodeData] = useState(null);
   const [qrCodeExpired, setQrCodeExpired] = useState(false);
   const [remainingTime, setRemainingTime] = useState(null);
-  
+
   // Loading states
   const [loading, setLoading] = useState({
     hocKy: false,
@@ -86,7 +86,7 @@ export const GenerateQRCodeComponents = () => {
       const now = moment();
       const expireTime = moment(qrCodeData.thoiGianKt);
       const duration = moment.duration(expireTime.diff(now));
-      
+
       if (duration.asSeconds() <= 0) {
         setQrCodeExpired(true);
         setRemainingTime('Đã hết hạn');
@@ -94,12 +94,12 @@ export const GenerateQRCodeComponents = () => {
         message.warning('QR Code đã hết hạn!');
         return;
       }
-      
+
       const totalSeconds = Math.floor(duration.asSeconds());
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
       setRemainingTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-      
+
       // Warning notifications
       if (totalSeconds === 60) message.warning('QR Code sẽ hết hạn trong 1 phút!');
       else if (totalSeconds === 30) message.warning('QR Code sẽ hết hạn trong 30 giây!');
@@ -149,7 +149,7 @@ export const GenerateQRCodeComponents = () => {
 
     const selectedMonHocData = monHocList.find(mh => mh.maMh === value);
     const selectedHocKyData = hocKyList.find(hk => hk.hocKy === selectedHocKy);
-    
+
     if (!selectedMonHocData || !selectedHocKyData) return;
 
     setSelectedMonHoc(value);
@@ -225,7 +225,7 @@ export const GenerateQRCodeComponents = () => {
 
     setLoading(prev => ({ ...prev, diemDanh: true }));
     try {
-      const promises = selectedStudents.map(maSv => 
+      const promises = selectedStudents.map(maSv =>
         markAttendanceManual({
           maTkb: selectedNgayData.maTkb,
           maSv: maSv,
@@ -253,7 +253,7 @@ export const GenerateQRCodeComponents = () => {
     const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
     if (!selectedNgayData) return;
 
-    const attendedStudents = selectedStudents.filter(maSv => 
+    const attendedStudents = selectedStudents.filter(maSv =>
       danhSachSinhVien.find(sv => sv.maSv === maSv)?.trangThaiDiemDanh === 'Đã điểm danh'
     );
 
@@ -264,9 +264,9 @@ export const GenerateQRCodeComponents = () => {
 
     setLoading(prev => ({ ...prev, xoaDiemDanhThuCong: true }));
     try {
-const promises = attendedStudents.map(maSv => 
-  xoaDiemDanhThuCong(maSv, selectedNgayData.maTkb, selectedNgayData.ngayHoc)
-);
+      const promises = attendedStudents.map(maSv =>
+        xoaDiemDanhThuCong(maSv, selectedNgayData.maTkb, selectedNgayData.ngayHoc)
+      );
 
 
       await Promise.all(promises);
@@ -357,13 +357,13 @@ const promises = attendedStudents.map(maSv =>
   };
 
   const getUnattendedCount = () => {
-    return selectedStudents.filter(maSv => 
+    return selectedStudents.filter(maSv =>
       danhSachSinhVien.find(sv => sv.maSv === maSv)?.trangThaiDiemDanh !== 'Đã điểm danh'
     ).length;
   };
 
   const getAttendedCount = () => {
-    return selectedStudents.filter(maSv => 
+    return selectedStudents.filter(maSv =>
       danhSachSinhVien.find(sv => sv.maSv === maSv)?.trangThaiDiemDanh === 'Đã điểm danh'
     ).length;
   };
@@ -399,12 +399,12 @@ const promises = attendedStudents.map(maSv =>
     { title: 'Họ tên', dataIndex: 'tenSv' },
     { title: 'Lớp', dataIndex: 'tenLop', width: 100 },
     { title: 'Khoa', dataIndex: 'tenKhoa', width: 150 },
-    { 
-      title: 'Trạng thái', 
+    {
+      title: 'Trạng thái',
       dataIndex: 'trangThaiDiemDanh',
       width: 120,
       render: (status) => (
-        <span style={{ 
+        <span style={{
           color: status === 'Đã điểm danh' ? 'green' : 'orange',
           fontWeight: 'bold'
         }}>
@@ -426,11 +426,11 @@ const promises = attendedStudents.map(maSv =>
   return (
     <Spin spinning={Object.values(loading).some(Boolean)}>
       <Form layout="vertical" style={{ maxWidth: 1000, margin: '0 auto', padding: '20px' }}>
-        
+
         {/* Form Controls */}
         <Form.Item label="Chọn học kỳ">
-          <Select 
-            onChange={handleHocKyChange} 
+          <Select
+            onChange={handleHocKyChange}
             placeholder="Chọn học kỳ"
             loading={loading.hocKy}
           >
@@ -443,9 +443,9 @@ const promises = attendedStudents.map(maSv =>
         </Form.Item>
 
         <Form.Item label="Chọn môn học">
-          <Select 
-            onChange={handleMonHocChange} 
-            value={selectedMonHoc} 
+          <Select
+            onChange={handleMonHocChange}
+            value={selectedMonHoc}
             placeholder="Chọn môn học"
             loading={loading.monHoc}
             disabled={!selectedHocKy}
@@ -459,9 +459,9 @@ const promises = attendedStudents.map(maSv =>
         </Form.Item>
 
         <Form.Item label="Chọn nhóm học">
-          <Select 
-            onChange={handleNhomChange} 
-            value={selectedNhom} 
+          <Select
+            onChange={handleNhomChange}
+            value={selectedNhom}
             placeholder="Chọn nhóm"
             loading={loading.nhom}
             disabled={!selectedMonHoc}
@@ -475,9 +475,9 @@ const promises = attendedStudents.map(maSv =>
         </Form.Item>
 
         <Form.Item label="Chọn ngày giảng dạy">
-          <Select 
-            onChange={handleNgayChange} 
-            value={selectedNgay} 
+          <Select
+            onChange={handleNgayChange}
+            value={selectedNgay}
             placeholder="Chọn ngày"
             loading={loading.ngayGiangDay}
             disabled={!selectedNhom}
@@ -501,15 +501,15 @@ const promises = attendedStudents.map(maSv =>
         {mode === 'thuCong' && danhSachSinhVien.length > 0 && (
           <>
             <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 onClick={handleDiemDanhThuCong}
                 loading={loading.diemDanh}
                 disabled={getUnattendedCount() === 0}
               >
                 Điểm danh ({getUnattendedCount()})
               </Button>
-              
+
               <Popconfirm
                 title={`Bạn có chắc muốn xóa điểm danh của ${getAttendedCount()} sinh viên đã chọn?`}
                 onConfirm={handleDeleteMultipleAttendance}
@@ -527,7 +527,7 @@ const promises = attendedStudents.map(maSv =>
                 </Button>
               </Popconfirm>
             </div>
-            
+
             <Table
               dataSource={danhSachSinhVien}
               columns={studentColumns}
@@ -554,8 +554,8 @@ const promises = attendedStudents.map(maSv =>
             </Form.Item>
 
             <Form.Item>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 icon={<QrcodeOutlined />}
                 onClick={handleTaoQR}
                 loading={loading.taoQR}
@@ -586,8 +586,8 @@ const promises = attendedStudents.map(maSv =>
                     <Text strong>Hết hạn:</Text> {moment(qrCodeData.thoiGianKt).format('DD/MM/YYYY HH:mm:ss')}
                   </div>
                   <div>
-                    <Text strong>Còn lại:</Text> 
-                    <span style={{ 
+                    <Text strong>Còn lại:</Text>
+                    <span style={{
                       color: qrCodeExpired ? 'red' : 'green',
                       fontWeight: 'bold'
                     }}>
@@ -595,13 +595,13 @@ const promises = attendedStudents.map(maSv =>
                     </span>
                   </div>
                 </div>
-                
+
                 <Divider />
-                
+
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ 
-                    padding: 20, 
-                    border: qrCodeExpired ? '2px dashed #ff4d4f' : '2px dashed #1890ff', 
+                  <div style={{
+                    padding: 20,
+                    border: qrCodeExpired ? '2px dashed #ff4d4f' : '2px dashed #1890ff',
                     borderRadius: 8,
                     display: 'inline-block',
                     position: 'relative'
@@ -631,9 +631,9 @@ const promises = attendedStudents.map(maSv =>
                       </div>
                     )}
                   </div>
-                  
+
                   <div style={{ marginTop: 16 }}>
-                    <Button 
+                    <Button
                       icon={<CopyOutlined />}
                       onClick={copyQRData}
                       disabled={qrCodeExpired}
