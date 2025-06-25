@@ -42,7 +42,6 @@ export const GenerateQRCodeComponents = () => {
   const [qrCodeExpired, setQrCodeExpired] = useState(false);
   const [remainingTime, setRemainingTime] = useState(null); // State riêng cho thời gian còn lại
 
-
   // State cho loading
   const [loading, setLoading] = useState({
     hocKy: false,
@@ -73,6 +72,19 @@ export const GenerateQRCodeComponents = () => {
     // Load danh sách học kỳ khi có đầy đủ thông tin
     loadHocKyList();
   }, [isAuthenticated, maGv]);
+
+  // Effect để tự động load danh sách sinh viên khi chọn ngày giảng dạy
+  useEffect(() => {
+    if (mode === 'thuCong' && selectedNgay) {
+      const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
+      if (selectedNgayData) {
+        handleThuCong();
+      }
+    } else {
+      setDanhSachSinhVien([]);
+      setSelectedStudents([]);
+    }
+  }, [selectedNgay, mode, ngayList]);
 
   // Effect để theo dõi thời gian hết hạn QR Code
   useEffect(() => {
@@ -141,7 +153,6 @@ export const GenerateQRCodeComponents = () => {
       if (interval) clearInterval(interval);
     };
   }, [qrCodeData, qrCodeExpired]);
-
 
   const loadHocKyList = async () => {
     setLoading(prev => ({ ...prev, hocKy: true }));
@@ -558,39 +569,26 @@ export const GenerateQRCodeComponents = () => {
           </Radio.Group>
         </Form.Item>
 
-        {mode === 'thuCong' && (
+        {mode === 'thuCong' && danhSachSinhVien.length > 0 && (
           <>
             <div style={{ marginBottom: 16 }}>
               <Button 
                 type="primary" 
-                onClick={handleThuCong}
-                loading={loading.sinhVien}
-                disabled={!selectedNgay}
+                onClick={handleDiemDanhThuCong}
+                loading={loading.diemDanh}
+                disabled={selectedStudents.length === 0}
               >
-                Hiển thị danh sách sinh viên
+                Điểm danh ({selectedStudents.length})
               </Button>
-              {danhSachSinhVien.length > 0 && (
-                <Button 
-                  type="primary" 
-                  onClick={handleDiemDanhThuCong}
-                  loading={loading.diemDanh}
-                  disabled={selectedStudents.length === 0}
-                  style={{ marginLeft: 8 }}
-                >
-                  Điểm danh ({selectedStudents.length})
-                </Button>
-              )}
             </div>
             
-            {danhSachSinhVien.length > 0 && (
-              <Table
-                dataSource={danhSachSinhVien}
-                columns={studentColumns}
-                rowKey="maSv"
-                pagination={{ pageSize: 10 }}
-                scroll={{ x: 800 }}
-              />
-            )}
+            <Table
+              dataSource={danhSachSinhVien}
+              columns={studentColumns}
+              rowKey="maSv"
+              pagination={{ pageSize: 10 }}
+              scroll={{ x: 800 }}
+            />
           </>
         )}
 
@@ -743,7 +741,7 @@ export const GenerateQRCodeComponents = () => {
                       disabled={qrCodeExpired}
                     >
                       Sao chép dữ liệu QR
-                    </Button>
+                    </Button> 
                   </div>
                   <div style={{ marginTop: 8, color: '#666' }}>
                     <small>

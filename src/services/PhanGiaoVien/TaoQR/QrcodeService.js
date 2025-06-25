@@ -93,6 +93,15 @@ export const markAttendanceManual = async (diemDanhData) => {
   }
 };
 
+export const xoaDiemDanhThuCong = async (id) => {
+  try {
+    const response = await api.post(`/diemdanh/`, { id });
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi xóa điểm danh thủ công:', error);
+    throw error;
+  }
+};
 // 7. Tạo QR Code mới
 export const createQRCode = async (maTkb, soPhut) => {
   if (soPhut == null || isNaN(soPhut)) {
