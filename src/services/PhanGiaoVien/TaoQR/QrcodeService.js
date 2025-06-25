@@ -2,15 +2,16 @@ import api from "../../api.js";
 
 
 // 1. Lấy danh sách học kỳ
-export const fetchHocKyList = async () => {
+export const fetchHocKyList = async (maGv) => {
   try {
-    const response = await api.get(`/lichgd/hoc-ky`);
+    const response = await api.get(`/lichgd/hoc-ky/${maGv}`);
     return response.data;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách học kỳ:', error);
     throw error;
   }
 };
+
 
 // 2. Lấy danh sách môn học theo giảng viên
 export const fetchMonHocByGiaoVien = async (maGv, hocKy, namHoc) => {

@@ -56,14 +56,15 @@ export const GenerateQRCodeComponents = () => {
 
   const maGv = user?.maGv || user?.id || user?.username;
 
-  // Initialize data
   useEffect(() => {
     if (!isAuthenticated || !maGv) {
       message.error('Vui lòng đăng nhập để sử dụng chức năng này');
       return;
     }
-    loadHocKyList();
+    console.log('Gọi API học kỳ với maGv:', maGv); // 👈 Thêm log
+    loadHocKyList(maGv);
   }, [isAuthenticated, maGv]);
+
 
   // Load students when date is selected in manual mode
   useEffect(() => {
@@ -111,18 +112,21 @@ export const GenerateQRCodeComponents = () => {
     return () => clearInterval(interval);
   }, [qrCodeData, qrCodeExpired]);
 
-  // API Functions
-  const loadHocKyList = async () => {
+  const loadHocKyList = async (maGv) => {
     setLoading(prev => ({ ...prev, hocKy: true }));
     try {
-      const data = await fetchHocKyList();
+      const data = await fetchHocKyList(maGv);
+      console.log('Danh sách học kỳ:', data); // 👈 THÊM DÒNG NÀY
       setHocKyList(data);
     } catch (error) {
+      console.error('Lỗi tải học kỳ:', error); // 👈 THÊM LOG
       message.error('Không thể tải danh sách học kỳ');
     } finally {
       setLoading(prev => ({ ...prev, hocKy: false }));
     }
   };
+
+
 
   const handleHocKyChange = async (value) => {
     if (!maGv) return;
@@ -431,7 +435,7 @@ export const GenerateQRCodeComponents = () => {
         <Form.Item label="Chọn học kỳ">
           <Select
             onChange={handleHocKyChange}
-            placeholder="Chọn học kỳ"
+            placeholder="Chọn học kỳ  "
             loading={loading.hocKy}
           >
             {hocKyList.map((hk) => (
