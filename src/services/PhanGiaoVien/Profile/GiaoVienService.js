@@ -20,4 +20,15 @@ export const GiaoVienService = {
             return null;
         }
     },
+
+     diemdanhQRSinhVien : async(studentInfo) =>{
+        try {
+            const res = await api.post('/giao-vien/diemdanhnguoc',studentInfo);
+            console.log('res data',res.data);
+            return res.data;
+        } catch (error) {
+            console.log('Lỗi điểm danh sinh viên' , error);
+            throw error;
+        }
+    }
 }

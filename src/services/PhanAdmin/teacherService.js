@@ -2,7 +2,7 @@ import api from '../api.js';
 
 export const teacherService = {
     // Get teachers with pagination, sorting, and search
-    getTeachers: async (page = 0, size = 10, sortBy = 'maGv', sortDir = 'asc', search = '') => {
+    getTeachersProfile: async (page = 0, size = 10, sortBy = 'maGv', sortDir = 'asc', search = '') => {
         const params = {
             page,
             size,

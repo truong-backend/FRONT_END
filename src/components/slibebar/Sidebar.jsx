@@ -73,7 +73,7 @@ const menuItemsByRole = {
     { title: 'Thời Khóa Biểu', shortTitle: 'TKB', icon: <ClipboardList size={20} />, path: '/student/schedule' },
     { title: 'Lịch Học Hôm Nay', shortTitle: 'LH', icon: <Calendar size={20} />, path: '/student/calendar' },
     { title: 'Lịch Sử Điểm Danh', shortTitle: 'LSDD', icon: <MessageSquare size={20} />, path: '/student/attendance-history' },
-    { title: 'QR Thông Tin Cá Nhân', shortTitle: 'QR', icon: <Settings size={20} />, path: '/student/qr' },
+    { title: 'QR Code', shortTitle: 'QR', icon: <QrCodeIcon size={20} />, path: '/student/qr' },
     { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <MessageSquare size={20} />, path: '/student/profile' },
   ]
 };

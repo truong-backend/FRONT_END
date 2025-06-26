@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Select, Button, Radio, InputNumber, Table, Form, message, Spin, Checkbox, Card, Typography, Divider, Popconfirm } from 'antd';
 import { QrcodeOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
+import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import QRScannerComponent from './QRScannerComponent.jsx';
+import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Scanner } from '@yudiel/react-qr-scanner';
+import { Modal, Alert } from 'antd';
 import moment from 'moment';
 import {
   fetchHocKyList,
@@ -14,6 +19,9 @@ import {
   xoaDiemDanhThuCong
 } from '../../../services/PhanGiaoVien/TaoQR/QrcodeService.js';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
+import { GiaoVienService } from '../../../services/PhanGiaoVien/Profile/GiaoVienService.js';
+import { responsiveArray } from 'antd/es/_util/responsiveObserver.js';
+import { data } from 'autoprefixer';
 
 const { Option } = Select;
 const { Text, Title } = Typography;
@@ -53,6 +61,9 @@ export const GenerateQRCodeComponents = () => {
     taoQR: false,
     xoaDiemDanhThuCong: false
   });
+  // dùng cho quét nhiều sinh viên liên tục 
+  const [loadingCounter, setLoadingCounter] = useState(0);
+
 
   const maGv = user?.maGv || user?.id || user?.username;
 
@@ -153,6 +164,7 @@ export const GenerateQRCodeComponents = () => {
 
     const selectedMonHocData = monHocList.find(mh => mh.maMh === value);
     const selectedHocKyData = hocKyList.find(hk => hk.hocKy === selectedHocKy);
+
 
     if (!selectedMonHocData || !selectedHocKyData) return;
 
@@ -498,6 +510,7 @@ export const GenerateQRCodeComponents = () => {
           <Radio.Group value={mode} onChange={(e) => setMode(e.target.value)}>
             <Radio.Button value="thuCong">Thủ công</Radio.Button>
             <Radio.Button value="qr">Tạo QR</Radio.Button>
+            <Radio.Button value="svqr">Quét mã</Radio.Button>
           </Radio.Group>
         </Form.Item>
 
@@ -600,7 +613,9 @@ export const GenerateQRCodeComponents = () => {
                   </div>
                 </div>
 
+
                 <Divider />
+
 
                 <div style={{ textAlign: 'center' }}>
                   <div style={{

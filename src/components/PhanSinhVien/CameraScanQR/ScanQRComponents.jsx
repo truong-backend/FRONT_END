@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Scanner } from '@yudiel/react-qr-scanner';
+import {Scanner } from '@yudiel/react-qr-scanner';
 import { message, Button, Card, Input, Modal, Spin, Alert } from 'antd';
 import { CameraOutlined, ReloadOutlined, UserOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { ScanQRService } from '../../../services/PhanSinhVien/CameraScanQR/ScanQRService.js';

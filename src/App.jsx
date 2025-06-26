@@ -28,6 +28,7 @@ import { QrcodePage } from './pages/PhanGiaoVien/TaoQR/QrcodePage.jsx';
 import {DanhSachDiemDanhPage} from './pages/PhanSinhVien/DanhSachDiemDiemSV/DanhSachDiemDanhPage.jsx';
 import {LichHocSVPage} from './pages/PhanSinhVien/LICHHOC/LichHocSVPage.jsx';
 import { TkbSvPage } from './pages/PhanSinhVien/TKB/TkbSvPage.jsx'; // Import the TKBComponents
+import QRSinhVienPage from './pages/PhanSinhVien/QRInfo/QRSinhVienPage.jsx';
 
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
@@ -223,6 +224,14 @@ function App() {
               element ={
                 <ProtectedRoute allowedRoles={['STUDENT']}>
                     <SinhVienProfilePage />
+                </ProtectedRoute>
+              }
+            />
+             <Route 
+              path="/student/qr"
+              element ={
+                <ProtectedRoute allowedRoles={['STUDENT']}>
+                    <QRSinhVienPage />
                 </ProtectedRoute>
               }
             />
