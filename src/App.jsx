@@ -10,15 +10,15 @@ import { QuenMatKhauFORMComponents } from './components/quenmatkhau/QuenMatKhauF
 import { XacThucOtpFORMComponents } from './components/quenmatkhau/XacThucOtpFORMComponents.jsx';
 import { DatLaiMatKhauFORMComponents } from './components/quenmatkhau/DatLaiMatKhauFORMComponents.jsx';
 import { useAuth } from './contexts/AuthContext';
-import {DanhSachLopPage} from './pages/PhanAdmin/danhsachlop/DanhSachLopPage.jsx';
-import {DanhSachKhoaPage} from './pages/PhanAdmin/danhsachkhoa/DanhSachKhoaPage.jsx';
-import {DanhSachMonHocPage} from './pages/PhanAdmin/danhsachmonhoc/DanhSachMonHocPage.jsx';
-import {DanhSachTaiKhoanQuanTriPage} from './pages/PhanAdmin/danhsachtaikhoanadmin/DanhSachTaiKhoanQuanTriPage.jsx';
-import {DanhSachTaiKhoanGiangVienPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanGiangVienPage.jsx';
-import {DanhSachTaiKhoanSinhVienPage} from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienPage.jsx';
-import {DanhSachGiangVienPage} from './pages/PhanAdmin/danhsachgiangvien/DanhSachGiangVienPage';
-import {DanhSachSinhVienPage} from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
-import {DanhsachlichhocPage} from './pages/PhanAdmin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
+import { DanhSachLopPage } from './pages/PhanAdmin/danhsachlop/DanhSachLopPage.jsx';
+import { DanhSachKhoaPage } from './pages/PhanAdmin/danhsachkhoa/DanhSachKhoaPage.jsx';
+import { DanhSachMonHocPage } from './pages/PhanAdmin/danhsachmonhoc/DanhSachMonHocPage.jsx';
+import { DanhSachTaiKhoanQuanTriPage } from './pages/PhanAdmin/danhsachtaikhoanadmin/DanhSachTaiKhoanQuanTriPage.jsx';
+import { DanhSachTaiKhoanGiangVienPage } from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanGiangVienPage.jsx';
+import { DanhSachTaiKhoanSinhVienPage } from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienPage.jsx';
+import { DanhSachGiangVienPage } from './pages/PhanAdmin/danhsachgiangvien/DanhSachGiangVienPage';
+import { DanhSachSinhVienPage } from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
+import { DanhsachlichhocPage } from './pages/PhanAdmin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
 // import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage';
 //đổi tên ProfileSinhVienPage && ProfileGiaoVien 
 import SinhVienProfilePage from './pages/PhanSinhVien/Profile/SinhVienProfilePage.jsx';
@@ -80,6 +80,18 @@ function App() {
                     userType="TEACHER"
                     title="Đăng nhập Giảng viên"
                     description="Dành cho giảng viên và cán bộ"
+                  />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/admin/login"
+              element={
+                <PublicRoute>
+                  <LoginForm
+                    userType="ADMIN"
+                    title="Đăng nhập Quản trị"
+                    description="Trang quản trị hệ thống"
                   />
                 </PublicRoute>
               }
@@ -219,11 +231,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route 
+            <Route
               path="/student/profile"
-              element ={
+              element={
                 <ProtectedRoute allowedRoles={['STUDENT']}>
-                    <SinhVienProfilePage />
+                  <SinhVienProfilePage />
                 </ProtectedRoute>
               }
             />
@@ -270,6 +282,14 @@ function App() {
               }
             />
             <Route
+              path="/admin/attendance"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <DsachDdanhPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/khoa"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -285,7 +305,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route
+            <Route
               path="/admin/account-account"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -357,7 +377,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route
+            <Route
               path="/student/attendance-history"
               element={
                 <ProtectedRoute allowedRoles={['STUDENT']}>
