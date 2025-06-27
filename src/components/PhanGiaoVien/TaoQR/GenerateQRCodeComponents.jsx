@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Select, Button, Radio, InputNumber, Table, Form, message, Spin, Checkbox, Card, Typography, Divider, Popconfirm } from 'antd';
-import { QrcodeOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
+import { QrcodeOutlined, DeleteOutlined, CopyOutlined,CameraOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import QRScannerComponent from './QRScannerComponent.jsx';
-import { Html5QrcodeScanner } from 'html5-qrcode';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { Modal, Alert } from 'antd';
 import moment from 'moment';
@@ -49,6 +47,11 @@ export const GenerateQRCodeComponents = () => {
   const [qrCodeData, setQrCodeData] = useState(null);
   const [qrCodeExpired, setQrCodeExpired] = useState(false);
   const [remainingTime, setRemainingTime] = useState(null);
+  //Dùng cho quét QR sinh viên
+  const [showScanner, setShowScanner] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [lastScanned, setLastScanned] = useState(null);
+  const [startCamera, setStartCamera] = useState(false);
 
   // Loading states
   const [loading, setLoading] = useState({
@@ -61,9 +64,117 @@ export const GenerateQRCodeComponents = () => {
     taoQR: false,
     xoaDiemDanhThuCong: false
   });
-  // dùng cho quét nhiều sinh viên liên tục 
-  const [loadingCounter, setLoadingCounter] = useState(0);
+  //hook mở modal bật cam quét QR sinh viên
+  useEffect(() => {
+      if(mode === 'svqr'){
+        setShowScanner(true);
+      }
+      else{
+        setShowScanner(false);
+        setStartCamera(false);
+      }
+  },[mode]);
+  
+  const stopScanning = () => {
+    setShowScanner(false);
+    setIsScanning(false);
+  };
+  const handleScan = async (result) =>{
+    if(result && result.length > 0){
+      const qrData = result[0].rawValue;
+      if (isScanning || qrData === lastScanned) return;
+      
+      setIsScanning(true);
+      setLastScanned(qrData);
 
+      try {
+        await processAttendance(qrData);
+      } catch (error) {
+        console.log('Lỗi xử lý QR',error);
+      }
+      finally{
+        setTimeout(() => {
+          setIsScanning(false);
+          setLastScanned(null);
+        },2000);
+      }
+    }
+  };
+  //Xử lý điểm danh
+  const processAttendance = async (qrData) => {
+    setLoading(true);
+    try {
+      let parsedData;
+      try {
+        parsedData = JSON.parse(qrData);
+      } catch {
+        //xử lý chuỗi masv-hoten-tenlop ||
+        const delimiters = ['-','_'];
+        for(let delimiter of delimiters){
+          const parts = qrData.split(delimiter);
+          if (parts.length >= 2) {
+            const maSv = parts[0];
+            const tenSv = parts[1];
+            const third = parts[2];
+            let field = 'tenLop';
+            let value = third;
+            if(/^\d{2}\.\d{2}\.\d{4}$/.test(third)){
+              const[dd,mm,yyyy] = third.split('.');
+              value = `${yyyy}-${mm}-${dd}`;
+              field = 'ngaySinh';
+            }
+            else if (/^\d{4}-\d{2}-\d{2}$/.test(third)) {
+              field = 'ngaySinh';
+            }
+
+            parsedData = {
+              maSv,
+              tenSv,
+              ...(third && {[field] : value})
+            };
+            break;
+          }
+        }        
+      }
+      if (!parsedData) {
+        message.error('QR Code không hợp lệ');
+        return;
+      }
+      const { maSv, tenSv} = parsedData;
+
+      if (!maSv) {
+        message.error('Không tìm thấy thông tin sinh viên');
+        return;
+      }
+      if(!selectedNgay){
+        message.error('Chưa chọn đầy đủ thông tin buổi học!');
+        return;
+      }
+      const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
+      const requestData = {
+        maSv,
+        maTkb:selectedNgayData.maTkb,
+        ngayHoc:new Date().toISOString().split('T')[0]
+      };
+
+      await GiaoVienService.diemdanhQRSinhVien(requestData);
+      message.success('Điểm danh thành công');
+      await handleThuCong();
+    } catch (error) {
+      console.log('Lỗi điểm danh', error);
+      message.error('Điểm danh thất bại');
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+  // Xử lý lỗi scanner
+  const handleError = (error) => {
+    console.error('Scanner error:', error);
+    message.error('Lỗi camera: ' + error.message);
+    setShowScanner(false);
+    setIsScanning(false);
+  };
 
   const maGv = user?.maGv || user?.id || user?.username;
 
@@ -81,10 +192,11 @@ export const GenerateQRCodeComponents = () => {
   useEffect(() => {
     if (mode === 'thuCong' && selectedNgay) {
       handleThuCong();
-    } else {
-      setDanhSachSinhVien([]);
-      setSelectedStudents([]);
     }
+    // } else {
+    //   setDanhSachSinhVien([]);
+    //   setSelectedStudents([]);
+    // }
   }, [selectedNgay, mode]);
 
   // QR Code timer
@@ -127,10 +239,10 @@ export const GenerateQRCodeComponents = () => {
     setLoading(prev => ({ ...prev, hocKy: true }));
     try {
       const data = await fetchHocKyList(maGv);
-      console.log('Danh sách học kỳ:', data); // 👈 THÊM DÒNG NÀY
+      console.log('Danh sách học kỳ:', data); 
       setHocKyList(data);
     } catch (error) {
-      console.error('Lỗi tải học kỳ:', error); // 👈 THÊM LOG
+      console.error('Lỗi tải học kỳ:', error); 
       message.error('Không thể tải danh sách học kỳ');
     } finally {
       setLoading(prev => ({ ...prev, hocKy: false }));
@@ -220,8 +332,15 @@ export const GenerateQRCodeComponents = () => {
 
     setLoading(prev => ({ ...prev, sinhVien: true }));
     try {
+      //Lấy dssv điểm danh có chứa diemDanh1 diemDanh2 xem từ console log
       const data = await fetchSinhVienDiemDanh(selectedNgayData.maTkb);
-      setDanhSachSinhVien(data);
+      //Sắp xếp time điểm danh
+      const sortedData = [...data].sort((a,b) => {
+        const fisrtTime = new Date(a.diemDanh2 || a.diemDanh1 || 0);
+        const secondTime = new Date(b.diemDanh2 || b.diemDanh1 || 0);
+        return secondTime - fisrtTime; //sort theo time điểm danh gần nhất
+      });
+      setDanhSachSinhVien(sortedData);
       setSelectedStudents([]);
     } catch (error) {
       message.error('Không thể tải danh sách sinh viên');
@@ -510,9 +629,63 @@ export const GenerateQRCodeComponents = () => {
           <Radio.Group value={mode} onChange={(e) => setMode(e.target.value)}>
             <Radio.Button value="thuCong">Thủ công</Radio.Button>
             <Radio.Button value="qr">Tạo QR</Radio.Button>
-            <Radio.Button value="svqr">Quét mã</Radio.Button>
+            <Radio.Button onClick={() => {
+              setShowScanner(true);
+              setStartCamera(false);
+            }} value="svqr">Quét mã</Radio.Button>
           </Radio.Group>
         </Form.Item>
+        {mode === 'svqr' &&  (
+          <>
+            <Modal
+              title="Quét mã QR sinh viên"
+              open={showScanner}
+              onCancel={stopScanning}
+              footer={null}
+              width={400}
+            >
+              <div className="text-center">
+                {!startCamera ? (
+                  <Button
+                    type="primary"
+                    icon={<CameraOutlined />}
+                    onClick={() => setStartCamera(true)}
+                    onCancel={() => {
+                      setShowScanner(fasle);
+                      setStartCamera(fasle);
+                    }}
+                    disabled={isScanning || loading.diemDanh}
+                    className="mb-3"
+                  >
+                    {isScanning ? 'Đang quét...' : 'Bắt đầu quét mã QR sinh viên'}
+                  </Button>
+                ) :(
+                  <>
+                    <Scanner
+                      onScan={handleScan}
+                      onError={handleError}
+                      constraints={{
+                        video: {
+                          facingMode: 'user' // Camera trước
+                        }
+                      }}
+                      components={{
+                        audio: false,
+                        finder: true
+                      }}
+                      styles={{
+                        container: { width: '100%', height: '300px' }
+                      }}
+                    />
+                    <p className="mt-3 text-gray-600">
+                      Đưa QR code vào khung để scan
+                    </p>
+                  </>
+                )}
+              </div>
+            </Modal>
+          </>
+        )}
 
         {/* Manual Attendance Mode */}
         {mode === 'thuCong' && danhSachSinhVien.length > 0 && (
@@ -545,13 +718,13 @@ export const GenerateQRCodeComponents = () => {
               </Popconfirm>
             </div>
 
-            <Table
+            {/* <Table
               dataSource={danhSachSinhVien}
               columns={studentColumns}
               rowKey="maSv"
               pagination={{ pageSize: 10 }}
               scroll={{ x: 900 }}
-            />
+            /> */}
           </>
         )}
 
@@ -664,6 +837,15 @@ export const GenerateQRCodeComponents = () => {
               </Card>
             )}
           </>
+        )}
+        {danhSachSinhVien.length > 0 && (
+          <Table
+            dataSource={danhSachSinhVien}
+            columns={studentColumns}
+            rowKey="maSv"
+            pagination={{ pageSize: 10 }}
+            scroll={{ x: 900 }}
+          />
         )}
       </Form>
     </Spin>
