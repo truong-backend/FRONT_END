@@ -29,7 +29,7 @@ import {DanhSachDiemDanhPage} from './pages/PhanSinhVien/DanhSachDiemDiemSV/Danh
 import {LichHocSVPage} from './pages/PhanSinhVien/LICHHOC/LichHocSVPage.jsx';
 import { TkbSvPage } from './pages/PhanSinhVien/TKB/TkbSvPage.jsx'; // Import the TKBComponents
 import QRSinhVienPage from './pages/PhanSinhVien/QRInfo/QRSinhVienPage.jsx';
-
+import {DsachDdanhPage} from './pages/PhanAdmin/danhsachdiemdanh/DsachDdanhPage.jsx';
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 
