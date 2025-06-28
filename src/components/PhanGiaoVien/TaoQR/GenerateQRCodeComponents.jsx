@@ -141,7 +141,6 @@ export const GenerateQRCodeComponents = () => {
         return;
       }
       const { maSv, tenSv} = parsedData;
-
       if (!maSv) {
         message.error('Không tìm thấy thông tin sinh viên');
         return;
@@ -651,8 +650,8 @@ export const GenerateQRCodeComponents = () => {
                     icon={<CameraOutlined />}
                     onClick={() => setStartCamera(true)}
                     onCancel={() => {
-                      setShowScanner(fasle);
-                      setStartCamera(fasle);
+                      setShowScanner(false);
+                      setStartCamera(false);
                     }}
                     disabled={isScanning || loading.diemDanh}
                     className="mb-3"

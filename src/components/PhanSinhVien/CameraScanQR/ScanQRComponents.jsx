@@ -55,12 +55,11 @@ const processAttendance = async (qrData) => {
 
         const { id: qrId, thoiGianKt, type } = parsedData;
 
-        // Kiểm tra type
-        if (type !== 'attendance') {
-            message.error('QR Code không hợp lệ (không phải điểm danh)');
-            return;
-        }
-
+        // // Kiểm tra type
+        // if (type !== 'attendance') {
+        //     message.error('QR Code không hợp lệ (không phải điểm danh)');
+        //     return;
+        // }
         // Kiểm tra hết hạn
         const now = new Date();
         const expiry = new Date(thoiGianKt);
