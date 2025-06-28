@@ -153,7 +153,9 @@ export const GenerateQRCodeComponents = () => {
       const requestData = {
         maSv,
         maTkb:selectedNgayData.maTkb,
-        ngayHoc:new Date().toISOString().split('T')[0]
+        // ngayHoc:new Date().toISOString().split('T')[0],
+        ngayHoc:selectedNgayData.ngayHoc
+        
       };
 
       await GiaoVienService.diemdanhQRSinhVien(requestData);
@@ -388,7 +390,7 @@ export const GenerateQRCodeComponents = () => {
     if (!selectedNgayData) return;
 
     const attendedStudents = selectedStudents.filter(maSv =>
-      danhSachSinhVien.find(sv => sv.maSv === maSv)?.trangThaiDiemDanh === 'Đã điểm danh'
+      danhSachSinhVien.find(sv => sv.maSv === maSv)?.trangThaiDiemDanh === 'Đã điểm danh lần 1'
     );
 
     if (attendedStudents.length === 0) {
@@ -492,13 +494,13 @@ export const GenerateQRCodeComponents = () => {
 
   const getUnattendedCount = () => {
     return selectedStudents.filter(maSv =>
-      danhSachSinhVien.find(sv => sv.maSv === maSv)?.trangThaiDiemDanh !== 'Đã điểm danh'
+      danhSachSinhVien.find(sv => sv.maSv === maSv)?.trangThaiDiemDanh !== 'Đã điểm danh lần 1'
     ).length;
   };
 
   const getAttendedCount = () => {
     return selectedStudents.filter(maSv =>
-      danhSachSinhVien.find(sv => sv.maSv === maSv)?.trangThaiDiemDanh === 'Đã điểm danh'
+      danhSachSinhVien.find(sv => sv.maSv === maSv)?.trangThaiDiemDanh === 'Đã điểm danh lần 1'
     ).length;
   };
 
