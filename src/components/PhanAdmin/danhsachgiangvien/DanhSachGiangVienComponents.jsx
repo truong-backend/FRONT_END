@@ -5,9 +5,11 @@ import {
 } from 'antd';
 import {
   EditOutlined, DeleteOutlined, PlusOutlined, UserOutlined,
-  UploadOutlined, EyeOutlined, SearchOutlined
+  UploadOutlined, EyeOutlined, SearchOutlined, DownloadOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { teacherService } from '../../../services/PhanAdmin/teacherService.js';
 import { ChiTietGiangVienComponents } from './ChiTietGiangVienComponents.jsx';
 
@@ -46,6 +48,91 @@ export const DanhSachGiangVienComponents = () => {
     teacher.tenGv?.toLowerCase().includes(searchText) ||
     teacher.email?.toLowerCase().includes(searchText)
   );
+
+  // Export Excel functionality
+  const exportToExcel = () => {
+    try {
+      // Prepare data for export
+      const exportData = filteredData.map((teacher, index) => ({
+        'STT': index + 1,
+        'Mã giáo viên': teacher.maGv || '',
+        'Họ và tên': teacher.tenGv || '',
+        'Ngày sinh': teacher.ngaySinh ? moment(teacher.ngaySinh).format('DD/MM/YYYY') : '',
+        'Giới tính': teacher.phai === 1 ? 'Nam' : 'Nữ',
+        'Địa chỉ': teacher.diaChi || '',
+        'Số điện thoại': teacher.sdt || '',
+        'Email': teacher.email || ''
+      }));
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 5 },   // STT
+        { wch: 12 },  // Mã giáo viên
+        { wch: 25 },  // Họ và tên
+        { wch: 12 },  // Ngày sinh
+        { wch: 10 },  // Giới tính
+        { wch: 30 },  // Địa chỉ
+        { wch: 15 },  // Số điện thoại
+        { wch: 25 }   // Email
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add title row
+      XLSX.utils.sheet_add_aoa(ws, [['DANH SÁCH GIÁO VIÊN']], { origin: 'A1' });
+      
+      // Merge title cells
+      if (!ws['!merges']) ws['!merges'] = [];
+      ws['!merges'].push({
+        s: { r: 0, c: 0 },
+        e: { r: 0, c: 7 }
+      });
+
+      // Style the title (if needed, you can add more styling here)
+      if (ws['A1']) {
+        ws['A1'].s = {
+          font: { bold: true, sz: 16 },
+          alignment: { horizontal: 'center' }
+        };
+      }
+
+      // Shift data down to make room for title
+      XLSX.utils.sheet_add_json(ws, exportData, {
+        origin: 'A3',
+        skipHeader: false
+      });
+
+      // Add export info
+      const exportInfo = [
+        [`Ngày xuất: ${moment().format('DD/MM/YYYY HH:mm:ss')}`],
+        [`Tổng số giáo viên: ${filteredData.length}`],
+        ['']
+      ];
+      
+      XLSX.utils.sheet_add_aoa(ws, exportInfo, { 
+        origin: `A${exportData.length + 5}` 
+      });
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Danh sách giáo viên');
+
+      // Generate file name with timestamp
+      const fileName = `DanhSachGiaoVien_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
+
+      // Save file
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      saveAs(blob, fileName);
+
+      message.success(`Xuất báo cáo thành công! Tệp: ${fileName}`);
+    } catch (error) {
+      console.error('Export error:', error);
+      message.error('Lỗi khi xuất báo cáo Excel');
+    }
+  };
 
   // Modal handlers
   const showModal = (record = null) => {
@@ -254,6 +341,14 @@ export const DanhSachGiangVienComponents = () => {
             allowClear
             style={{ width: 300 }}
           />
+          <Button 
+            type="default"
+            // icon={<DownloadOutlined />} 
+            onClick={exportToExcel}
+            title="Xuất báo cáo Excel"
+          >
+            Xuất Excel
+          </Button>
           <Button 
             type="primary" 
             icon={<PlusOutlined />} 

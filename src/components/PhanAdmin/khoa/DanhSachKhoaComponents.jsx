@@ -12,8 +12,10 @@ import {
   Alert,
   Spin,
 } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons';
 import { khoaService } from '../../../services/PhanAdmin/khoaService.js';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -56,6 +58,47 @@ export const DanhSachKhoaComponents = () => {
   useEffect(() => {
     fetchKhoas();
   }, []);
+
+  // Excel export function
+  const exportToExcel = () => {
+    try {
+      // Prepare data for export
+      const exportData = filteredKhoas.map((item, index) => ({
+        'STT': index + 1,
+        'Mã Khoa': item.maKhoa,
+        'Tên Khoa': item.tenKhoa,
+      }));
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 5 },  // STT
+        { wch: 15 }, // Mã Khoa
+        { wch: 30 }, // Tên Khoa
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Danh sách Khoa');
+
+      // Generate Excel file and save
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Generate filename with current date
+      const currentDate = new Date().toISOString().split('T')[0];
+      const fileName = `DanhSachKhoa_${currentDate}.xlsx`;
+      
+      saveAs(blob, fileName);
+      message.success('Xuất file Excel thành công!');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      message.error('Có lỗi xảy ra khi xuất file Excel');
+    }
+  };
 
   // Search functionality
   const handleSearch = (value) => {
@@ -196,9 +239,19 @@ export const DanhSachKhoaComponents = () => {
         alignItems: 'center' 
       }}>
         <Title level={2}>Quản lý Khoa</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
-          Thêm Khoa Mới
-        </Button>
+        <Space>
+          <Button 
+            type="default" 
+            icon={<DownloadOutlined />} 
+            onClick={exportToExcel}
+            disabled={filteredKhoas.length === 0}
+          >
+            Xuất Excel
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
+            Thêm Khoa Mới
+          </Button>
+        </Space>
       </div>
 
       {/* Search */}

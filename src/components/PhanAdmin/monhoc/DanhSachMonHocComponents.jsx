@@ -3,7 +3,12 @@ import {
   Table, Button, Space, Modal, Form, Input, InputNumber, 
   message, Popconfirm, Typography, Alert, Spin
 } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { 
+  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, DownloadOutlined 
+} from '@ant-design/icons';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import moment from 'moment';
 import { monHocService } from '../../../services/PhanAdmin/monHocService.js';
 
 const { Title } = Typography;
@@ -77,6 +82,85 @@ const createTableColumns = (onEdit, onDelete) => [
   },
 ];
 
+// Export Excel functionality
+const exportToExcel = (filteredData) => {
+  try {
+    // Prepare data for export
+    const exportData = filteredData.map((monHoc, index) => ({
+      'STT': index + 1,
+      'Mã môn học': monHoc.maMh || '',
+      'Tên môn học': monHoc.tenMh || '',
+      'Số tiết': monHoc.soTiet || 0
+    }));
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Set column widths
+    const colWidths = [
+      { wch: 5 },   // STT
+      { wch: 15 },  // Mã môn học
+      { wch: 40 },  // Tên môn học
+      { wch: 10 }   // Số tiết
+    ];
+    ws['!cols'] = colWidths;
+
+    // Add title row
+    XLSX.utils.sheet_add_aoa(ws, [['DANH SÁCH MÔN HỌC']], { origin: 'A1' });
+    
+    // Merge title cells
+    if (!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({
+      s: { r: 0, c: 0 },
+      e: { r: 0, c: 3 }
+    });
+
+    // Style the title
+    if (ws['A1']) {
+      ws['A1'].s = {
+        font: { bold: true, sz: 16 },
+        alignment: { horizontal: 'center' }
+      };
+    }
+
+    // Shift data down to make room for title
+    XLSX.utils.sheet_add_json(ws, exportData, {
+      origin: 'A3',
+      skipHeader: false
+    });
+
+    // Add export info
+    const totalLessons = filteredData.reduce((sum, item) => sum + (item.soTiet || 0), 0);
+    const exportInfo = [
+      [`Ngày xuất: ${moment().format('DD/MM/YYYY HH:mm:ss')}`],
+      [`Tổng số môn học: ${filteredData.length}`],
+      [`Tổng số tiết: ${totalLessons}`],
+      ['']
+    ];
+    
+    XLSX.utils.sheet_add_aoa(ws, exportInfo, { 
+      origin: `A${exportData.length + 5}` 
+    });
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Danh sách môn học');
+
+    // Generate file name with timestamp
+    const fileName = `DanhSachMonHoc_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
+
+    // Save file
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    saveAs(blob, fileName);
+
+    message.success(`Xuất báo cáo thành công! Tệp: ${fileName}`);
+  } catch (error) {
+    console.error('Export error:', error);
+    message.error('Lỗi khi xuất báo cáo Excel');
+  }
+};
+
 // Components
 const SearchBar = ({ value, onChange }) => (
   <Search
@@ -90,7 +174,7 @@ const SearchBar = ({ value, onChange }) => (
   />
 );
 
-const Header = ({ onCreateClick }) => (
+const Header = ({ onCreateClick, onExportClick }) => (
   <div style={{ 
     marginBottom: '16px', 
     display: 'flex', 
@@ -98,9 +182,19 @@ const Header = ({ onCreateClick }) => (
     alignItems: 'center' 
   }}>
     <Title level={2}>Quản lý Môn học</Title>
-    <Button type="primary" icon={<PlusOutlined />} onClick={onCreateClick}>
-      Thêm Môn học Mới
-    </Button>
+    <Space>
+      <Button 
+        type="default" 
+        icon={<DownloadOutlined />} 
+        onClick={onExportClick}
+        title="Xuất báo cáo Excel"
+      >
+        Xuất Excel
+      </Button>
+      <Button type="primary" icon={<PlusOutlined />} onClick={onCreateClick}>
+        Thêm Môn học Mới
+      </Button>
+    </Space>
   </div>
 );
 
@@ -235,13 +329,17 @@ export const DanhSachMonHocComponents = () => {
     form.resetFields();
   };
 
+  const handleExport = () => {
+    exportToExcel(filteredData);
+  };
+
   // Table configuration
   const columns = createTableColumns(handleEdit, handleDelete);
   const modalTitle = editingMaMh ? 'Cập nhật Môn học' : 'Thêm Môn học Mới';
 
   return (
     <div style={{ padding: '24px' }}>
-      <Header onCreateClick={handleCreate} />
+      <Header onCreateClick={handleCreate} onExportClick={handleExport} />
       <SearchBar value={searchText} onChange={handleSearch} />
       <ErrorAlert error={error} />
       

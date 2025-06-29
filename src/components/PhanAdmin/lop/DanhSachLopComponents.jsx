@@ -3,9 +3,11 @@ import {
   Table, Button, Space, Modal, Form, Input, message, 
   Popconfirm, Select, Typography, Alert, Spin
 } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons';
 import { khoaService } from '../../../services/PhanAdmin/khoaService.js';
 import { lopService } from '../../../services/PhanAdmin/lopService.js';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -119,7 +121,7 @@ const createTableColumns = (onEdit, onDelete) => [
 ];
 
 // Components
-const Header = ({ onCreateClick }) => (
+const Header = ({ onCreateClick, onExportClick, hasData }) => (
   <div style={{ 
     marginBottom: '16px', 
     display: 'flex', 
@@ -127,6 +129,19 @@ const Header = ({ onCreateClick }) => (
     alignItems: 'center' 
   }}>
     <Title level={2}>Quản lý Lớp</Title>
+    <Space>
+      <Button 
+        type="default" 
+        icon={<DownloadOutlined />} 
+        onClick={onExportClick}
+        disabled={!hasData}
+      >
+        Xuất Excel
+      </Button>
+      <Button type="primary" icon={<PlusOutlined />} onClick={onCreateClick}>
+        Thêm Lớp Mới
+      </Button>
+    </Space>
   </div>
 );
 
@@ -135,38 +150,31 @@ const FilterControls = ({
   selectedKhoa, 
   onKhoaChange, 
   searchText, 
-  onSearchChange,
-  onCreateClick 
+  onSearchChange 
 }) => (
-  <Space style={{ marginBottom: '16px', width: '100%', justifyContent: 'space-between' }}>
-    <Space>
-      <Select
-        style={{ width: 200 }}
-        placeholder="Chọn khoa"
-        allowClear
-        value={selectedKhoa}
-        onChange={onKhoaChange}
-      >
-        {khoas.map(khoa => (
-          <Option key={khoa.maKhoa} value={khoa.maKhoa}>
-            {khoa.tenKhoa}
-          </Option>
-        ))}
-      </Select>
-      
-      <Search
-        placeholder="Tìm mã/tên lớp"
-        allowClear
-        value={searchText}
-        onChange={(e) => onSearchChange(e.target.value)}
-        style={{ width: 250 }}
-        enterButton={<SearchOutlined />}
-      />
-    </Space>
+  <Space style={{ marginBottom: '16px', width: '100%' }}>
+    <Select
+      style={{ width: 200 }}
+      placeholder="Chọn khoa"
+      allowClear
+      value={selectedKhoa}
+      onChange={onKhoaChange}
+    >
+      {khoas.map(khoa => (
+        <Option key={khoa.maKhoa} value={khoa.maKhoa}>
+          {khoa.tenKhoa}
+        </Option>
+      ))}
+    </Select>
     
-    <Button type="primary" icon={<PlusOutlined />} onClick={onCreateClick}>
-      Thêm Lớp Mới
-    </Button>
+    <Search
+      placeholder="Tìm mã/tên lớp"
+      allowClear
+      value={searchText}
+      onChange={(e) => onSearchChange(e.target.value)}
+      style={{ width: 250 }}
+      enterButton={<SearchOutlined />}
+    />
   </Space>
 );
 
@@ -243,6 +251,68 @@ export const DanhSachLopComponents = () => {
   const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
   const [sorter, setSorter] = useState(DEFAULT_SORTER);
   const [form] = Form.useForm();
+
+  // Excel export function
+  const exportToExcel = () => {
+    try {
+      // Get all filtered data (not just current page)
+      const allFilteredData = applyFilters(allLops, { selectedKhoa, searchText });
+      const sortedData = applySorting(allFilteredData, sorter);
+      
+      // Prepare data for export
+      const exportData = sortedData.map((item, index) => ({
+        'STT': index + 1,
+        'Mã Lớp': item.maLop,
+        'Tên Lớp': item.tenLop,
+        'Khoa': item.tenKhoa,
+        'GVCN': item.gvcn,
+        'SĐT GVCN': item.sdtGvcn,
+      }));
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 5 },  // STT
+        { wch: 12 }, // Mã Lớp
+        { wch: 20 }, // Tên Lớp
+        { wch: 25 }, // Khoa
+        { wch: 20 }, // GVCN
+        { wch: 15 }, // SĐT GVCN
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Danh sách Lớp');
+
+      // Generate Excel file and save
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Generate filename with current date and filters
+      const currentDate = new Date().toISOString().split('T')[0];
+      let fileName = `DanhSachLop_${currentDate}`;
+      
+      if (selectedKhoa) {
+        const khoaName = khoas.find(k => k.maKhoa === selectedKhoa)?.tenKhoa || selectedKhoa;
+        fileName += `_${khoaName.replace(/\s+/g, '_')}`;
+      }
+      
+      if (searchText) {
+        fileName += `_Search_${searchText.replace(/\s+/g, '_')}`;
+      }
+      
+      fileName += '.xlsx';
+      
+      saveAs(blob, fileName);
+      message.success(`Xuất file Excel thành công! (${exportData.length} bản ghi)`);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      message.error('Có lỗi xảy ra khi xuất file Excel');
+    }
+  };
 
   // Data processing
   const processData = () => {
@@ -350,10 +420,15 @@ export const DanhSachLopComponents = () => {
   const columns = createTableColumns(handleEdit, handleDelete);
   const modalTitle = editingMaLop ? 'Cập nhật Lớp' : 'Thêm Lớp Mới';
   const totalFilteredItems = applyFilters(allLops, { selectedKhoa, searchText }).length;
+  const hasData = totalFilteredItems > 0;
 
   return (
     <div style={{ padding: '24px' }}>
-      <Header onCreateClick={handleCreate} />
+      <Header 
+        onCreateClick={handleCreate} 
+        onExportClick={exportToExcel}
+        hasData={hasData}
+      />
       
       <FilterControls
         khoas={khoas}
@@ -361,7 +436,6 @@ export const DanhSachLopComponents = () => {
         onKhoaChange={handleKhoaChange}
         searchText={searchText}
         onSearchChange={handleSearchChange}
-        onCreateClick={handleCreate}
       />
 
       <ErrorAlert error={error} />
@@ -376,6 +450,8 @@ export const DanhSachLopComponents = () => {
             total: totalFilteredItems,
             showSizeChanger: true,
             showQuickJumper: true,
+            showTotal: (total, range) => 
+              `${range[0]}-${range[1]} của ${total} bản ghi`,
           }}
           onChange={handleTableChange}
         />

@@ -12,6 +12,9 @@ import { studentService } from '../../../services/PhanAdmin/studentService.js';
 import { lopService } from '../../../services/PhanAdmin/lopService.js';
 import { ChiTietSinhVienComponents } from './ChiTietSinhVienComponents.jsx';
 import moment from 'moment';
+// Import thư viện xuất Excel
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 export const DanhSachSinhVienComponents = () => {
   // State management
@@ -247,15 +250,132 @@ export const DanhSachSinhVienComponents = () => {
     }
   };
 
+  // Hàm xuất Excel mới sử dụng xlsx và file-saver
   const handleExport = async () => {
     setExportLoading(true);
     try {
-      await studentService.exportStudents();
-      message.success('Xuất danh sách sinh viên thành công');
+      // Lấy dữ liệu đã được lọc
+      const filteredData = getFilteredData();
+      
+      if (filteredData.length === 0) {
+        message.warning('Không có dữ liệu để xuất');
+        return;
+      }
+
+      // Chuẩn bị dữ liệu cho Excel
+      const exportData = filteredData.map((student, index) => ({
+        'STT': index + 1,
+        'Mã sinh viên': student.maSv || '',
+        'Họ và tên': student.tenSv || '',
+        'Ngày sinh': student.ngaySinh ? moment(student.ngaySinh).format('DD/MM/YYYY') : '',
+        'Giới tính': student.phai === 1 ? 'Nam' : student.phai === 0 ? 'Nữ' : '',
+        'Lớp': student.tenLop || '',
+        'Khoa': student.tenKhoa || '',
+        'Địa chỉ': student.diaChi || '',
+        'Số điện thoại': student.sdt || '',
+        'Email': student.email || ''
+      }));
+
+      // Tạo workbook và worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Thiết lập độ rộng cột
+      const colWidths = [
+        { wch: 5 },   // STT
+        { wch: 15 },  // Mả sinh viên
+        { wch: 25 },  // Họ và tên
+        { wch: 12 },  // Ngày sinh
+        { wch: 10 },  // Giới tính
+        { wch: 15 },  // Lớp
+        { wch: 20 },  // Khoa
+        { wch: 30 },  // Địa chỉ
+        { wch: 15 },  // Số điện thoại
+        { wch: 25 }   // Email
+      ];
+      ws['!cols'] = colWidths;
+
+      // Thiết lập style cho header (nếu cần)
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const address = XLSX.utils.encode_cell({ r: 0, c: C });
+        if (!ws[address]) continue;
+        ws[address].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: "EEEEEE" } }
+        };
+      }
+
+      // Thêm worksheet vào workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Danh sách sinh viên');
+
+      // Tạo tên file với timestamp
+      const currentDate = moment().format('YYYY-MM-DD_HH-mm-ss');
+      const fileName = `Danh_sach_sinh_vien_${currentDate}.xlsx`;
+
+      // Xuất file
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const data = new Blob([excelBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      saveAs(data, fileName);
+      message.success(`Xuất danh sách sinh viên thành công! File: ${fileName}`);
+
     } catch (error) {
-      message.error(error.message || 'Lỗi khi xuất danh sách sinh viên');
+      console.error('Export error:', error);
+      message.error('Lỗi khi xuất danh sách sinh viên');
     } finally {
       setExportLoading(false);
+    }
+  };
+
+  // Hàm xuất Excel cho dữ liệu đã chọn (nếu cần)
+  const handleExportSelected = (selectedRows) => {
+    if (!selectedRows || selectedRows.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một sinh viên để xuất');
+      return;
+    }
+
+    try {
+      const exportData = selectedRows.map((student, index) => ({
+        'STT': index + 1,
+        'Mã sinh viên': student.maSv || '',
+        'Họ và tên': student.tenSv || '',
+        'Ngày sinh': student.ngaySinh ? moment(student.ngaySinh).format('DD/MM/YYYY') : '',
+        'Giới tính': student.phai === 1 ? 'Nam' : student.phai === 0 ? 'Nữ' : '',
+        'Lớp': student.tenLop || '',
+        'Khoa': student.tenKhoa || '',
+        'Địa chỉ': student.diaChi || '',
+        'Số điện thoại': student.sdt || '',
+        'Email': student.email || ''
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      const colWidths = [
+        { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 10 },
+        { wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 15 }, { wch: 25 }
+      ];
+      ws['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Sinh viên đã chọn');
+
+      const currentDate = moment().format('YYYY-MM-DD_HH-mm-ss');
+      const fileName = `Sinh_vien_da_chon_${currentDate}.xlsx`;
+
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const data = new Blob([excelBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      saveAs(data, fileName);
+      message.success(`Xuất danh sách sinh viên đã chọn thành công! File: ${fileName}`);
+
+    } catch (error) {
+      console.error('Export selected error:', error);
+      message.error('Lỗi khi xuất danh sách sinh viên đã chọn');
     }
   };
 
@@ -447,6 +567,16 @@ export const DanhSachSinhVienComponents = () => {
         onChange={handleTableChange}
         rowKey="maSv"
         scroll={{ x: 1500 }}
+        rowSelection={{
+          type: 'checkbox',
+          onChange: (selectedRowKeys, selectedRows) => {
+            // Có thể thêm state để lưu các hàng được chọn
+            console.log('Selected rows:', selectedRows);
+          },
+          getCheckboxProps: (record) => ({
+            name: record.maSv,
+          }),
+        }}
       />
 
       {/* Detail Modal */}

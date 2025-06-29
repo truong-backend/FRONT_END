@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-
 import {
   Table,
   Input,
@@ -16,16 +15,20 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import moment from 'moment';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { LichGdService } from '../../../services/PhanAdmin/LichGdService';
 import { monHocService } from "../../../services/PhanAdmin/monHocService.js";
 import { teacherService } from "../../../services/PhanAdmin/teacherService.js"
 
 const { Option } = Select;
 
-export const DanhsachlichhocComponents = () => {
+export const DanhsachlichGDComponents = () => {
   const [data, setData] = useState([]);
+  const [originalData, setOriginalData] = useState([]); // Lưu dữ liệu gốc
   const [monHocList, setMonHocList] = useState([]);
   const [teacherList, setTeacherList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,12 +42,14 @@ export const DanhsachlichhocComponents = () => {
     try {
       const result = await LichGdService.getAllLichGdNoPaging();
       setData(result);
+      setOriginalData(result); // Lưu dữ liệu gốc
     } catch (error) {
       message.error(error.message);
     } finally {
       setLoading(false);
     }
   };
+
   const fetchMonHocList = async () => {
     try {
       const response = await monHocService.getAllMonHocs();
@@ -53,6 +58,7 @@ export const DanhsachlichhocComponents = () => {
       message.error('Lỗi khi tải danh sách môn học: ' + error.message);
     }
   };
+
   const fetchTeacherList = async () => {
     try {
       const response = await teacherService.getListGiaoVien();
@@ -61,23 +67,92 @@ export const DanhsachlichhocComponents = () => {
       message.error('Lỗi khi tải danh sách giáo viên: ' + error.message);
     }
   };
+
   useEffect(() => {
     fetchTeacherList();
     fetchMonHocList();
     fetchLichGdList();
   }, []);
 
-
   // Tìm kiếm theo tên giáo viên hoặc tên môn học
   const handleSearch = (e) => {
     const value = e.target.value.toLowerCase();
     setSearchText(value);
-    const filtered = data.filter(
-      (item) =>
-        item.tenGv.toLowerCase().includes(value) ||
-        item.tenMh.toLowerCase().includes(value)
-    );
-    setData(filtered);
+    
+    if (value === '') {
+      setData(originalData); // Khôi phục dữ liệu gốc khi xóa tìm kiếm
+    } else {
+      const filtered = originalData.filter(
+        (item) =>
+          item.tenGv.toLowerCase().includes(value) ||
+          item.tenMh.toLowerCase().includes(value)
+      );
+      setData(filtered);
+    }
+  };
+
+  // Hàm xuất Excel
+  const exportToExcel = () => {
+    try {
+      // Chuẩn bị dữ liệu để xuất
+      const exportData = data.map((item, index) => ({
+        'STT': index + 1,
+        'Mã GV': item.maGv,
+        'Tên GV': item.tenGv,
+        'Mã MH': item.maMh,
+        'Tên MH': item.tenMh,
+        'Số tiết MH': item.nmh,
+        'Phòng học': item.phongHoc,
+        'Ngày bắt đầu': moment(item.ngayBd).format('DD/MM/YYYY'),
+        'Ngày kết thúc': moment(item.ngayKt).format('DD/MM/YYYY'),
+        'Tiết bắt đầu': item.stBd,
+        'Tiết kết thúc': item.stKt,
+        'Học kỳ': `Học kỳ ${item.hocKy}`,
+        'Thứ trong tuần': Array.isArray(item.cacBuoiHoc) 
+          ? item.cacBuoiHoc.map(day => {
+              const days = ['', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+              return days[day];
+            }).join(', ')
+          : item.cacBuoiHoc
+      }));
+
+      // Tạo workbook và worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Thiết lập độ rộng cột
+      const colWidths = [
+        { wch: 5 },   // STT
+        { wch: 10 },  // Mã GV
+        { wch: 20 },  // Tên GV
+        { wch: 10 },  // Mã MH
+        { wch: 25 },  // Tên MH
+        { wch: 12 },  // Số tiết MH
+        { wch: 15 },  // Phòng học
+        { wch: 15 },  // Ngày bắt đầu
+        { wch: 15 },  // Ngày kết thúc
+        { wch: 12 },  // Tiết bắt đầu
+        { wch: 12 },  // Tiết kết thúc
+        { wch: 10 },  // Học kỳ
+        { wch: 20 }   // Thứ trong tuần
+      ];
+      ws['!cols'] = colWidths;
+
+      // Thêm worksheet vào workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Lịch Giảng Dạy');
+
+      // Tạo tên file với timestamp
+      const fileName = `LichGiangDay_${moment().format('DDMMYYYY_HHmmss')}.xlsx`;
+
+      // Xuất file
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, fileName);
+
+      message.success(`✅ Xuất Excel thành công! File: ${fileName}`);
+    } catch (error) {
+      message.error('❌ Lỗi khi xuất Excel: ' + error.message);
+    }
   };
 
   // Mở modal tạo mới hoặc sửa
@@ -108,7 +183,6 @@ export const DanhsachlichhocComponents = () => {
       message.error(`❌ ${errorMsg}`);
     }
   };
-
 
   // Lưu tạo hoặc sửa
   const handleSave = async () => {
@@ -146,6 +220,7 @@ export const DanhsachlichhocComponents = () => {
       form.setFieldsValue({ tenMh: selectedMonHoc.tenMh });
     }
   };
+
   const handleGiaoVienChange = (value) => {
     const selectedGiaoVien = teacherList.find((gv) => gv.maGv === value);
     if (selectedGiaoVien) {
@@ -222,7 +297,6 @@ export const DanhsachlichhocComponents = () => {
       key: 'hocKy',
       width: 80,
     },
-
     {
       title: 'Hành động',
       key: 'action',
@@ -242,7 +316,6 @@ export const DanhsachlichhocComponents = () => {
             type="danger"
             size="small"
             onClick={() => handleDelete(record.id)}
-
           />
         </>
       ),
@@ -268,6 +341,14 @@ export const DanhsachlichhocComponents = () => {
           onClick={() => openModal(null)}
         >
           Thêm lịch Giảng dạy
+        </Button>
+        <Button
+          type="default"
+          icon={<DownloadOutlined />}
+          onClick={exportToExcel}
+          style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+        >
+          Xuất Excel ({data.length} bản ghi)
         </Button>
       </div>
 
@@ -331,7 +412,6 @@ export const DanhsachlichhocComponents = () => {
               ))}
             </Select>
           </Form.Item>
-
 
           <Form.Item
             label="Tên môn học"
