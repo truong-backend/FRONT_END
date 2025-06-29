@@ -13,7 +13,7 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
   const [form] = Form.useForm();
   const [tableParams, setTableParams] = useState({
     pagination: { current: 1, pageSize: 10, total: 0 },
-    sorter: { field: 'id', order: 'ascend' },
+    sorter: { field: 'createdAt', order: 'descend' },
     search: ''
   });
 
@@ -61,10 +61,11 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
   };
 
   const handleSearch = (value) => {
+    const trimmedValue = value.trim();
     setTableParams(prev => ({
       ...prev,
       pagination: { ...prev.pagination, current: 1 },
-      search: value
+      search: trimmedValue
     }));
   };
 
@@ -99,9 +100,12 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
       if (editingTeacher) {
         await userService.updateUser(editingTeacher.id, payload);
         message.success('Cập nhật giảng viên thành công');
+        fetchTeachers();
       } else {
         await userService.createUser(payload);
         message.success('Thêm giảng viên mới thành công');
+        fetchTeachers();
+        
       }
 
       closeModal();
@@ -224,7 +228,7 @@ export const DanhSachTaiKhoanGiangVienComponents = () => {
         <div className="flex gap-3">
           <Input.Search
             placeholder="Tìm kiếm giảng viên..."
-            onSearch={handleSearch}
+            onChange={(e) => handleSearch(e.target.value)}
             style={{ width: 300 }}
             allowClear
           />

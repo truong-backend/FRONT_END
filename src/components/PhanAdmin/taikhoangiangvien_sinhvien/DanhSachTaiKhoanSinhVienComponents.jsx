@@ -13,9 +13,10 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
   const [form] = Form.useForm();
   const [tableParams, setTableParams] = useState({
     pagination: { current: 1, pageSize: 10, total: 0 },
-    sorter: { field: 'id', order: 'ascend' },
+    sorter: { field: 'createdAt', order: 'descend' }, // 👈 Mặc định sắp xếp theo ngày tạo mới nhất
     search: ''
   });
+
 
   // Data fetching
   const fetchStudents = async () => {
@@ -30,7 +31,7 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
         sorter.order === 'ascend' ? 'asc' : 'desc',
         search
       );
-      
+
       setStudents(data.content);
       setTableParams(prev => ({
         ...prev,
@@ -48,23 +49,24 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
     fetchStudents();
   }, [JSON.stringify(tableParams)]);
 
-  // Table handlers
   const handleTableChange = (pagination, filters, sorter) => {
     setTableParams({
       ...tableParams,
       pagination,
       sorter: {
-        field: sorter.field || 'id',
-        order: sorter.order || 'ascend'
+        field: sorter.field || 'createdAt',
+        order: sorter.order || 'descend'
       }
     });
   };
 
+
   const handleSearch = (value) => {
+    const trimmedValue = value.trim();
     setTableParams(prev => ({
       ...prev,
       pagination: { ...prev.pagination, current: 1 },
-      search: value
+      search: trimmedValue
     }));
   };
 
@@ -204,11 +206,11 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
             okText="Có"
             cancelText="Không"
           >
-            <Button 
-              type="primary" 
-              danger 
+            <Button
+              type="primary"
+              danger
               size="small"
-              icon={<DeleteOutlined />} 
+              icon={<DeleteOutlined />}
             />
           </Popconfirm>
         </div>
@@ -224,7 +226,7 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
         <div className="flex gap-3">
           <Input.Search
             placeholder="Tìm kiếm sinh viên..."
-            onSearch={handleSearch}
+            onChange={(e) => handleSearch(e.target.value)}
             style={{ width: 300 }}
             allowClear
           />
@@ -247,7 +249,7 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
           ...tableParams.pagination,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total, range) => 
+          showTotal: (total, range) =>
             `${range[0]}-${range[1]} của ${total} sinh viên`
         }}
         loading={loading}
