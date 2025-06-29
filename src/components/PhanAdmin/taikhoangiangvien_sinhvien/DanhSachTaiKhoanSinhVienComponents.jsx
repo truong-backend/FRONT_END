@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Button, Popconfirm, message, Modal, Form, Switch, Tag } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, FileExcelOutlined } from '@ant-design/icons';
 import { userService } from '../../../services/PhanAdmin/userService.js';
 import moment from 'moment';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 export const DanhSachTaiKhoanSinhVienComponents = () => {
   // State management
@@ -16,7 +18,6 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
     sorter: { field: 'createdAt', order: 'descend' }, // 👈 Mặc định sắp xếp theo ngày tạo mới nhất
     search: ''
   });
-
 
   // Data fetching
   const fetchStudents = async () => {
@@ -60,7 +61,6 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
     });
   };
 
-
   const handleSearch = (value) => {
     const trimmedValue = value.trim();
     setTableParams(prev => ({
@@ -68,6 +68,79 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
       pagination: { ...prev.pagination, current: 1 },
       search: trimmedValue
     }));
+  };
+
+  // Excel Export Function
+  const handleExportExcel = async () => {
+    try {
+      setLoading(true);
+      
+      // Lấy tất cả dữ liệu sinh viên để xuất (không phân trang)
+      const allStudentsData = await userService.getUsersByRole(
+        'STUDENT',
+        0, // page 0
+        1000, // lấy nhiều records
+        'createdAt',
+        'desc',
+        tableParams.search // giữ filter search hiện tại
+      );
+
+      const studentsToExport = allStudentsData.content;
+
+      if (studentsToExport.length === 0) {
+        message.warning('Không có dữ liệu để xuất');
+        return;
+      }
+
+      // Chuẩn bị dữ liệu cho Excel
+      const excelData = studentsToExport.map((student, index) => ({
+        'STT': index + 1,
+        'ID': student.id,
+        'Họ và tên': student.fullName || '',
+        'Username': student.username || '',
+        'Email': student.email || '',
+        'Trạng thái': student.isActive ? 'Hoạt động' : 'Khóa',
+        'Email xác thực': student.emailVerifiedAt ? 'Đã xác thực' : 'Chưa xác thực',
+        'Ngày tạo': student.createdAt ? moment(student.createdAt).format('DD/MM/YYYY HH:mm') : '',
+        'Ngày cập nhật': student.updatedAt ? moment(student.updatedAt).format('DD/MM/YYYY HH:mm') : ''
+      }));
+
+      // Tạo workbook và worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Thiết lập độ rộng cột
+      const colWidths = [
+        { wch: 5 },  // STT
+        { wch: 8 },  // ID
+        { wch: 25 }, // Họ và tên
+        { wch: 15 }, // Username
+        { wch: 30 }, // Email
+        { wch: 12 }, // Trạng thái
+        { wch: 15 }, // Email xác thực
+        { wch: 18 }, // Ngày tạo
+        { wch: 18 }  // Ngày cập nhật
+      ];
+      ws['!cols'] = colWidths;
+
+      // Thêm worksheet vào workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Danh sách sinh viên');
+
+      // Tạo tên file với timestamp
+      const fileName = `danh-sach-sinh-vien-${moment().format('YYYY-MM-DD-HH-mm')}.xlsx`;
+
+      // Xuất file
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, fileName);
+
+      message.success(`Xuất Excel thành công! File: ${fileName}`);
+    } catch (error) {
+      message.error('Lỗi khi xuất Excel: ' + (error.message || 'Unknown error'));
+      console.error('Export Excel error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Modal handlers
@@ -230,6 +303,14 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
             style={{ width: 300 }}
             allowClear
           />
+          <Button
+            type="default"
+            icon={<FileExcelOutlined />}
+            onClick={handleExportExcel}
+            loading={loading}
+          >
+            Xuất Excel
+          </Button>
           <Button
             type="primary"
             icon={<PlusOutlined />}
