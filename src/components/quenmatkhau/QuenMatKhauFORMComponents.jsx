@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { requestOTP } from '../../services/authService.js';
+import { requestOTP } from '../../services/matKhauService.js';
 import { Mail, ArrowLeft, Send } from 'lucide-react';
 
 export const QuenMatKhauFORMComponents = ({ userType, title, description }) => {

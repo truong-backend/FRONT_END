@@ -262,33 +262,33 @@ export const DanhSachTaiKhoanSinhVienComponents = () => {
       sorter: true,
       render: (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A'
     },
-    {
-      title: 'Thao tác',
-      width: 120,
-      render: (_, record) => (
-        <div className="flex gap-2">
-          <Button
-            type="primary"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => openModal(record)}
-          />
-          <Popconfirm
-            title="Bạn có chắc chắn muốn xóa sinh viên này?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Có"
-            cancelText="Không"
-          >
-            <Button
-              type="primary"
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-            />
-          </Popconfirm>
-        </div>
-      )
-    }
+    // {
+    //   title: 'Thao tác',
+    //   width: 120,
+    //   render: (_, record) => (
+    //     <div className="flex gap-2">
+    //       <Button
+    //         type="primary"
+    //         size="small"
+    //         icon={<EditOutlined />}
+    //         onClick={() => openModal(record)}
+    //       />
+    //       {/* <Popconfirm
+    //         title="Bạn có chắc chắn muốn xóa sinh viên này?"
+    //         onConfirm={() => handleDelete(record.id)}
+    //         okText="Có"
+    //         cancelText="Không"
+    //       >
+    //         <Button
+    //           type="primary"
+    //           danger
+    //           size="small"
+    //           icon={<DeleteOutlined />}
+    //         />
+    //       </Popconfirm> */}
+    //     </div>
+    //   )
+    // }
   ];
 
   return (

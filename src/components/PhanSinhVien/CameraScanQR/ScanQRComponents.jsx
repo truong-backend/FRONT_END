@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {Scanner } from '@yudiel/react-qr-scanner';
+import { Scanner } from '@yudiel/react-qr-scanner';
 import { message, Button, Card, Input, Modal, Spin, Alert } from 'antd';
 import { CameraOutlined, ReloadOutlined, UserOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { ScanQRService } from '../../../services/PhanSinhVien/CameraScanQR/ScanQRService.js';
@@ -11,7 +11,6 @@ export const ScanQRComponents = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [scannedData, setScannedData] = useState('');
     const [showScanner, setShowScanner] = useState(false);
-    const [attendanceHistory, setAttendanceHistory] = useState([]);
 
     // Lấy mã sinh viên từ context
     const maSv = user?.maSv || user?.id || user?.username;
@@ -33,72 +32,46 @@ export const ScanQRComponents = () => {
         }
     };
 
-// Xử lý điểm danh
-const processAttendance = async (qrData) => {
-    if (!maSv) {
-        message.error('Không tìm thấy thông tin sinh viên');
-        return;
-    }
+    // Xử lý điểm danh
+    const processAttendance = async (qrData) => {
+        if (!maSv) {
+            message.error('Không tìm thấy thông tin sinh viên');
+            return;
+        }
 
-    setIsLoading(true);
-
-    try {
-        // Tách và kiểm tra dữ liệu QR
-        let parsedData;
+        setIsLoading(true);
 
         try {
-            parsedData = JSON.parse(qrData);
-        } catch {
-            message.error('QR Code không hợp lệ (không phải định dạng JSON)');
-            return;
+            // Tách và kiểm tra dữ liệu QR
+            let parsedData;
+            try {
+                parsedData = JSON.parse(qrData);
+            } catch {
+                message.error('QR Code không hợp lệ');
+                return;
+            }
+
+            const { id: qrId } = parsedData;
+            if (!qrId) {
+                message.error('QR Code thiếu ID');
+                return;
+            }
+
+            const requestData = {
+                qrId,
+                maSv
+            };
+
+            await ScanQRService.markAttendanceByQR(requestData);
+            message.success('Điểm danh thành công!');
+
+        } catch (error) {
+            console.error('Lỗi điểm danh:', error);
+            message.error(error.message || 'Điểm danh thất bại');
+        } finally {
+            setIsLoading(false);
         }
-
-        const { id: qrId, thoiGianKt, type } = parsedData;
-
-        // // Kiểm tra type
-        // if (type !== 'attendance') {
-        //     message.error('QR Code không hợp lệ (không phải điểm danh)');
-        //     return;
-        // }
-        // Kiểm tra hết hạn
-        const now = new Date();
-        const expiry = new Date(thoiGianKt);
-        if (now > expiry) {
-            message.error('QR Code đã hết hạn');
-            return;
-        }
-
-        if (!qrId) {
-            message.error('QR Code thiếu ID');
-            return;
-        }
-
-        const requestData = {
-            qrId,
-            maSv
-        };
-
-        const response = await ScanQRService.markAttendanceByQR(requestData);
-
-        message.success('Điểm danh thành công!');
-
-        // Cập nhật lịch sử điểm danh
-        const newAttendance = {
-            id: Date.now(),
-            qrId,
-            time: new Date().toLocaleString('vi-VN'),
-            status: 'Thành công'
-        };
-        setAttendanceHistory(prev => [newAttendance, ...prev.slice(0, 4)]);
-
-    } catch (error) {
-        console.error('Lỗi điểm danh:', error);
-        message.error(error.message || 'Điểm danh thất bại');
-    } finally {
-        setIsLoading(false);
-    }
-};
-
+    };
 
     // Bắt đầu scan
     const startScanning = () => {
@@ -240,28 +213,6 @@ const processAttendance = async (qrData) => {
                     </p>
                 </div>
             </Modal>
-
-            {/* Lịch sử điểm danh */}
-            {attendanceHistory.length > 0 && (
-                <Card title="Lịch sử điểm danh gần đây" className="mt-4">
-                    <div className="space-y-2">
-                        {attendanceHistory.map(item => (
-                            <div 
-                                key={item.id}
-                                className="flex justify-between items-center p-3 bg-green-50 rounded-lg border-l-4 border-green-400"
-                            >
-                                <div>
-                                    <p className="font-medium">QR ID: {item.qrId}</p>
-                                    <p className="text-sm text-gray-600">{item.time}</p>
-                                </div>
-                                <span className="text-green-600 font-medium">
-                                    {item.status}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-            )}
         </div>
     );
 };

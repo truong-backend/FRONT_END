@@ -25,11 +25,13 @@ import SinhVienProfilePage from './pages/PhanSinhVien/Profile/SinhVienProfilePag
 import GiaoVienProfilePage from './pages/PhanGiaoVien/Profile/GiaoVienProfilePage.jsx';
 import { ScanQRPage } from './pages/PhanSinhVien/CameraScanQR/ScanQRPage.jsx';
 import { QrcodePage } from './pages/PhanGiaoVien/TaoQR/QrcodePage.jsx';
-import {DanhSachDiemDanhPage} from './pages/PhanSinhVien/DanhSachDiemDiemSV/DanhSachDiemDanhPage.jsx';
-import {LichHocSVPage} from './pages/PhanSinhVien/LICHHOC/LichHocSVPage.jsx';
+import { DanhSachDiemDanhPage } from './pages/PhanSinhVien/DanhSachDiemDiemSV/DanhSachDiemDanhPage.jsx';
+import { LichHocSVPage } from './pages/PhanSinhVien/LICHHOC/LichHocSVPage.jsx';
 import { TkbSvPage } from './pages/PhanSinhVien/TKB/TkbSvPage.jsx'; // Import the TKBComponents
 import QRSinhVienPage from './pages/PhanSinhVien/QRInfo/QRSinhVienPage.jsx';
-import {DsachDdanhPage} from './pages/PhanAdmin/danhsachdiemdanh/DsachDdanhPage.jsx';
+import { DsachDdanhPage } from './pages/PhanAdmin/danhsachdiemdanh/DsachDdanhPage.jsx';
+
+// import {LichHocPage} from './pages/PhanAdmin/LichHoc/LichHocPage.jsx'
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
 
 
@@ -239,11 +241,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route 
+            <Route
               path="/student/qr"
-              element ={
+              element={
                 <ProtectedRoute allowedRoles={['STUDENT']}>
-                    <QRSinhVienPage />
+                  <QRSinhVienPage />
                 </ProtectedRoute>
               }
             />
@@ -305,6 +307,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* <Route
+              path="/admin/lichhoc"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <LichHocPage />
+                </ProtectedRoute>
+              }
+            /> */}
             <Route
               path="/admin/account-account"
               element={

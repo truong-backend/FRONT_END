@@ -53,6 +53,7 @@ const menuItemsByRole = {
     // createScheduleMenu(),
     { title: 'Quản Lý Điểm Danh', shortTitle: 'DD', icon: <ClipboardCheck size={20} />, path: '/admin/attendance' },
     { title: 'Quản Lý Lịch GD', shortTitle: 'LGd', icon: <Presentation size={20} />, path: '/admin/calendar' },
+    // { title: 'Quản Lý Lịch Học', shortTitle: 'LH', icon: <Calendar size={20} />, path: '/admin/lichhoc' },
     { title: 'Quản Lý Giáo Viên', shortTitle: 'GiVi', icon: <Presentation size={20} />, path: '/admin/teachers-list' },
     { title: 'Quản Lý Sinh Viên', shortTitle: 'SV', icon: <GraduationCap size={20} />, path: '/admin/students-list' },
     { title: 'Quản Lý Lớp Học', shortTitle: 'LoHo', icon: <Users size={20} />, path: '/admin/lop' },

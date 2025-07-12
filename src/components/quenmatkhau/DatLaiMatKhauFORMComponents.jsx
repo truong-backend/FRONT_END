@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { resetPassword } from '../../services/authService.js';
+import { resetPassword } from '../../services/matKhauService.js';
 import { KeyRound, ArrowLeft, Save, Eye, EyeOff } from 'lucide-react';
 
 export const DatLaiMatKhauFORMComponents = ({ userType, title }) => {
@@ -12,18 +12,16 @@ export const DatLaiMatKhauFORMComponents = ({ userType, title }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
-  const token = sessionStorage.getItem('resetToken');
   const email = sessionStorage.getItem('resetEmail');
 
   useEffect(() => {
-    if (!token || !email) {
+    if ( !email) {
       navigate(`/${userType.toLowerCase()}/forgot-password`);
     }
-  }, [token, email, navigate, userType]);
+  }, [email, navigate, userType]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!token) return;
 
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
@@ -39,8 +37,7 @@ export const DatLaiMatKhauFORMComponents = ({ userType, title }) => {
     setLoading(true);
 
     try {
-      await resetPassword(token, password, userType);
-      sessionStorage.removeItem('resetToken');
+      await resetPassword( password, userType);
       sessionStorage.removeItem('resetEmail');
       navigate(`/${userType.toLowerCase()}/login?reset=success`);
     } catch (err) {

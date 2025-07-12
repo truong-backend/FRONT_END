@@ -8,7 +8,7 @@ import {
 import { adminService } from '../../../services/PhanAdmin/adminService.js';
 import moment from 'moment';
 
-const ListAdmin = () => {
+export const DanhSachTaiKhoanAdminComponents = () => {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -297,5 +297,3 @@ const ListAdmin = () => {
     </div>
   );
 };
-
-export default ListAdmin;

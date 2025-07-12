@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, Button, Space, Modal, Form, Input, InputNumber, 
-  message, Popconfirm, Typography, Alert, Spin
+  message, Popconfirm, Typography, Alert, Spin, Upload, Progress
 } from 'antd';
 import { 
-  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, DownloadOutlined 
+  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, 
+  DownloadOutlined, UploadOutlined, InboxOutlined 
 } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -13,6 +14,7 @@ import { monHocService } from '../../../services/PhanAdmin/monHocService.js';
 
 const { Title } = Typography;
 const { Search } = Input;
+const { Dragger } = Upload;
 
 // Configuration
 const PAGE_SIZE = 10;
@@ -161,6 +163,164 @@ const exportToExcel = (filteredData) => {
   }
 };
 
+// Import Excel functionality
+const validateMonHocData = (monHoc, index) => {
+  const errors = [];
+  
+  // Validate mã môn học
+  if (!monHoc.maMh || monHoc.maMh.toString().trim() === '') {
+    errors.push(`Dòng ${index + 1}: Mã môn học không được để trống`);
+  } else if (monHoc.maMh.toString().length > 20) {
+    errors.push(`Dòng ${index + 1}: Mã môn học không được vượt quá 20 ký tự`);
+  }
+  
+  // Validate tên môn học
+  if (!monHoc.tenMh || monHoc.tenMh.toString().trim() === '') {
+    errors.push(`Dòng ${index + 1}: Tên môn học không được để trống`);
+  } else if (monHoc.tenMh.toString().length > 50) {
+    errors.push(`Dòng ${index + 1}: Tên môn học không được vượt quá 50 ký tự`);
+  }
+  
+  // Validate số tiết
+  if (!monHoc.soTiet || isNaN(monHoc.soTiet) || monHoc.soTiet <= 0) {
+    errors.push(`Dòng ${index + 1}: Số tiết phải là số nguyên dương`);
+  }
+  
+  return errors;
+};
+
+const parseExcelFile = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        const data = e.target.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convert to JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+          header: 1,
+          defval: '',
+          blankrows: false
+        });
+        
+        // Skip empty rows and find header row
+        const nonEmptyRows = jsonData.filter(row => 
+          row.some(cell => cell && cell.toString().trim() !== '')
+        );
+        
+        if (nonEmptyRows.length < 2) {
+          reject(new Error('File Excel không có dữ liệu hợp lệ'));
+          return;
+        }
+        
+        // Find header row (look for columns containing "mã", "tên", "số tiết")
+        let headerRowIndex = -1;
+        let headerRow = null;
+        
+        for (let i = 0; i < nonEmptyRows.length; i++) {
+          const row = nonEmptyRows[i];
+          const hasRequiredColumns = row.some(cell => {
+            const cellStr = cell.toString().toLowerCase();
+            return cellStr.includes('mã') || cellStr.includes('tên') || cellStr.includes('tiết');
+          });
+          
+          if (hasRequiredColumns) {
+            headerRowIndex = i;
+            headerRow = row;
+            break;
+          }
+        }
+        
+        if (headerRowIndex === -1) {
+          reject(new Error('Không tìm thấy dòng tiêu đề hợp lệ trong file Excel'));
+          return;
+        }
+        
+        // Map column indices
+        const columnMapping = {};
+        headerRow.forEach((header, index) => {
+          const headerStr = header.toString().toLowerCase().trim();
+          if (headerStr.includes('mã')) {
+            columnMapping.maMh = index;
+          } else if (headerStr.includes('tên')) {
+            columnMapping.tenMh = index;
+          } else if (headerStr.includes('tiết')) {
+            columnMapping.soTiet = index;
+          }
+        });
+        
+        // Validate required columns
+        if (!columnMapping.maMh || !columnMapping.tenMh || !columnMapping.soTiet) {
+          reject(new Error('File Excel thiếu các cột bắt buộc: Mã môn học, Tên môn học, Số tiết'));
+          return;
+        }
+        
+        // Parse data rows
+        const dataRows = nonEmptyRows.slice(headerRowIndex + 1);
+        const monHocs = dataRows.map(row => ({
+          maMh: row[columnMapping.maMh]?.toString().trim() || '',
+          tenMh: row[columnMapping.tenMh]?.toString().trim() || '',
+          soTiet: parseInt(row[columnMapping.soTiet]) || 0
+        })).filter(monHoc => monHoc.maMh || monHoc.tenMh); // Filter out completely empty rows
+        
+        resolve(monHocs);
+      } catch (error) {
+        reject(new Error('Lỗi khi đọc file Excel: ' + error.message));
+      }
+    };
+    
+    reader.onerror = () => {
+      reject(new Error('Không thể đọc file'));
+    };
+    
+    reader.readAsBinaryString(file);
+  });
+};
+
+const importMonHocs = async (monHocs, onProgress) => {
+  const results = {
+    success: 0,
+    failed: 0,
+    errors: []
+  };
+  
+  const total = monHocs.length;
+  
+  for (let i = 0; i < monHocs.length; i++) {
+    const monHoc = monHocs[i];
+    
+    try {
+      // Validate data
+      const validationErrors = validateMonHocData(monHoc, i);
+      if (validationErrors.length > 0) {
+        results.failed++;
+        results.errors.push(...validationErrors);
+        continue;
+      }
+      
+      // Call API
+      await monHocService.createMonHoc(monHoc);
+      results.success++;
+      
+      // Update progress
+      if (onProgress) {
+        onProgress(Math.round(((i + 1) / total) * 100));
+      }
+      
+    } catch (error) {
+      results.failed++;
+      const errorMessage = error.response?.data || error.message || 'Lỗi không xác định';
+      results.errors.push(`Dòng ${i + 1} (${monHoc.maMh}): ${errorMessage}`);
+    }
+  }
+  
+  return results;
+};
+
 // Components
 const SearchBar = ({ value, onChange }) => (
   <Search
@@ -174,7 +334,7 @@ const SearchBar = ({ value, onChange }) => (
   />
 );
 
-const Header = ({ onCreateClick, onExportClick }) => (
+const Header = ({ onCreateClick, onExportClick, onImportClick }) => (
   <div style={{ 
     marginBottom: '16px', 
     display: 'flex', 
@@ -183,6 +343,14 @@ const Header = ({ onCreateClick, onExportClick }) => (
   }}>
     <Title level={2}>Quản lý Môn học</Title>
     <Space>
+      <Button 
+        type="default" 
+        icon={<UploadOutlined />} 
+        onClick={onImportClick}
+        title="Import file Excel"
+      >
+        Import Excel
+      </Button>
       <Button 
         type="default" 
         icon={<DownloadOutlined />} 
@@ -240,6 +408,181 @@ const MonHocModal = ({ visible, title, onOk, onCancel, form, editingMaMh }) => (
   </Modal>
 );
 
+const ImportModal = ({ visible, onCancel, onImport }) => {
+  const [fileList, setFileList] = useState([]);
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [previewData, setPreviewData] = useState([]);
+  const [importResults, setImportResults] = useState(null);
+
+  const handleFileChange = async (info) => {
+    const { fileList: newFileList } = info;
+    setFileList(newFileList);
+    setPreviewData([]);
+    setImportResults(null);
+    
+    if (newFileList.length > 0) {
+      const file = newFileList[0].originFileObj;
+      try {
+        const data = await parseExcelFile(file);
+        setPreviewData(data.slice(0, 5)); // Show first 5 rows for preview
+      } catch (error) {
+        message.error(error.message);
+      }
+    }
+  };
+
+  const handleImport = async () => {
+    if (fileList.length === 0) {
+      message.error('Vui lòng chọn file Excel');
+      return;
+    }
+
+    try {
+      setImporting(true);
+      setImportProgress(0);
+      
+      const file = fileList[0].originFileObj;
+      const data = await parseExcelFile(file);
+      
+      if (data.length === 0) {
+        message.error('File Excel không có dữ liệu');
+        return;
+      }
+
+      const results = await importMonHocs(data, setImportProgress);
+      setImportResults(results);
+      
+      if (results.success > 0) {
+        message.success(`Import thành công ${results.success}/${data.length} môn học`);
+        onImport(); // Refresh data
+      }
+      
+      if (results.failed > 0) {
+        message.warning(`${results.failed} môn học import thất bại`);
+      }
+      
+    } catch (error) {
+      message.error('Lỗi khi import: ' + error.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleModalCancel = () => {
+    if (!importing) {
+      setFileList([]);
+      setPreviewData([]);
+      setImportResults(null);
+      setImportProgress(0);
+      onCancel();
+    }
+  };
+
+  const previewColumns = [
+    { title: 'Mã môn học', dataIndex: 'maMh', key: 'maMh' },
+    { title: 'Tên môn học', dataIndex: 'tenMh', key: 'tenMh' },
+    { title: 'Số tiết', dataIndex: 'soTiet', key: 'soTiet' }
+  ];
+
+  return (
+    <Modal
+      title="Import Môn học từ Excel"
+      open={visible}
+      onCancel={handleModalCancel}
+      footer={[
+        <Button key="cancel" onClick={handleModalCancel} disabled={importing}>
+          Đóng
+        </Button>,
+        <Button 
+          key="import" 
+          type="primary" 
+          onClick={handleImport}
+          loading={importing}
+          disabled={fileList.length === 0}
+        >
+          Import
+        </Button>
+      ]}
+      width={800}
+      destroyOnClose
+    >
+      <div style={{ marginBottom: 16 }}>
+        <Alert
+          message="Lưu ý"
+          description="File Excel cần có các cột: Mã môn học, Tên môn học, Số tiết"
+          type="info"
+          showIcon
+        />
+      </div>
+
+      <Dragger
+        accept=".xlsx,.xls"
+        fileList={fileList}
+        onChange={handleFileChange}
+        beforeUpload={() => false}
+        maxCount={1}
+      >
+        <p className="ant-upload-drag-icon">
+          <InboxOutlined />
+        </p>
+        <p className="ant-upload-text">Click hoặc kéo file Excel vào đây</p>
+        <p className="ant-upload-hint">
+          Chỉ hỗ trợ file .xlsx và .xls
+        </p>
+      </Dragger>
+
+      {importing && (
+        <div style={{ marginTop: 16 }}>
+          <Progress percent={importProgress} status="active" />
+          <p style={{ textAlign: 'center', marginTop: 8 }}>
+            Đang import dữ liệu...
+          </p>
+        </div>
+      )}
+
+      {previewData.length > 0 && !importing && (
+        <div style={{ marginTop: 16 }}>
+          <Title level={5}>Xem trước dữ liệu (5 dòng đầu tiên):</Title>
+          <Table
+            columns={previewColumns}
+            dataSource={previewData}
+            rowKey={(record, index) => index}
+            pagination={false}
+            size="small"
+          />
+        </div>
+      )}
+
+      {importResults && (
+        <div style={{ marginTop: 16 }}>
+          <Alert
+            message="Kết quả Import"
+            description={
+              <div>
+                <p>Thành công: {importResults.success}</p>
+                <p>Thất bại: {importResults.failed}</p>
+                {importResults.errors.length > 0 && (
+                  <div style={{ marginTop: 8, maxHeight: 200, overflow: 'auto' }}>
+                    <Title level={5}>Chi tiết lỗi:</Title>
+                    {importResults.errors.map((error, index) => (
+                      <p key={index} style={{ margin: 0, color: 'red', fontSize: 12 }}>
+                        {error}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            }
+            type={importResults.success > 0 ? 'success' : 'error'}
+            showIcon
+          />
+        </div>
+      )}
+    </Modal>
+  );
+};
+
 // Main Component
 export const DanhSachMonHocComponents = () => {
   // State management
@@ -248,6 +591,7 @@ export const DanhSachMonHocComponents = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [importModalVisible, setImportModalVisible] = useState(false);
   const [editingMaMh, setEditingMaMh] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -333,13 +677,26 @@ export const DanhSachMonHocComponents = () => {
     exportToExcel(filteredData);
   };
 
+  const handleImport = () => {
+    setImportModalVisible(true);
+  };
+
+  const handleImportComplete = () => {
+    setImportModalVisible(false);
+    fetchMonHocs(); // Refresh data after import
+  };
+
   // Table configuration
   const columns = createTableColumns(handleEdit, handleDelete);
   const modalTitle = editingMaMh ? 'Cập nhật Môn học' : 'Thêm Môn học Mới';
 
   return (
     <div style={{ padding: '24px' }}>
-      <Header onCreateClick={handleCreate} onExportClick={handleExport} />
+      <Header 
+        onCreateClick={handleCreate} 
+        onExportClick={handleExport}
+        onImportClick={handleImport}
+      />
       <SearchBar value={searchText} onChange={handleSearch} />
       <ErrorAlert error={error} />
       
@@ -363,6 +720,12 @@ export const DanhSachMonHocComponents = () => {
         onCancel={handleModalCancel}
         form={form}
         editingMaMh={editingMaMh}
+      />
+
+      <ImportModal
+        visible={importModalVisible}
+        onCancel={() => setImportModalVisible(false)}
+        onImport={handleImportComplete}
       />
     </div>
   );

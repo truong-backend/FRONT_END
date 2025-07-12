@@ -9,11 +9,11 @@ const sampleTKB = {
           maMH: "CS03036",
           tenMon: "Toán cao cấp",
           nmh: "3",
-          stc: "3.0",
-          maLop: "x",
-          stchp: "x",
+          // stc: "3.0",
+          // maLop: "x",
+          // stchp: "x",
           kdk: "Năm",
-          th: "1",
+          th: "X",
           thu: "Thứ 2",
           tietBd: 1,
           tietKt: 3,
@@ -29,11 +29,11 @@ const sampleTKB = {
           maMH: "CS03036",
           tenMon: "Lập trình Web",
           nmh: "3",
-          stc: "3.0",
-          maLop: "x",
-          stchp: "x",
+          // stc: "3.0",
+          // maLop: "x",
+          // stchp: "x",
           kdk: "Năm",
-          th: "1",
+          th: "X",
           thu: "Thứ 3",
           tietBd: 2,
           tietKt: 5,
@@ -49,11 +49,11 @@ const sampleTKB = {
           maMH: "CS03036",
           tenMon: "CSDL",
           nmh: "3",
-          stc: "3.0",
-          maLop: "x",
-          stchp: "x",
+          // stc: "3.0",
+          // maLop: "x",
+          // stchp: "x",
           kdk: "Năm",
-          th: "1",
+          th: "X",
           thu: "Thứ 5",
           tietBd: 1,
           tietKt: 3,
@@ -91,9 +91,9 @@ const TKBCaNhan = ({ data }) => {
                 "Mã MH",
                 "Tên MH",
                 "NMH",
-                "STC",
-                "Mã lớp",
-                "STCHP",
+                // "STC",
+                // "Mã lớp",
+                // "STCHP",
                 "KDK",
                 "TH",
                 "Tiết BD",
@@ -114,9 +114,9 @@ const TKBCaNhan = ({ data }) => {
                 <td style={thtdStyle}>{mon.maMH}</td>
                 <td style={thtdStyle}>{mon.tenMon}</td>
                 <td style={thtdStyle}>{mon.nmh || "N/A"}</td>
-                <td style={thtdStyle}>{mon.stc || "N/A"}</td>
-                <td style={thtdStyle}>{mon.maLop || "N/A"}</td>
-                <td style={thtdStyle}>{mon.stchp || "N/A"}</td>
+                {/* <td style={thtdStyle}>{mon.stc || "N/A"}</td> */}
+                {/* <td style={thtdStyle}>{mon.maLop || "N/A"}</td> */}
+                {/* <td style={thtdStyle}>{mon.stchp || "N/A"}</td> */}
                 <td style={thtdStyle}>{mon.kdk || "N/A"}</td>
                 <td style={thtdStyle}>{mon.th || "N/A"}</td>
                 <td style={thtdStyle}>{mon.tietBd}</td>
@@ -213,7 +213,7 @@ const TKBTheoTuan = ({ data, selectedTuan }) => {
                       <div>{mon.tenMon}</div>
                       <div>Phòng: {mon.phong}</div>
                       <div>Giảng viên: {mon.cbgd}</div>
-                      <div>Tín chỉ: {mon.stc} TC</div>
+                      {/* <div>Tín chỉ: {mon.stc} TC</div> */}
                     </td>
                   );
                 } else if (mon && mon.tietBd < tiet && tiet <= mon.tietKt) {
@@ -250,7 +250,7 @@ const TKBTheoTuan = ({ data, selectedTuan }) => {
             </div>
             <div>
               <p>Mã môn học: {selectedSubject.maMH}</p>
-              <p>Số tín chỉ: {selectedSubject.stc}</p>
+              {/* <p>Số tín chỉ: {selectedSubject.stc}</p> */}
               <p>Tên môn học: {selectedSubject.tenMon}</p>
               <p>
                 Thứ: {selectedSubject.thu} - Tiết: {selectedSubject.tietBd} đến {selectedSubject.tietKt}

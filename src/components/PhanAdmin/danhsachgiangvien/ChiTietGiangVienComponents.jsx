@@ -20,14 +20,14 @@ export const ChiTietGiangVienComponents = ({ visible, onClose, lecturer }) => {
 
   const workInfo = [
     { label: 'Mã giảng viên', value: <Tag color="blue">{lecturer.maGv}</Tag> },
-    { label: 'Chức vụ', value: lecturer.chucVu },
-    { label: 'Khoa', value: lecturer.tenKhoa, span: 2 }
+    // { label: 'Chức vụ', value: lecturer.chucVu },
+    // { label: 'Khoa', value: lecturer.tenKhoa, span: 2 }
   ];
 
   const accountInfo = [
     { label: 'Tên đăng nhập', value: lecturer.maGv },
     { label: 'Email đăng nhập', value: lecturer.email },
-    { label: 'Trạng thái', value: <Tag color="green">Đã kích hoạt</Tag> }
+    // { label: 'Trạng thái', value: <Tag color="green">Đã kích hoạt</Tag> }
   ];
 
   const renderDescriptions = (items) => (

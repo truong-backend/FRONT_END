@@ -1,26 +1,30 @@
-import api from "../api.js";
+// src/services/lichHocService.js
+import api from "../api.js"; // giả sử api đã tạo axios instance với baseURL
 
-const LICH_HOC_API = '/lichhoc';
-
-// Service methods for LichHoc API
 export const lichHocService = {
-  // Create a new LichHoc (register a student for a teaching schedule)
-  createLichHoc: (lichHocData) =>
-    api.post(LICH_HOC_API, lichHocData).then(res => res.data),
+  // Lấy danh sách sinh viên chưa học theo maGd
+  getSinhVienChuaHoc: async (maGd) => {
+    const response = await api.get(`/lichhoc/chua-hoc/${maGd}`);
+    return response.data;
+  },
 
-  // Get paginated list of LichHoc with optional filters
-  getLichHocList: (params = {}) =>
-    api.get(LICH_HOC_API, { params }).then(res => res.data),
+  // Lấy danh sách sinh viên đã học theo maGd
+  getSinhVienDaHoc: async (maGd) => {
+    const response = await api.get(`/lichhoc/da-hoc/${maGd}`);
+    return response.data;
+  },
 
-  // Get all LichHoc without pagination
-  getAllLichHoc: () =>
-    api.get(`${LICH_HOC_API}/all`).then(res => res.data),
+  // Thêm sinh viên vào lịch học
+  themSinhVien: async ({ maSv, maGd }) => {
+    const response = await api.post('/lichhoc/them', { maSv, maGd });
+    return response.data;
+  },
 
-  // Update a LichHoc (change teaching schedule for a student)
-  updateLichHoc: (maSv, maGd, lichHocData) =>
-    api.put(`${LICH_HOC_API}/${maSv}/${maGd}`, lichHocData).then(res => res.data),
-
-  // Delete a LichHoc (cancel a student's registration)
-  deleteLichHoc: (maSv, maGd) =>
-    api.delete(`${LICH_HOC_API}/${maSv}/${maGd}`).then(res => res.data),
+  // Xóa sinh viên khỏi lịch học
+  xoaSinhVien: async (maSv, maGd) => {
+    const response = await api.delete('/lichhoc/xoa', {
+      params: { maSv, maGd }
+    });
+    return response.data;
+  },
 };
