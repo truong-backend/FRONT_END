@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, Button, Space, Modal, Form, Input, message, 
-  Popconfirm, Select, Typography, Alert, Spin
+  Popconfirm, Select, Typography, Alert, Spin, Upload, Progress
 } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons';
+import { 
+  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, 
+  DownloadOutlined, UploadOutlined, InboxOutlined 
+} from '@ant-design/icons';
 import { khoaService } from '../../../services/PhanAdmin/khoaService.js';
 import { lopService } from '../../../services/PhanAdmin/lopService.js';
 import * as XLSX from 'xlsx';
@@ -12,6 +15,7 @@ import { saveAs } from 'file-saver';
 const { Option } = Select;
 const { Title } = Typography;
 const { Search } = Input;
+const { Dragger } = Upload;
 
 // Configuration
 const DEFAULT_PAGINATION = { current: 1, pageSize: 10 };
@@ -26,6 +30,15 @@ const FORM_RULES = {
     { required: true, message: 'Vui lòng nhập số điện thoại GVCN' },
     { pattern: /^[0-9]{10}$/, message: 'Số điện thoại không hợp lệ' }
   ]
+};
+
+// Excel column mapping
+const EXCEL_COLUMNS = {
+  'Mã Lớp': 'maLop',
+  'Tên Lớp': 'tenLop', 
+  'Mã Khoa': 'maKhoa',
+  'GVCN': 'gvcn',
+  'SĐT GVCN': 'sdtGvcn'
 };
 
 // Utility functions
@@ -120,8 +133,48 @@ const createTableColumns = (onEdit, onDelete) => [
   },
 ];
 
+// Validate Excel data
+const validateExcelRow = (row, index, khoas) => {
+  const errors = [];
+  
+  // Check required fields
+  if (!row.maLop?.trim()) {
+    errors.push(`Dòng ${index + 1}: Thiếu mã lớp`);
+  }
+  
+  if (!row.tenLop?.trim()) {
+    errors.push(`Dòng ${index + 1}: Thiếu tên lớp`);
+  }
+  
+  if (!row.maKhoa?.trim()) {
+    errors.push(`Dòng ${index + 1}: Thiếu mã khoa`);
+  } else {
+    // Check if maKhoa exists
+    const khoaExists = khoas.some(khoa => khoa.maKhoa === row.maKhoa.trim());
+    if (!khoaExists) {
+      errors.push(`Dòng ${index + 1}: Mã khoa "${row.maKhoa}" không tồn tại`);
+    }
+  }
+  
+  if (!row.gvcn?.trim()) {
+    errors.push(`Dòng ${index + 1}: Thiếu tên GVCN`);
+  }
+  
+  if (!row.sdtGvcn?.trim()) {
+    errors.push(`Dòng ${index + 1}: Thiếu số điện thoại GVCN`);
+  } else {
+    // Validate phone number format
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(row.sdtGvcn.toString().trim())) {
+      errors.push(`Dòng ${index + 1}: Số điện thoại không hợp lệ`);
+    }
+  }
+  
+  return errors;
+};
+
 // Components
-const Header = ({ onCreateClick, onExportClick, hasData }) => (
+const Header = ({ onCreateClick, onExportClick, onImportClick, hasData }) => (
   <div style={{ 
     marginBottom: '16px', 
     display: 'flex', 
@@ -130,6 +183,13 @@ const Header = ({ onCreateClick, onExportClick, hasData }) => (
   }}>
     <Title level={2}>Quản lý Lớp</Title>
     <Space>
+      <Button 
+        type="default" 
+        icon={<UploadOutlined />} 
+        onClick={onImportClick}
+      >
+        Import Excel
+      </Button>
       <Button 
         type="default" 
         icon={<DownloadOutlined />} 
@@ -236,6 +296,180 @@ const LopModal = ({ visible, title, onOk, onCancel, form, khoas, editingMaLop })
   </Modal>
 );
 
+// Import Modal Component
+const ImportModal = ({ visible, onCancel, onImport, importProgress, isImporting }) => {
+  const [fileList, setFileList] = useState([]);
+  const [previewData, setPreviewData] = useState([]);
+  const [importErrors, setImportErrors] = useState([]);
+
+  const handleFileUpload = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        // Transform data to match expected format
+        const transformedData = jsonData.map(row => {
+          const transformedRow = {};
+          Object.keys(EXCEL_COLUMNS).forEach(excelCol => {
+            const dbCol = EXCEL_COLUMNS[excelCol];
+            transformedRow[dbCol] = row[excelCol] || '';
+          });
+          return transformedRow;
+        });
+        
+        setPreviewData(transformedData);
+        setImportErrors([]);
+        message.success(`Đã đọc thành công ${transformedData.length} dòng dữ liệu`);
+      } catch (error) {
+        message.error('Lỗi khi đọc file Excel');
+        setPreviewData([]);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    return false; // Prevent default upload
+  };
+
+  const handleImport = () => {
+    if (previewData.length === 0) {
+      message.warning('Vui lòng chọn file Excel để import');
+      return;
+    }
+    onImport(previewData);
+  };
+
+  const handleCancel = () => {
+    setFileList([]);
+    setPreviewData([]);
+    setImportErrors([]);
+    onCancel();
+  };
+
+  const previewColumns = [
+    { title: 'Mã Lớp', dataIndex: 'maLop', width: '15%' },
+    { title: 'Tên Lớp', dataIndex: 'tenLop', width: '25%' },
+    { title: 'Mã Khoa', dataIndex: 'maKhoa', width: '15%' },
+    { title: 'GVCN', dataIndex: 'gvcn', width: '20%' },
+    { title: 'SĐT GVCN', dataIndex: 'sdtGvcn', width: '15%' },
+  ];
+
+  return (
+    <Modal
+      title="Import Danh Sách Lớp"
+      open={visible}
+      onCancel={handleCancel}
+      footer={[
+        <Button key="cancel" onClick={handleCancel}>
+          Hủy
+        </Button>,
+        <Button 
+          key="import" 
+          type="primary" 
+          onClick={handleImport}
+          disabled={previewData.length === 0 || isImporting}
+          loading={isImporting}
+        >
+          Import
+        </Button>
+      ]}
+      width={900}
+      destroyOnClose
+    >
+      <div style={{ marginBottom: '16px' }}>
+        <Alert
+          message="Hướng dẫn"
+          description={
+            <div>
+              <p>File Excel cần có các cột sau:</p>
+              <ul>
+                <li><strong>Mã Lớp:</strong> Mã định danh lớp (bắt buộc)</li>
+                <li><strong>Tên Lớp:</strong> Tên lớp học (bắt buộc)</li>
+                <li><strong>Mã Khoa:</strong> Mã khoa quản lý (bắt buộc)</li>
+                <li><strong>GVCN:</strong> Tên giáo viên chủ nhiệm (bắt buộc)</li>
+                <li><strong>SĐT GVCN:</strong> Số điện thoại GVCN (bắt buộc, 10 số)</li>
+              </ul>
+            </div>
+          }
+          type="info"
+          showIcon
+        />
+      </div>
+
+      <Dragger
+        fileList={fileList}
+        beforeUpload={handleFileUpload}
+        onRemove={() => {
+          setFileList([]);
+          setPreviewData([]);
+          setImportErrors([]);
+        }}
+        accept=".xlsx,.xls"
+        multiple={false}
+      >
+        <p className="ant-upload-drag-icon">
+          <InboxOutlined />
+        </p>
+        <p className="ant-upload-text">Kích hoặc kéo file Excel vào đây</p>
+        <p className="ant-upload-hint">
+          Chỉ hỗ trợ file .xlsx và .xls
+        </p>
+      </Dragger>
+
+      {isImporting && (
+        <div style={{ margin: '16px 0' }}>
+          <Progress 
+            percent={importProgress} 
+            status="active"
+            format={(percent) => `${percent}% (${Math.round(percent * previewData.length / 100)}/${previewData.length})`}
+          />
+        </div>
+      )}
+
+      {importErrors.length > 0 && (
+        <Alert
+          message="Lỗi dữ liệu"
+          description={
+            <ul>
+              {importErrors.slice(0, 10).map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+              {importErrors.length > 10 && (
+                <li>... và {importErrors.length - 10} lỗi khác</li>
+              )}
+            </ul>
+          }
+          type="error"
+          showIcon
+          style={{ marginTop: '16px' }}
+        />
+      )}
+
+      {previewData.length > 0 && (
+        <div style={{ marginTop: '16px' }}>
+          <Title level={4}>Xem trước dữ liệu ({previewData.length} dòng)</Title>
+          <Table
+            columns={previewColumns}
+            dataSource={previewData.slice(0, 10)}
+            rowKey={(record, index) => index}
+            pagination={false}
+            scroll={{ x: 700 }}
+            size="small"
+          />
+          {previewData.length > 10 && (
+            <p style={{ textAlign: 'center', marginTop: '8px', color: '#666' }}>
+              Chỉ hiển thị 10 dòng đầu tiên
+            </p>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+};
+
 // Main Component
 export const DanhSachLopComponents = () => {
   // State management
@@ -245,11 +479,14 @@ export const DanhSachLopComponents = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [importModalVisible, setImportModalVisible] = useState(false);
   const [editingMaLop, setEditingMaLop] = useState(null);
   const [selectedKhoa, setSelectedKhoa] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
   const [sorter, setSorter] = useState(DEFAULT_SORTER);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
   const [form] = Form.useForm();
 
   // Excel export function
@@ -311,6 +548,88 @@ export const DanhSachLopComponents = () => {
     } catch (error) {
       console.error('Error exporting to Excel:', error);
       message.error('Có lỗi xảy ra khi xuất file Excel');
+    }
+  };
+
+  // Excel import function
+  const handleImport = async (importData) => {
+    setIsImporting(true);
+    setImportProgress(0);
+    
+    try {
+      // Validate data
+      const errors = [];
+      const validData = [];
+      
+      importData.forEach((row, index) => {
+        const rowErrors = validateExcelRow(row, index, khoas);
+        if (rowErrors.length > 0) {
+          errors.push(...rowErrors);
+        } else {
+          // Clean and format data
+          validData.push({
+            maLop: row.maLop.toString().trim(),
+            tenLop: row.tenLop.toString().trim(),
+            maKhoa: row.maKhoa.toString().trim(),
+            gvcn: row.gvcn.toString().trim(),
+            sdtGvcn: row.sdtGvcn.toString().trim()
+          });
+        }
+      });
+
+      if (errors.length > 0) {
+        message.error(`Phát hiện ${errors.length} lỗi trong dữ liệu`);
+        return;
+      }
+
+      if (validData.length === 0) {
+        message.warning('Không có dữ liệu hợp lệ để import');
+        return;
+      }
+
+      // Import data using forEach with API calls
+      let successCount = 0;
+      let errorCount = 0;
+      const importErrors = [];
+
+      for (let i = 0; i < validData.length; i++) {
+        try {
+          await lopService.createLop(validData[i]);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          const errorMessage = error.response?.data || error.message || 'Lỗi không xác định';
+          importErrors.push(`Dòng ${i + 1} (${validData[i].maLop}): ${errorMessage}`);
+        }
+        
+        // Update progress
+        const progress = Math.round(((i + 1) / validData.length) * 100);
+        setImportProgress(progress);
+        
+        // Small delay to show progress
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // Show results
+      if (successCount > 0) {
+        message.success(`Import thành công ${successCount} lớp`);
+      }
+      
+      if (errorCount > 0) {
+        message.error(`${errorCount} lớp không thể import`);
+        console.error('Import errors:', importErrors);
+      }
+
+      // Close modal and refresh data
+      setImportModalVisible(false);
+      fetchData();
+      
+    } catch (error) {
+      console.error('Import error:', error);
+      message.error('Có lỗi xảy ra trong quá trình import');
+    } finally {
+      setIsImporting(false);
+      setImportProgress(0);
     }
   };
 
@@ -416,6 +735,14 @@ export const DanhSachLopComponents = () => {
     setModalVisible(false);
   };
 
+  const handleImportModalOpen = () => {
+    setImportModalVisible(true);
+  };
+
+  const handleImportModalCancel = () => {
+    setImportModalVisible(false);
+  };
+
   // Configuration
   const columns = createTableColumns(handleEdit, handleDelete);
   const modalTitle = editingMaLop ? 'Cập nhật Lớp' : 'Thêm Lớp Mới';
@@ -427,6 +754,7 @@ export const DanhSachLopComponents = () => {
       <Header 
         onCreateClick={handleCreate} 
         onExportClick={exportToExcel}
+        onImportClick={handleImportModalOpen}
         hasData={hasData}
       />
       
@@ -465,6 +793,14 @@ export const DanhSachLopComponents = () => {
         form={form}
         khoas={khoas}
         editingMaLop={editingMaLop}
+      />
+
+      <ImportModal
+        visible={importModalVisible}
+        onCancel={handleImportModalCancel}
+        onImport={handleImport}
+        importProgress={importProgress}
+        isImporting={isImporting}
       />
     </div>
   );

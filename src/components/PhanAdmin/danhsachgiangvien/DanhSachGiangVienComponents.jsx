@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, Input, Space, Button, Popconfirm, message, Modal, Form,
-  DatePicker, Radio, Upload, Avatar
+  DatePicker, Radio, Upload, Avatar, Progress, List, Typography
 } from 'antd';
 import {
   EditOutlined, DeleteOutlined, PlusOutlined, UserOutlined,
-  UploadOutlined, EyeOutlined, SearchOutlined, DownloadOutlined
+  UploadOutlined, EyeOutlined, SearchOutlined, DownloadOutlined,
+  ImportOutlined, InboxOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { teacherService } from '../../../services/PhanAdmin/teacherService.js';
 import { ChiTietGiangVienComponents } from './ChiTietGiangVienComponents.jsx';
+
+const { Dragger } = Upload;
+const { Text, Title } = Typography;
 
 export const DanhSachGiangVienComponents = () => {
   // State management
@@ -23,6 +27,13 @@ export const DanhSachGiangVienComponents = () => {
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [form] = Form.useForm();
+
+  // Import states
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importData, setImportData] = useState([]);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importResults, setImportResults] = useState(null);
 
   // Data fetching
   const fetchTeachers = async () => {
@@ -48,6 +59,221 @@ export const DanhSachGiangVienComponents = () => {
     teacher.tenGv?.toLowerCase().includes(searchText) ||
     teacher.email?.toLowerCase().includes(searchText)
   );
+
+  // Import Excel functionality
+  const handleImportExcel = async (file) => {
+    try {
+      setImportLoading(true);
+      setImportProgress(0);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+          // Validate and transform data
+          const transformedData = jsonData.map((row, index) => {
+            const rowNumber = index + 2; // Excel row number (assuming header is row 1)
+            
+            // Map Excel columns to our data structure
+            const teacher = {
+              maGv: row['Mã giáo viên'] || row['maGv'] || '',
+              tenGv: row['Họ và tên'] || row['tenGv'] || '',
+              ngaySinh: row['Ngày sinh'] || row['ngaySinh'] || '',
+              phai: row['Giới tính'] || row['phai'] || '',
+              diaChi: row['Địa chỉ'] || row['diaChi'] || '',
+              sdt: row['Số điện thoại'] || row['sdt'] || '',
+              email: row['Email'] || row['email'] || '',
+              rowNumber: rowNumber
+            };
+
+            // Transform gender
+            if (typeof teacher.phai === 'string') {
+              teacher.phai = teacher.phai.toLowerCase() === 'nam' ? 1 : 0;
+            }
+
+            // Transform date
+            if (teacher.ngaySinh) {
+              if (typeof teacher.ngaySinh === 'number') {
+                // Excel date number
+                const excelDate = new Date((teacher.ngaySinh - 25569) * 86400 * 1000);
+                teacher.ngaySinh = moment(excelDate).format('YYYY-MM-DD');
+              } else if (typeof teacher.ngaySinh === 'string') {
+                // String date
+                const parsedDate = moment(teacher.ngaySinh, ['DD/MM/YYYY', 'YYYY-MM-DD', 'MM/DD/YYYY']);
+                teacher.ngaySinh = parsedDate.isValid() ? parsedDate.format('YYYY-MM-DD') : '';
+              }
+            }
+
+            return teacher;
+          });
+
+          // Validate required fields
+          const validatedData = transformedData.map(teacher => {
+            const errors = [];
+            
+            if (!teacher.maGv) errors.push('Mã giáo viên không được để trống');
+            if (!teacher.tenGv) errors.push('Họ tên không được để trống');
+            if (!teacher.email) errors.push('Email không được để trống');
+            if (!teacher.ngaySinh) errors.push('Ngày sinh không được để trống');
+            if (teacher.phai === undefined || teacher.phai === null) errors.push('Giới tính không được để trống');
+            if (!teacher.diaChi) errors.push('Địa chỉ không được để trống');
+            if (!teacher.sdt) errors.push('Số điện thoại không được để trống');
+
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (teacher.email && !emailRegex.test(teacher.email)) {
+              errors.push('Email không đúng định dạng');
+            }
+
+            return {
+              ...teacher,
+              errors: errors,
+              isValid: errors.length === 0
+            };
+          });
+
+          setImportData(validatedData);
+          setImportModalVisible(true);
+        } catch (error) {
+          console.error('Error parsing Excel file:', error);
+          message.error('Lỗi khi đọc file Excel. Vui lòng kiểm tra định dạng file.');
+        } finally {
+          setImportLoading(false);
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      console.error('Import error:', error);
+      message.error('Lỗi khi import file Excel');
+      setImportLoading(false);
+    }
+
+    return false; // Prevent default upload
+  };
+
+  const processImport = async () => {
+    try {
+      setImportLoading(true);
+      setImportProgress(0);
+      
+      const validData = importData.filter(item => item.isValid);
+      const results = {
+        total: importData.length,
+        success: 0,
+        failed: 0,
+        errors: []
+      };
+
+      // Process each valid record
+      for (let i = 0; i < validData.length; i++) {
+        const teacher = validData[i];
+        setImportProgress(Math.round(((i + 1) / validData.length) * 100));
+
+        try {
+          // Prepare data for API
+          const teacherData = {
+            maGv: teacher.maGv.trim(),
+            tenGv: teacher.tenGv.trim(),
+            ngaySinh: teacher.ngaySinh,
+            phai: teacher.phai,
+            diaChi: teacher.diaChi.trim(),
+            sdt: teacher.sdt.trim(),
+            email: teacher.email.trim()
+          };
+
+          await teacherService.createTeacher(teacherData);
+          results.success++;
+        } catch (error) {
+          results.failed++;
+          results.errors.push({
+            row: teacher.rowNumber,
+            maGv: teacher.maGv,
+            tenGv: teacher.tenGv,
+            error: error.message || 'Lỗi không xác định'
+          });
+        }
+
+        // Small delay to prevent overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      setImportResults(results);
+      
+      if (results.success > 0) {
+        message.success(`Import thành công ${results.success} giáo viên`);
+        fetchTeachers(); // Refresh the list
+      }
+      
+      if (results.failed > 0) {
+        message.warning(`${results.failed} giáo viên import thất bại`);
+      }
+
+    } catch (error) {
+      console.error('Process import error:', error);
+      message.error('Lỗi khi xử lý import');
+    } finally {
+      setImportLoading(false);
+      setImportProgress(0);
+    }
+  };
+
+  const downloadTemplate = () => {
+    try {
+      const templateData = [
+        {
+          'Mã giáo viên': 'GV001',
+          'Họ và tên': 'Nguyễn Văn A',
+          'Ngày sinh': '01/01/1980',
+          'Giới tính': 'Nam',
+          'Địa chỉ': '123 Đường ABC, Quận 1, TP.HCM',
+          'Số điện thoại': '0123456789',
+          'Email': 'nguyenvana@email.com'
+        },
+        {
+          'Mã giáo viên': 'GV002',
+          'Họ và tên': 'Trần Thị B',
+          'Ngày sinh': '15/05/1985',
+          'Giới tính': 'Nữ',
+          'Địa chỉ': '456 Đường XYZ, Quận 2, TP.HCM',
+          'Số điện thoại': '0987654321',
+          'Email': 'tranthib@email.com'
+        }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(templateData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 12 },  // Mã giáo viên
+        { wch: 25 },  // Họ và tên
+        { wch: 12 },  // Ngày sinh
+        { wch: 10 },  // Giới tính
+        { wch: 30 },  // Địa chỉ
+        { wch: 15 },  // Số điện thoại
+        { wch: 25 }   // Email
+      ];
+      ws['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Template');
+
+      const fileName = `Template_DanhSachGiaoVien_${moment().format('YYYYMMDD')}.xlsx`;
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      saveAs(blob, fileName);
+
+      message.success('Tải template thành công!');
+    } catch (error) {
+      console.error('Download template error:', error);
+      message.error('Lỗi khi tải template');
+    }
+  };
 
   // Export Excel functionality
   const exportToExcel = () => {
@@ -190,6 +416,13 @@ export const DanhSachGiangVienComponents = () => {
   const showDetails = (record) => {
     setSelectedTeacher(record);
     setDetailsVisible(true);
+  };
+
+  const closeImportModal = () => {
+    setImportModalVisible(false);
+    setImportData([]);
+    setImportResults(null);
+    setImportProgress(0);
   };
 
   // Table configuration
@@ -343,7 +576,29 @@ export const DanhSachGiangVienComponents = () => {
           />
           <Button 
             type="default"
-            // icon={<DownloadOutlined />} 
+            icon={<DownloadOutlined />}
+            onClick={downloadTemplate}
+            title="Tải template Excel"
+          >
+            Tải Template
+          </Button>
+          <Upload
+            accept=".xlsx,.xls"
+            beforeUpload={handleImportExcel}
+            showUploadList={false}
+          >
+            <Button 
+              type="default"
+              icon={<ImportOutlined />}
+              loading={importLoading}
+              title="Import từ Excel"
+            >
+              Import Excel
+            </Button>
+          </Upload>
+          <Button 
+            type="default"
+            icon={<DownloadOutlined />}
             onClick={exportToExcel}
             title="Xuất báo cáo Excel"
           >
@@ -391,6 +646,135 @@ export const DanhSachGiangVienComponents = () => {
             </Form.Item>
           ))}
         </Form>
+      </Modal>
+
+      {/* Import Modal */}
+      <Modal
+        title="Import Danh sách Giáo viên từ Excel"
+        open={importModalVisible}
+        onCancel={closeImportModal}
+        width={800}
+        footer={[
+          <Button key="cancel" onClick={closeImportModal}>
+            Hủy
+          </Button>,
+          <Button
+            key="import"
+            type="primary"
+            loading={importLoading}
+            onClick={processImport}
+            disabled={!importData.length || importData.filter(item => item.isValid).length === 0}
+          >
+            Thực hiện Import
+          </Button>
+        ]}
+      >
+        <div className="space-y-4">
+          {/* Import Progress */}
+          {importLoading && (
+            <div>
+              <Text>Đang xử lý...</Text>
+              <Progress percent={importProgress} />
+            </div>
+          )}
+
+          {/* Import Results */}
+          {importResults && (
+            <div className="bg-gray-50 p-4 rounded">
+              <Title level={5}>Kết quả Import:</Title>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{importResults.total}</div>
+                  <div className="text-sm text-gray-600">Tổng số</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{importResults.success}</div>
+                  <div className="text-sm text-gray-600">Thành công</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{importResults.failed}</div>
+                  <div className="text-sm text-gray-600">Thất bại</div>
+                </div>
+              </div>
+              
+              {importResults.errors.length > 0 && (
+                <div className="mt-4">
+                  <Text strong>Lỗi chi tiết:</Text>
+                  <List
+                    size="small"
+                    dataSource={importResults.errors}
+                    renderItem={(error) => (
+                      <List.Item>
+                        <Text type="danger">
+                          Dòng {error.row}: {error.maGv} - {error.tenGv} - {error.error}
+                        </Text>
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Import Data Preview */}
+          {importData.length > 0 && !importResults && (
+            <div>
+              <Title level={5}>
+                Dữ liệu import ({importData.filter(item => item.isValid).length} hợp lệ / {importData.length} tổng)
+              </Title>
+              <div className="max-h-96 overflow-y-auto">
+                <Table
+                  size="small"
+                  dataSource={importData}
+                  rowKey={(record, index) => index}
+                  pagination={false}
+                  columns={[
+                    {
+                      title: 'Dòng',
+                      dataIndex: 'rowNumber',
+                      width: 60
+                    },
+                    {
+                      title: 'Mã GV',
+                      dataIndex: 'maGv',
+                      width: 100
+                    },
+                    {
+                      title: 'Họ tên',
+                      dataIndex: 'tenGv',
+                      width: 150
+                    },
+                    {
+                      title: 'Email',
+                      dataIndex: 'email',
+                      width: 150
+                    },
+                    {
+                      title: 'Trạng thái',
+                      width: 100,
+                      render: (_, record) => (
+                        record.isValid ? 
+                          <Text type="success">Hợp lệ</Text> : 
+                          <Text type="danger">Lỗi</Text>
+                      )
+                    },
+                    {
+                      title: 'Lỗi',
+                      render: (_, record) => (
+                        record.errors.length > 0 && (
+                          <Text type="danger" className="text-xs">
+                            {record.errors.join(', ')}
+                          </Text>
+                        )
+                      )
+                    }
+                  ]}
+                  rowClassName={(record) => record.isValid ? '' : 'bg-red-50'}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </Modal>
 
       {/* Details Modal */}

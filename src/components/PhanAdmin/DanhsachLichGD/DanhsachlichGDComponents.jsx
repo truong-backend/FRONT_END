@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { UploadOutlined } from '@ant-design/icons';
 import {
   Table,
   Input,
@@ -52,6 +53,11 @@ const PERIOD_RANGE = { min: 1, max: 20 };
 const GROUP_COUNT = 100;
 
 export const DanhsachlichGDComponents = () => {
+
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importFile, setImportFile] = useState(null);
   const [studentSearchText, setStudentSearchText] = useState('');
   const [addStudentModalVisible, setAddStudentModalVisible] = useState(false);
   const [selectedStudentsToAdd, setSelectedStudentsToAdd] = useState([]);
@@ -418,7 +424,325 @@ export const DanhsachlichGDComponents = () => {
       </Option>
     )), [monHocList]
   );
+  const handleImport = async () => {
+    if (!importFile) {
+      message.error('Vui lòng chọn file Excel để import');
+      return;
+    }
 
+    setIsImporting(true);
+    setImportProgress(0);
+
+    try {
+      // Đọc file Excel
+      const data = await importFile.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        throw new Error('File Excel không có dữ liệu');
+      }
+
+      // Validate và convert dữ liệu
+      const validData = [];
+      const errors = [];
+
+      for (let i = 0; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        const rowNum = i + 2; // Bắt đầu từ hàng 2 (do có header)
+
+        try {
+          // Kiểm tra các trường bắt buộc
+          if (!row['Mã GV'] || !row['Mã MH'] || !row['Phòng học'] || !row['Ngày bắt đầu'] || !row['Ngày kết thúc']) {
+            errors.push(`Hàng ${rowNum}: Thiếu thông tin bắt buộc`);
+            continue;
+          }
+
+          // Kiểm tra giáo viên tồn tại
+          const teacher = teacherList.find(gv => gv.maGv === row['Mã GV']);
+          if (!teacher) {
+            errors.push(`Hàng ${rowNum}: Không tìm thấy giáo viên với mã ${row['Mã GV']}`);
+            continue;
+          }
+
+          // Kiểm tra môn học tồn tại
+          const subject = monHocList.find(mh => mh.maMh === row['Mã MH']);
+          if (!subject) {
+            errors.push(`Hàng ${rowNum}: Không tìm thấy môn học với mã ${row['Mã MH']}`);
+            continue;
+          }
+
+          // Parse ngày tháng
+          let ngayBd, ngayKt;
+          try {
+            // Xử lý nhiều định dạng ngày
+            if (typeof row['Ngày bắt đầu'] === 'number') {
+              ngayBd = XLSX.SSF.parse_date_code(row['Ngày bắt đầu']);
+              ngayBd = moment(new Date(ngayBd.y, ngayBd.m - 1, ngayBd.d)).format('YYYY-MM-DD');
+            } else {
+              ngayBd = moment(row['Ngày bắt đầu'], ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']).format('YYYY-MM-DD');
+            }
+
+            if (typeof row['Ngày kết thúc'] === 'number') {
+              ngayKt = XLSX.SSF.parse_date_code(row['Ngày kết thúc']);
+              ngayKt = moment(new Date(ngayKt.y, ngayKt.m - 1, ngayKt.d)).format('YYYY-MM-DD');
+            } else {
+              ngayKt = moment(row['Ngày kết thúc'], ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']).format('YYYY-MM-DD');
+            }
+
+            if (!moment(ngayBd).isValid() || !moment(ngayKt).isValid()) {
+              throw new Error('Định dạng ngày không hợp lệ');
+            }
+
+            if (moment(ngayKt).isBefore(moment(ngayBd))) {
+              throw new Error('Ngày kết thúc phải sau ngày bắt đầu');
+            }
+          } catch (dateError) {
+            errors.push(`Hàng ${rowNum}: Lỗi ngày tháng - ${dateError.message}`);
+            continue;
+          }
+
+          // Validate tiết học
+          const stBd = parseInt(row['Tiết bắt đầu']) || 1;
+          const stKt = parseInt(row['Tiết kết thúc']) || 2;
+
+          if (stBd < PERIOD_RANGE.min || stBd > PERIOD_RANGE.max ||
+            stKt < PERIOD_RANGE.min || stKt > PERIOD_RANGE.max) {
+            errors.push(`Hàng ${rowNum}: Tiết học phải từ ${PERIOD_RANGE.min}-${PERIOD_RANGE.max}`);
+            continue;
+          }
+
+          if (stKt <= stBd) {
+            errors.push(`Hàng ${rowNum}: Tiết kết thúc phải sau tiết bắt đầu`);
+            continue;
+          }
+
+          // Validate học kỳ
+          const hocKy = parseInt(row['Học kỳ']) || 1;
+          if (![1, 2, 3].includes(hocKy)) {
+            errors.push(`Hàng ${rowNum}: Học kỳ phải là 1, 2 hoặc 3`);
+            continue;
+          }
+
+          // Parse ngày trong tuần
+          let ngayTrongTuan = [];
+          if (row['Thứ trong tuần']) {
+            const days = row['Thứ trong tuần'].toString().split(',').map(d => d.trim());
+            ngayTrongTuan = days.map(day => {
+              const dayMap = {
+                'Thứ 2': 1, 'Thu 2': 1, '2': 1,
+                'Thứ 3': 2, 'Thu 3': 2, '3': 2,
+                'Thứ 4': 3, 'Thu 4': 3, '4': 3,
+                'Thứ 5': 4, 'Thu 5': 4, '5': 4,
+                'Thứ 6': 5, 'Thu 6': 5, '6': 5,
+                'Thứ 7': 6, 'Thu 7': 6, '7': 6,
+                'Chủ nhật': 7, 'CN': 7, 'Sunday': 7
+              };
+              return dayMap[day] || parseInt(day);
+            }).filter(d => d >= 1 && d <= 7);
+          }
+
+          const importRecord = {
+            maGv: row['Mã GV'],
+            tenGv: teacher.tenGv,
+            maMh: row['Mã MH'],
+            tenMh: subject.tenMh,
+            nmh: parseInt(row['Số tiết MH']) || subject.soTiet || 1,
+            nhomMonHoc: parseInt(row['Nhóm MH']) || 1,
+            phongHoc: row['Phòng học'].toString(),
+            ngayBd,
+            ngayKt,
+            stBd,
+            stKt,
+            hocKy,
+            ngayTrongTuan
+          };
+
+          validData.push(importRecord);
+        } catch (error) {
+          errors.push(`Hàng ${rowNum}: ${error.message}`);
+        }
+
+        // Cập nhật progress
+        setImportProgress(Math.round(((i + 1) / jsonData.length) * 50));
+      }
+
+      // Hiển thị lỗi nếu có
+      if (errors.length > 0) {
+        const errorMessage = errors.slice(0, 5).join('\n') +
+          (errors.length > 5 ? `\n... và ${errors.length - 5} lỗi khác` : '');
+
+        Modal.error({
+          title: `Có ${errors.length} lỗi trong file import`,
+          content: (
+            <div style={{ maxHeight: 300, overflow: 'auto' }}>
+              <pre style={{ whiteSpace: 'pre-wrap', fontSize: '12px' }}>
+                {errorMessage}
+              </pre>
+            </div>
+          ),
+          width: 600,
+        });
+
+        if (validData.length === 0) {
+          setIsImporting(false);
+          setImportProgress(0);
+          return;
+        }
+      }
+
+      // Import dữ liệu hợp lệ
+      let successCount = 0;
+      let failCount = 0;
+      const importErrors = [];
+
+      for (let i = 0; i < validData.length; i++) {
+        try {
+          await LichGdService.createLichGd(validData[i]);
+          successCount++;
+        } catch (error) {
+          failCount++;
+          const errorMsg = error.response?.data?.message || error.message || 'Lỗi không xác định';
+          importErrors.push(`Bản ghi ${i + 1}: ${errorMsg}`);
+        }
+
+        // Cập nhật progress
+        setImportProgress(50 + Math.round(((i + 1) / validData.length) * 50));
+      }
+
+      // Hiển thị kết quả
+      if (successCount > 0) {
+        message.success(`✅ Import thành công ${successCount} bản ghi`);
+        fetchLichGdList(); // Refresh danh sách
+      }
+
+      if (failCount > 0) {
+        const errorMessage = importErrors.slice(0, 5).join('\n') +
+          (importErrors.length > 5 ? `\n... và ${importErrors.length - 5} lỗi khác` : '');
+
+        Modal.warning({
+          title: `Có ${failCount} bản ghi import thất bại`,
+          content: (
+            <div style={{ maxHeight: 300, overflow: 'auto' }}>
+              <pre style={{ whiteSpace: 'pre-wrap', fontSize: '12px' }}>
+                {errorMessage}
+              </pre>
+            </div>
+          ),
+          width: 600,
+        });
+      }
+
+      // Đóng modal sau khi hoàn thành
+      setTimeout(() => {
+        setImportModalVisible(false);
+        setImportFile(null);
+      }, 1000);
+
+    } catch (error) {
+      message.error(`❌ Lỗi khi import: ${error.message}`);
+    } finally {
+      setIsImporting(false);
+      setImportProgress(0);
+    }
+  };
+
+  // Hàm đóng modal import
+  const handleImportModalCancel = () => {
+    if (isImporting) {
+      Modal.confirm({
+        title: 'Xác nhận hủy',
+        content: 'Quá trình import đang diễn ra. Bạn có chắc chắn muốn hủy?',
+        onOk: () => {
+          setImportModalVisible(false);
+          setImportFile(null);
+          setIsImporting(false);
+          setImportProgress(0);
+        },
+      });
+    } else {
+      setImportModalVisible(false);
+      setImportFile(null);
+      setImportProgress(0);
+    }
+  };
+
+  // Component Import Modal
+  const ImportModal = () => (
+    <Modal
+      title="Import lịch giảng dạy từ Excel"
+      open={importModalVisible}
+      onOk={handleImport}
+      onCancel={handleImportModalCancel}
+      okText={isImporting ? 'Đang import...' : 'Import'}
+      cancelText="Hủy"
+      confirmLoading={isImporting}
+      maskClosable={!isImporting}
+      width={600}
+    >
+      <div style={{ marginBottom: 16 }}>
+        <p><strong>Định dạng file Excel yêu cầu:</strong></p>
+        <ul style={{ fontSize: '12px', color: '#666' }}>
+          <li>Mã GV (bắt buộc): Mã giáo viên</li>
+          <li>Mã MH (bắt buộc): Mã môn học</li>
+          <li>Phòng học (bắt buộc): Tên phòng học</li>
+          <li>Ngày bắt đầu (bắt buộc): DD/MM/YYYY</li>
+          <li>Ngày kết thúc (bắt buộc): DD/MM/YYYY</li>
+          <li>Tiết bắt đầu: Số từ 1-20 (mặc định: 1)</li>
+          <li>Tiết kết thúc: Số từ 1-20 (mặc định: 2)</li>
+          <li>Học kỳ: 1, 2 hoặc 3 (mặc định: 1)</li>
+          <li>Số tiết MH: Số tiết môn học (tự động lấy từ hệ thống)</li>
+          <li>Nhóm MH: Nhóm môn học (mặc định: 1)</li>
+          <li>Thứ trong tuần: Ví dụ: "Thứ 2, Thứ 4" hoặc "2,4"</li>
+        </ul>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <input
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={(e) => setImportFile(e.target.files[0])}
+          style={{ width: '100%' }}
+          disabled={isImporting}
+        />
+      </div>
+
+      {isImporting && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ marginRight: 8 }}>Tiến trình:</span>
+            <div style={{
+              flex: 1,
+              height: 20,
+              backgroundColor: '#f0f0f0',
+              borderRadius: 10,
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${importProgress}%`,
+                backgroundColor: '#1890ff',
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+            <span style={{ marginLeft: 8 }}>{importProgress}%</span>
+          </div>
+          <p style={{ color: '#666', fontSize: '12px' }}>
+            {importProgress < 50 ? 'Đang xử lý dữ liệu...' : 'Đang import vào hệ thống...'}
+          </p>
+        </div>
+      )}
+
+      <div style={{ backgroundColor: '#f9f9f9', padding: 12, borderRadius: 4 }}>
+        <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>
+          <strong>Lưu ý:</strong> Hệ thống sẽ tự động kiểm tra và bỏ qua các bản ghi không hợp lệ.
+          Các lỗi sẽ được hiển thị sau khi import hoàn tất.
+        </p>
+      </div>
+    </Modal>
+  );
   // Table columns
   const columns = useMemo(() => [
     {
@@ -579,6 +903,7 @@ export const DanhsachlichGDComponents = () => {
           style={{ width: 300 }}
           allowClear
         />
+
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -593,6 +918,14 @@ export const DanhsachlichGDComponents = () => {
           style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
         >
           Xuất Excel ({data.length} bản ghi)
+        </Button>
+        <Button
+          type="default"
+          icon={<UploadOutlined />}
+          onClick={() => setImportModalVisible(true)}
+          style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
+        >
+          Import Excel
         </Button>
       </div>
 
@@ -917,6 +1250,7 @@ export const DanhsachlichGDComponents = () => {
           )}
         </div>
       </Modal>
+      <ImportModal />
     </div>
   );
 };

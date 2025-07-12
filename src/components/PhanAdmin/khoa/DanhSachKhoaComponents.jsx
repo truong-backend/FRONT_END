@@ -696,7 +696,7 @@ export const DanhSachKhoaComponents = () => {
               <Input />
             </Form.Item>
           )}
-          <Form.Item name="tenKhoa" label="Tên khoa" rules={validationRules.tenKhoa}>
+          <Form.Item name="teanKhoa" label="Tên khoa" rules={validationRules.tenKhoa}>
             <Input />
           </Form.Item>
         </Form>
