@@ -1,0 +1,11 @@
+import React from 'react'
+import { DashboardLayout } from '../../../components/BoCuc/DashboardLayout.jsx'
+import ProfileSinhVienComponents from '../../../components/SinhVien/Profile/ProfileSinhVienComponents.jsx'
+
+export default function ProfileSinhVienPage() {
+  return (
+    <DashboardLayout>
+        <ProfileSinhVienComponents/>
+    </DashboardLayout>
+  )
+}

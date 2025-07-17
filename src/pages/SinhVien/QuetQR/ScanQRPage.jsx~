@@ -1,0 +1,11 @@
+import React from 'react';
+import {ScanQRComponents} from '../../../components/SinhVien/CameraScanQR/ScanQRComponents.jsx';
+import { DashboardLayout } from '../../../components/BoCuc/DashboardLayout.jsx';
+
+export const ScanQRPage = () => {
+  return (
+    <DashboardLayout>
+      < ScanQRComponents/>
+    </DashboardLayout>
+  );
+};

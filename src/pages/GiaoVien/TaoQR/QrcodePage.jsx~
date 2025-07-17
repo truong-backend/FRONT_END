@@ -1,0 +1,12 @@
+import React from 'react';
+import {GenerateQRCodeComponents} from '../../../components/GiaoVien/TaoQR/GenerateQRCodeComponents.jsx';
+import { BocCucChinh } from '../../../components/BoCuc/BocCucChinh.jsx';
+import { Card } from 'antd';
+
+export const QrcodePage = () => {
+  return (
+    <BocCucChinh>
+        <GenerateQRCodeComponents />
+    </BocCucChinh>
+  );
+};

@@ -1,35 +1,35 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { LoginForm } from './components/login/giaodien/LoginForm';
-import { StudentDashboard } from './pages/Home/StudentDashboard';
-import { TeacherDashboard } from './pages/Home/TeacherDashboard';
-import { AdminDashboard } from './pages/Home/AdminDashboard';
-import { ProtectedRoute } from './components/login/baomatdangnhap/ProtectedRoute';
-import { QuenMatKhauFORMComponents } from './components/quenmatkhau/QuenMatKhauFORMComponents.jsx';
-import { XacThucOtpFORMComponents } from './components/quenmatkhau/XacThucOtpFORMComponents.jsx';
-import { DatLaiMatKhauFORMComponents } from './components/quenmatkhau/DatLaiMatKhauFORMComponents.jsx';
+import { BieuMauDangNhap } from './components/DanhNhap/GiaoDien/BieuMauDangNhap.jsx';
+import { TrangChuSinhVienPage } from './pages/TrangChu/TrangChuSinhVienPage.jsx';
+import { TrangChuGVPage } from './pages/TrangChu/TrangChuGVPage.jsx';
+import { TrangChuQTVPage } from './pages/TrangChu/TrangChuQTVPage.jsx';
+import { BaoVeDuongDan } from './components/DanhNhap/BaoMat/BaoVeDuongDan';
+import { QuenMatKhauComponents } from './components/quenmatkhau/QuenMatKhauComponents.jsx';
+import { XacThucOtpComponents } from './components/quenmatkhau/XacThucOtpComponents.jsx';
+import { DatLaiMatKhauComponents } from './components/quenmatkhau/DatLaiMatKhauComponents.jsx';
 import { useAuth } from './contexts/AuthContext';
-import { DanhSachLopPage } from './pages/PhanAdmin/danhsachlop/DanhSachLopPage.jsx';
-import { DanhSachKhoaPage } from './pages/PhanAdmin/danhsachkhoa/DanhSachKhoaPage.jsx';
-import { DanhSachMonHocPage } from './pages/PhanAdmin/danhsachmonhoc/DanhSachMonHocPage.jsx';
-import { DanhSachTaiKhoanQuanTriPage } from './pages/PhanAdmin/danhsachtaikhoanadmin/DanhSachTaiKhoanQuanTriPage.jsx';
-import { DanhSachTaiKhoanGiangVienPage } from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanGiangVienPage.jsx';
-import { DanhSachTaiKhoanSinhVienPage } from './pages/PhanAdmin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienPage.jsx';
-import { DanhSachGiangVienPage } from './pages/PhanAdmin/danhsachgiangvien/DanhSachGiangVienPage';
-import { DanhSachSinhVienPage } from './pages/PhanAdmin/danhsachsinhvien/DanhSachSinhVienPage';
-import { DanhsachlichhocPage } from './pages/PhanAdmin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
+import { DanhSachLopPage } from './pages/Admin/danhsachlop/DanhSachLopPage.jsx';
+import { DanhSachKhoaPage } from './pages/Admin/danhsachkhoa/DanhSachKhoaPage.jsx';
+import { DanhSachMonHocPage } from './pages/Admin/danhsachmonhoc/DanhSachMonHocPage.jsx';
+import { DanhSachTaiKhoanQuanTriPage } from './pages/Admin/danhsachtaikhoanadmin/DanhSachTaiKhoanQuanTriPage.jsx';
+import { DanhSachTaiKhoanGiangVienPage } from './pages/Admin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanGiangVienPage.jsx';
+import { DanhSachTaiKhoanSinhVienPage } from './pages/Admin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienPage.jsx';
+import { DanhSachGiangVienPage } from './pages/Admin/danhsachgiangvien/DanhSachGiangVienPage';
+import { DanhSachSinhVienPage } from './pages/Admin/danhsachsinhvien/DanhSachSinhVienPage';
+import { DanhsachlichhocPage } from './pages/Admin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
 // import {TkbPage} from './pages/PhanAdmin/danhsachthoikhoabieu/TkbPage';
 //đổi tên ProfileSinhVienPage && ProfileGiaoVien 
-import SinhVienProfilePage from './pages/PhanSinhVien/Profile/SinhVienProfilePage.jsx';
-import GiaoVienProfilePage from './pages/PhanGiaoVien/Profile/GiaoVienProfilePage.jsx';
-import { ScanQRPage } from './pages/PhanSinhVien/CameraScanQR/ScanQRPage.jsx';
-import { QrcodePage } from './pages/PhanGiaoVien/TaoQR/QrcodePage.jsx';
-import { DanhSachDiemDanhPage } from './pages/PhanSinhVien/DanhSachDiemDiemSV/DanhSachDiemDanhPage.jsx';
-import { LichHocSVPage } from './pages/PhanSinhVien/LICHHOC/LichHocSVPage.jsx';
-import { TkbSvPage } from './pages/PhanSinhVien/TKB/TkbSvPage.jsx'; // Import the TKBComponents
-import QRSinhVienPage from './pages/PhanSinhVien/QRInfo/QRSinhVienPage.jsx';
-import { DsachDdanhPage } from './pages/PhanAdmin/danhsachdiemdanh/DsachDdanhPage.jsx';
+import SinhVienProfilePage from './pages/SinhVien/Profile/SinhVienProfilePage.jsx';
+import GiaoVienProfilePage from './pages/GiaoVien/Profile/GiaoVienProfilePage.jsx';
+import { QuetQRPage } from './pages/SinhVien/QuetQR/QuetQRPage.jsx';
+import { QrcodePage } from './pages/GiaoVien/TaoQR/QrcodePage.jsx';
+import { DanhSachDiemDanhPage } from './pages/SinhVien/DanhSachDiemDiemSV/DanhSachDiemDanhPage.jsx';
+import { LichHocSVPage } from './pages/SinhVien/LICHHOC/LichHocSVPage.jsx';
+import { TKBSinhVienPage } from './pages/SinhVien/TKB/TKBSinhVienPage.jsx'; // Import the TKBComponents
+import ThongTinQRPage from './pages/SinhVien/ThongTinQR/ThongTinQRPage.jsx';
+import { DsachDdanhPage } from './pages/Admin/danhsachdiemdanh/DsachDdanhPage.jsx';
 
 // import {LichHocPage} from './pages/PhanAdmin/LichHoc/LichHocPage.jsx'
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
@@ -66,7 +66,7 @@ function App() {
               path="/student/login"
               element={
                 <PublicRoute>
-                  <LoginForm
+                  <BieuMauDangNhap
                     userType="STUDENT"
                     title="Đăng nhập Sinh viên"
                     description="Sử dụng email sinh viên (@student.stu.edu.vn)"
@@ -78,7 +78,7 @@ function App() {
               path="/teacher/login"
               element={
                 <PublicRoute>
-                  <LoginForm
+                  <BieuMauDangNhap
                     userType="TEACHER"
                     title="Đăng nhập Giảng viên"
                     description="Dành cho giảng viên và cán bộ"
@@ -90,7 +90,7 @@ function App() {
               path="/admin/login"
               element={
                 <PublicRoute>
-                  <LoginForm
+                  <BieuMauDangNhap
                     userType="ADMIN"
                     title="Đăng nhập Quản trị"
                     description="Trang quản trị hệ thống"
@@ -102,7 +102,7 @@ function App() {
               path="/admin/login"
               element={
                 <PublicRoute>
-                  <LoginForm
+                  <BieuMauDangNhap
                     userType="ADMIN"
                     title="Đăng nhập Quản trị"
                     description="Trang quản trị hệ thống"
@@ -115,7 +115,7 @@ function App() {
               path="/student/forgot-password"
               element={
                 <PublicRoute>
-                  <QuenMatKhauFORMComponents
+                  <QuenMatKhauComponents
                     userType="STUDENT"
                     title="Quên mật khẩu"
                     description="Khôi phục mật khẩu tài khoản sinh viên"
@@ -127,7 +127,7 @@ function App() {
               path="/student/verify-otp"
               element={
                 <PublicRoute>
-                  <XacThucOtpFORMComponents
+                  <XacThucOtpComponents
                     userType="STUDENT"
                     title="Xác thực OTP"
                     description="Nhập mã OTP đã được gửi đến email của bạn"
@@ -139,7 +139,7 @@ function App() {
               path="/student/reset-password"
               element={
                 <PublicRoute>
-                  <DatLaiMatKhauFORMComponents
+                  <DatLaiMatKhauComponents
                     userType="STUDENT"
                     title="Đặt lại mật khẩu"
                     description="Tạo mật khẩu mới cho tài khoản sinh viên"
@@ -153,7 +153,7 @@ function App() {
               path="/teacher/forgot-password"
               element={
                 <PublicRoute>
-                  <QuenMatKhauFORMComponents
+                  <QuenMatKhauComponents
                     userType="TEACHER"
                     title="Quên mật khẩu"
                     description="Khôi phục mật khẩu tài khoản giảng viên"
@@ -165,7 +165,7 @@ function App() {
               path="/teacher/verify-otp"
               element={
                 <PublicRoute>
-                  <XacThucOtpFORMComponents
+                  <XacThucOtpComponents
                     userType="TEACHER"
                     title="Xác thực OTP"
                     description="Nhập mã OTP đã được gửi đến email của bạn"
@@ -177,7 +177,7 @@ function App() {
               path="/teacher/reset-password"
               element={
                 <PublicRoute>
-                  <DatLaiMatKhauFORMComponents
+                  <DatLaiMatKhauComponents
                     userType="TEACHER"
                     title="Đặt lại mật khẩu"
                     description="Tạo mật khẩu mới cho tài khoản giảng viên"
@@ -191,7 +191,7 @@ function App() {
               path="/admin/forgot-password"
               element={
                 <PublicRoute>
-                  <QuenMatKhauFORMComponents
+                  <QuenMatKhauComponents
                     userType="ADMIN"
                     title="Quên mật khẩu"
                     description="Khôi phục mật khẩu tài khoản quản trị"
@@ -203,7 +203,7 @@ function App() {
               path="/admin/verify-otp"
               element={
                 <PublicRoute>
-                  <XacThucOtpFORMComponents
+                  <XacThucOtpComponents
                     userType="ADMIN"
                     title="Xác thực OTP"
                     description="Nhập mã OTP đã được gửi đến email của bạn"
@@ -215,7 +215,7 @@ function App() {
               path="/admin/reset-password"
               element={
                 <PublicRoute>
-                  <DatLaiMatKhauFORMComponents
+                  <DatLaiMatKhauComponents
                     userType="ADMIN"
                     title="Đặt lại mật khẩu"
                     description="Tạo mật khẩu mới cho tài khoản quản trị"
@@ -228,49 +228,49 @@ function App() {
             <Route
               path="/student/dashboard"
               element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
-                  <StudentDashboard />
-                </ProtectedRoute>
+                <BaoVeDuongDan allowedRoles={['STUDENT']}>
+                  <TrangChuSinhVienPage />
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/student/profile"
               element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
+                <BaoVeDuongDan allowedRoles={['STUDENT']}>
                   <SinhVienProfilePage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/student/qr"
               element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
-                  <QRSinhVienPage />
-                </ProtectedRoute>
+                <BaoVeDuongDan allowedRoles={['STUDENT']}>
+                  <ThongTinQRPage />
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/teacher/dashboard"
               element={
-                <ProtectedRoute allowedRoles={['TEACHER']}>
-                  <TeacherDashboard />
-                </ProtectedRoute>
+                <BaoVeDuongDan allowedRoles={['TEACHER']}>
+                  <TrangChuGVPage />
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/teacher/profile"
               element={
-                <ProtectedRoute allowedRoles={['TEACHER']}>
+                <BaoVeDuongDan allowedRoles={['TEACHER']}>
                   <GiaoVienProfilePage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/admin/dashboard"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
+                  <TrangChuQTVPage />
+                </BaoVeDuongDan>
               }
             />
 
@@ -278,137 +278,137 @@ function App() {
             <Route
               path="/admin/lop"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhSachLopPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/admin/attendance"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DsachDdanhPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/admin/khoa"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhSachKhoaPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/admin/monhoc"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhSachMonHocPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             {/* <Route
               path="/admin/lichhoc"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <LichHocPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             /> */}
             <Route
               path="/admin/account-account"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhSachTaiKhoanQuanTriPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/admin/teacher-account"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhSachTaiKhoanGiangVienPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/admin/student-account"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhSachTaiKhoanSinhVienPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/admin/teachers-list"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhSachGiangVienPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/admin/students-list"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhSachSinhVienPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/admin/calendar"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhsachlichhocPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             {/* <Route
               path="/admin/schedule"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   < TkbPage/>
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             /> */}
             <Route
               path="/teacher/diemdanh"
               element={
-                <ProtectedRoute allowedRoles={['TEACHER']}>
+                <BaoVeDuongDan allowedRoles={['TEACHER']}>
                   <QrcodePage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/student/scan-qr"
               element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
-                  <ScanQRPage />
-                </ProtectedRoute>
+                <BaoVeDuongDan allowedRoles={['STUDENT']}>
+                  <QuetQRPage />
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/student/attendance-history"
               element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
+                <BaoVeDuongDan allowedRoles={['STUDENT']}>
                   <DanhSachDiemDanhPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/student/calendar"
               element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
+                <BaoVeDuongDan allowedRoles={['STUDENT']}>
                   <LichHocSVPage />
-                </ProtectedRoute>
+                </BaoVeDuongDan>
               }
             />
             <Route
               path="/student/schedule"
               element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
-                  <TkbSvPage />
-                </ProtectedRoute>
+                <BaoVeDuongDan allowedRoles={['STUDENT']}>
+                  <TKBSinhVienPage />
+                </BaoVeDuongDan>
               }
             />
           </Routes>
