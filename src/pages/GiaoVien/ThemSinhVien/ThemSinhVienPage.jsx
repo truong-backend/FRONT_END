@@ -6,7 +6,7 @@ import { Card } from 'antd';
 export const ThemSinhVienPage = () => {
   return (
     <BocCucChinh>
-        {/* <ThemSinhVienComponents /> */}
+        <ThemSinhVienComponents />
     </BocCucChinh>
   );
 };
