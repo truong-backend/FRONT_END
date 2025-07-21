@@ -1,5 +1,5 @@
 import React from 'react';
-// import { ThemSinhVienComponents } from '../../../components/GiaoVien/ThemSinhVien/themSinhVienComponents.jsx';
+import { ThemSinhVienComponents } from '../../../components/GiaoVien/ThemSinhVien/themSinhVienComponents.jsx';
 import { BocCucChinh } from '../../../components/BoCuc/BocCucChinh.jsx';
 import { Card } from 'antd';
 
