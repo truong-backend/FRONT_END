@@ -22,7 +22,7 @@ import { lichGDService } from '../../../services/GiaoVien/LichGD/lichGDService.j
 import { studentService } from '../../../services/Admin/studentService.js';
 import { lichHocService } from '../../../services/Admin/lichHocService.js';
 
-export const ThemSinhVienComponents = () => {
+export const ThemSinhVienComponent = () => {
   const [studentSearchText, setStudentSearchText] = useState('');
   const [addStudentModalVisible, setAddStudentModalVisible] = useState(false);
   const [selectedStudentsToAdd, setSelectedStudentsToAdd] = useState([]);
