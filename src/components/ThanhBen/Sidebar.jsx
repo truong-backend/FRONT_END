@@ -24,16 +24,16 @@ import {
   UserIcon,
 } from 'lucide-react';
 
-const createAccountManageMenu = () => ({
-  title: 'Quản Lý Tài Khoản',
-  shortTitle: 'TaKh',
-  icon: <UserCog2 size={20} />,
-  subItems: [
-    { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} />, path: '/admin/account-account' },
-    { title: 'Tài Khoản Giảng Viên', icon: <Presentation size={18} />, path: '/admin/teacher-account' },
-    { title: 'Tài Khoản Sinh Viên', icon: <GraduationCap size={18} />, path: '/admin/student-account' }
-  ]
-});
+// const createAccountManageMenu = () => ({
+//   title: 'Quản Lý Tài Khoản',
+//   shortTitle: 'TaKh',
+//   icon: <UserCog2 size={20} />,
+//   subItems: [
+//     { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} />, path: '/admin/account-account' },
+//     { title: 'Tài Khoản Giảng Viên', icon: <Presentation size={18} />, path: '/admin/teacher-account' },
+//     { title: 'Tài Khoản Sinh Viên', icon: <GraduationCap size={18} />, path: '/admin/student-account' }
+//   ]
+// });
 
 // const createScheduleMenu = () => ({
 //   title: 'Quản Lý TKB',
@@ -49,7 +49,8 @@ const createAccountManageMenu = () => ({
 const menuItemsByRole = {
   admin: [
     { title: 'Trang Chủ', shortTitle: 'TrCh', icon: <LayoutDashboard size={20} />, path: '/admin/dashboard' },
-    createAccountManageMenu(),
+     { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} />, path: '/admin/account-account' },
+    // createAccountManageMenu(),
     // createScheduleMenu(),
     { title: 'Quản Lý Điểm Danh', shortTitle: 'DD', icon: <ClipboardCheck size={20} />, path: '/admin/attendance' },
     { title: 'Quản Lý Lịch GD', shortTitle: 'LGd', icon: <Presentation size={20} />, path: '/admin/calendar' },
@@ -66,7 +67,8 @@ const menuItemsByRole = {
     { title: 'Trang Chủ', shortTitle: 'TC', icon: <FileText size={20} />, path: '/teacher/dashboard' },
     { title: 'Điểm Danh', shortTitle: 'DD', icon: <QrCodeIcon size={20} />, path: '/teacher/diemdanh' },
     { title: 'Kết Quả Điểm Danh', shortTitle: 'KQDD', icon: <UserCheckIcon size={20} />, path: '/teacher/kqdiemdanh' },
-    { title: 'Lịch Giảng Dạy', shortTitle: 'LGD', icon: <Calendar size={20} />, path: '/teacher/lichgd' },
+    // { title: 'Lịch Giảng Dạy', shortTitle: 'LGD', icon: <Calendar size={20} />, path: '/teacher/lichgd' },
+    { title: 'Lịch Giảng Dạy', shortTitle: 'LGD', icon: <Calendar size={20} />, path: '/teacher/add-student' },
     { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <UserIcon size={20} />, path: '/teacher/profile' },
   ],
   student: [

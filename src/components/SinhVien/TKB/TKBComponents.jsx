@@ -64,7 +64,7 @@ const generateWeeks = (startDate, endDate) => {
   return weeks;
 };
 
-// DỮ LIỆU HỌC KỲ
+// DỮ LIỆU HỌC KỲ - CẬP NHẬT ĐỂ SỬ DỤNG NĂM HIỆN TẠI
 const generateSemesterData = (baseYear) => {
   const currentYear = baseYear;
   const nextYear = baseYear + 1;
@@ -86,6 +86,41 @@ const generateSemesterData = (baseYear) => {
       weeks: generateWeeks(`${nextYear}-06-23`, `${nextYear}-07-13`)
     }
   };
+};
+
+// FUNCTION LẤY NĂM HỌC HIỆN TẠI DỰA TRÊN THÁNG HIỆN TẠI
+const getCurrentAcademicYear = () => {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1; // getMonth() trả về 0-11, nên +1
+  const currentYear = now.getFullYear();
+
+  // Năm học bắt đầu từ tháng 9
+  // Nếu tháng hiện tại >= 9, năm học bắt đầu từ năm hiện tại
+  // Nếu tháng hiện tại < 9, năm học bắt đầu từ năm trước
+  if (currentMonth >= 9) {
+    return currentYear;
+  } else {
+    return currentYear - 1;
+  }
+};
+
+// FUNCTION XÁC ĐỊNH HỌC KỲ HIỆN TẠI
+const getCurrentSemester = () => {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const academicYear = getCurrentAcademicYear();
+  const nextYear = academicYear + 1;
+
+  if (currentMonth >= 9 && currentMonth <= 12) {
+    return `Học kỳ 1 - Năm học ${academicYear}-${nextYear}`;
+  } else if (currentMonth >= 2 && currentMonth <= 6) {
+    return `Học kỳ 2 - Năm học ${academicYear}-${nextYear}`;
+  } else if (currentMonth >= 6 && currentMonth <= 7) {
+    return `Học kỳ 3 - Năm học ${academicYear}-${nextYear}`;
+  } else {
+    // Mặc định về học kỳ 1
+    return `Học kỳ 1 - Năm học ${academicYear}-${nextYear}`;
+  }
 };
 
 // FUNCTION CONVERT API DATA TO SAMPLE TKB FORMAT
@@ -125,46 +160,51 @@ const convertApiDataToTKB = (apiData) => {
   return tkbData;
 };
 
-// FALLBACK DATA (dùng khi API lỗi)
-const sampleTKB = {
-  "Học kỳ 3 - Năm học 2024-2025": {
-    "Tuần 1": {
-      "Thứ 2": [
-        {
-          maMH: "CS03036",
-          tenMon: "Toán cao cấp",
-          nmh: "3",
-          kdk: "Năm",
-          th: "X",
-          thu: "Thứ 2",
-          tietBd: 1,
-          tietKt: 3,
-          st: "5",
-          phong: "A101",
-          cbgd: "TVHưng",
-          tuan: "07/07/2025 - 13/07/2025",
-          ngay: "2025-07-07",
-        },
-      ],
-      "Thứ 3": [
-        {
-          maMH: "CS03037",
-          tenMon: "Lập trình Web",
-          nmh: "3",
-          kdk: "Năm",
-          th: "X",
-          thu: "Thứ 3",
-          tietBd: 2,
-          tietKt: 5,
-          st: "5",
-          phong: "B202",
-          cbgd: "TVHưng",
-          tuan: "07/07/2025 - 13/07/2025",
-          ngay: "2025-07-08",
-        },
-      ],
+// FALLBACK DATA - CẬP NHẬT VỚI NĂM HIỆN TẠI
+const getSampleTKB = () => {
+  const academicYear = getCurrentAcademicYear();
+  const nextYear = academicYear + 1;
+  
+  return {
+    [`Học kỳ 3 - Năm học ${academicYear}-${nextYear}`]: {
+      "Tuần 1": {
+        "Thứ 2": [
+          {
+            maMH: "CS03036",
+            tenMon: "Toán cao cấp",
+            nmh: "3",
+            kdk: "Năm",
+            th: "X",
+            thu: "Thứ 2",
+            tietBd: 1,
+            tietKt: 3,
+            st: "5",
+            phong: "A101",
+            cbgd: "TVHưng",
+            tuan: "07/07/2025 - 13/07/2025",
+            ngay: "2025-07-07",
+          },
+        ],
+        "Thứ 3": [
+          {
+            maMH: "CS03037",
+            tenMon: "Lập trình Web",
+            nmh: "3",
+            kdk: "Năm",
+            th: "X",
+            thu: "Thứ 3",
+            tietBd: 2,
+            tietKt: 5,
+            st: "5",
+            phong: "B202",
+            cbgd: "TVHưng",
+            tuan: "07/07/2025 - 13/07/2025",
+            ngay: "2025-07-08",
+          },
+        ],
+      },
     },
-  },
+  };
 };
 
 const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
@@ -487,18 +527,22 @@ const TKBTheoTuan = ({
 // COMPONENT CHÍNH
 export const TKBComponents = () => {
   const { user, } = useAuth();
-   const maSvFE = user?.maSv || user?.id || user?.username;
-  // const maSvFE = user?.maSv;
+  const maSvFE = user?.maSv || user?.id || user?.username;
+  
+  // Sử dụng năm học hiện tại
+  const currentAcademicYear = getCurrentAcademicYear();
+  const currentSemester = getCurrentSemester();
+  
   const [selectedView, setSelectedView] = useState("theoTuan");
-  const [selectedHk, setSelectedHk] = useState("Học kỳ 3 - Năm học 2024-2025");
+  const [selectedHk, setSelectedHk] = useState(currentSemester); // Mặc định là học kỳ hiện tại
   const [selectedTuan, setSelectedTuan] = useState("Tuần 1");
   const [tkbData, setTkbData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastApiCall, setLastApiCall] = useState(null);
 
-  // Tạo dữ liệu học kỳ cho năm 2024-2025
-  const semesterData = generateSemesterData(2024);
+  // Tạo dữ liệu học kỳ cho năm hiện tại
+  const semesterData = generateSemesterData(currentAcademicYear);
 
   // Lấy thông tin tuần hiện tại
   const getCurrentWeekInfo = useCallback(() => {
@@ -566,7 +610,8 @@ export const TKBComponents = () => {
       console.error("❌ Lỗi khi tải dữ liệu TKB:", err);
       setError(err.message);
 
-      // Fallback to sample data
+      // Fallback to sample data với năm hiện tại
+      const sampleTKB = getSampleTKB();
       const fallbackData = sampleTKB[hocKy]?.[tuan] || {};
       setTkbData(fallbackData);
       console.log("🔄 Sử dụng dữ liệu mẫu:", fallbackData);
@@ -607,6 +652,19 @@ export const TKBComponents = () => {
             fontWeight: "bold"
           }}>
             {maSvFE || "Chưa có"}
+          </span>
+        </div>
+
+        <div>
+          <label><strong>Năm học hiện tại:</strong> </label>
+          <span style={{ 
+            padding: "5px 10px", 
+            backgroundColor: "#d4edda", 
+            borderRadius: "4px",
+            fontWeight: "bold",
+            color: "#155724"
+          }}>
+            {currentAcademicYear}-{currentAcademicYear + 1}
           </span>
         </div>
 

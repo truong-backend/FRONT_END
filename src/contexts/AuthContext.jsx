@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { authAPI } from "../services/api";
+import { authService } from "../services/api";
 
 const AuthContext = createContext(undefined);
 
@@ -38,13 +38,13 @@ export const AuthProvider = ({ children }) => {
       
       switch (userType) {
         case 'STUDENT':
-          response = await authAPI.loginStudent(credentials);
+          response = await authService.loginStudent(credentials);
           break;
         case 'TEACHER':
-          response = await authAPI.loginTeacher(credentials);
+          response = await authService.loginTeacher(credentials);
           break;
         case 'ADMIN':
-          response = await authAPI.loginAdmin(credentials);
+          response = await authService.loginAdmin(credentials);
           break;
         default:
           throw new Error('Invalid user type');

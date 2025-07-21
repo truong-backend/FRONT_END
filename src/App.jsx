@@ -14,8 +14,6 @@ import { DanhSachLopPage } from './pages/Admin/danhsachlop/DanhSachLopPage.jsx';
 import { DanhSachKhoaPage } from './pages/Admin/danhsachkhoa/DanhSachKhoaPage.jsx';
 import { DanhSachMonHocPage } from './pages/Admin/danhsachmonhoc/DanhSachMonHocPage.jsx';
 import { DanhSachTaiKhoanQuanTriPage } from './pages/Admin/danhsachtaikhoanadmin/DanhSachTaiKhoanQuanTriPage.jsx';
-import { DanhSachTaiKhoanGiangVienPage } from './pages/Admin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanGiangVienPage.jsx';
-import { DanhSachTaiKhoanSinhVienPage } from './pages/Admin/danhsachtaikhoangiangvien_sinhvien/DanhSachTaiKhoanSinhVienPage.jsx';
 import { DanhSachGiangVienPage } from './pages/Admin/danhsachgiangvien/DanhSachGiangVienPage';
 import { DanhSachSinhVienPage } from './pages/Admin/danhsachsinhvien/DanhSachSinhVienPage';
 import { DanhsachlichhocPage } from './pages/Admin/Danhsachlichhoc/DanhsachlichhocPage.jsx';
@@ -30,6 +28,7 @@ import { LichHocSVPage } from './pages/SinhVien/LICHHOC/LichHocSVPage.jsx';
 import { TKBSinhVienPage } from './pages/SinhVien/TKB/TKBSinhVienPage.jsx'; // Import the TKBComponents
 import ThongTinQRPage from './pages/SinhVien/ThongTinQR/ThongTinQRPage.jsx';
 import { DsachDdanhPage } from './pages/Admin/danhsachdiemdanh/DsachDdanhPage.jsx';
+import { ThemSinhVienPage } from './pages/GiaoVien/ThemSinhVien/ThemSinhVienPage.jsx';
 
 // import {LichHocPage} from './pages/PhanAdmin/LichHoc/LichHocPage.jsx'
 // import TeacherPage from './pages/teacher/TeacherPage.jsx';
@@ -324,22 +323,6 @@ function App() {
               }
             />
             <Route
-              path="/admin/teacher-account"
-              element={
-                <BaoVeDuongDan allowedRoles={['ADMIN']}>
-                  <DanhSachTaiKhoanGiangVienPage />
-                </BaoVeDuongDan>
-              }
-            />
-            <Route
-              path="/admin/student-account"
-              element={
-                <BaoVeDuongDan allowedRoles={['ADMIN']}>
-                  <DanhSachTaiKhoanSinhVienPage />
-                </BaoVeDuongDan>
-              }
-            />
-            <Route
               path="/admin/teachers-list"
               element={
                 <BaoVeDuongDan allowedRoles={['ADMIN']}>
@@ -376,6 +359,21 @@ function App() {
               element={
                 <BaoVeDuongDan allowedRoles={['TEACHER']}>
                   <QrcodePage />
+                </BaoVeDuongDan>
+              }
+            />
+            <Route
+              path="/teacher/diemdanh"
+              element={
+                <BaoVeDuongDan allowedRoles={['TEACHER']}>
+                  <QrcodePage />
+                </BaoVeDuongDan>
+              }
+            /><Route
+              path="/teacher/add-student"
+              element={
+                <BaoVeDuongDan allowedRoles={['TEACHER']}>
+                  <ThemSinhVienPage />
                 </BaoVeDuongDan>
               }
             />

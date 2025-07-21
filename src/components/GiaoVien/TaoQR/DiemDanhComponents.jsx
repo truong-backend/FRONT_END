@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Select, Button, Radio, InputNumber, Table, Form, message, Spin, Checkbox, Card, Typography, Divider, Popconfirm } from 'antd';
-import { QrcodeOutlined, DeleteOutlined, CopyOutlined,CameraOutlined } from '@ant-design/icons';
+import { QrcodeOutlined, DeleteOutlined, CopyOutlined, CameraOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { Scanner } from '@yudiel/react-qr-scanner';
-import { Modal , Input} from 'antd';
+import { Modal, Input } from 'antd';
 import moment from 'moment';
 import {
   fetchHocKyList,
@@ -67,37 +67,37 @@ export const DiemDanhComponents = () => {
   });
   //hook mở modal bật cam quét QR sinh viên
   useEffect(() => {
-      if(mode === 'svqr'){
-        setShowScanner(true);
-      }
-      else{
-        setShowScanner(false);
-        setStartCamera(false);
-      }
-  },[mode]);
-  
+    if (mode === 'svqr') {
+      setShowScanner(true);
+    }
+    else {
+      setShowScanner(false);
+      setStartCamera(false);
+    }
+  }, [mode]);
+
   const stopScanning = () => {
     setShowScanner(false);
     setIsScanning(false);
   };
-  const handleScan = async (result) =>{
-    if(result && result.length > 0){
+  const handleScan = async (result) => {
+    if (result && result.length > 0) {
       const qrData = result[0].rawValue;
       if (isScanning || qrData === lastScanned) return;
-      
+
       setIsScanning(true);
       setLastScanned(qrData);
 
       try {
         await processAttendance(qrData);
       } catch (error) {
-        console.log('Lỗi xử lý QR',error);
+        console.log('Lỗi xử lý QR', error);
       }
-      finally{
+      finally {
         setTimeout(() => {
           setIsScanning(false);
           setLastScanned(null);
-        },2000);
+        }, 2000);
       }
     }
   };
@@ -110,8 +110,8 @@ export const DiemDanhComponents = () => {
         parsedData = JSON.parse(qrData);
       } catch {
         //xử lý chuỗi masv-hoten-tenlop ||
-        const delimiters = ['-','_'];
-        for(let delimiter of delimiters){
+        const delimiters = ['-', '_'];
+        for (let delimiter of delimiters) {
           const parts = qrData.split(delimiter);
           if (parts.length >= 2) {
             const maSv = parts[0];
@@ -119,8 +119,8 @@ export const DiemDanhComponents = () => {
             const third = parts[2];
             let field = 'tenLop';
             let value = third;
-            if(/^\d{2}\.\d{2}\.\d{4}$/.test(third)){
-              const[dd,mm,yyyy] = third.split('.');
+            if (/^\d{2}\.\d{2}\.\d{4}$/.test(third)) {
+              const [dd, mm, yyyy] = third.split('.');
               value = `${yyyy}-${mm}-${dd}`;
               field = 'ngaySinh';
             }
@@ -131,30 +131,30 @@ export const DiemDanhComponents = () => {
             parsedData = {
               maSv,
               tenSv,
-              ...(third && {[field] : value})
+              ...(third && { [field]: value })
             };
             break;
           }
-        }        
+        }
       }
       if (!parsedData) {
         message.error('QR Code không hợp lệ');
         return;
       }
-      const { maSv, tenSv} = parsedData;
+      const { maSv, tenSv } = parsedData;
       if (!maSv) {
         message.error('Không tìm thấy thông tin sinh viên');
         return;
       }
-      if(!selectedNgay){
+      if (!selectedNgay) {
         message.error('Chưa chọn đầy đủ thông tin buổi học!');
         return;
       }
       const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
       const requestData = {
         maSv,
-        maTkb:selectedNgayData.maTkb,
-        ngayHoc:new Date().toISOString().split('T')[0],
+        maTkb: selectedNgayData.maTkb,
+        ngayHoc: new Date().toISOString().split('T')[0],
         //ngayHoc:selectedNgayData.ngayHoc
       };
 
@@ -164,7 +164,7 @@ export const DiemDanhComponents = () => {
     } catch (error) {
       console.log('Lỗi điểm danh', error);
       const backendMessage = error?.response?.data?.message ||
-      error?.response?.data || 'Điểm danh thất bại'
+        error?.response?.data || 'Điểm danh thất bại'
       message.error(backendMessage);
     }
     finally {
@@ -186,7 +186,7 @@ export const DiemDanhComponents = () => {
       message.error('Vui lòng đăng nhập để sử dụng chức năng này');
       return;
     }
-    console.log('Gọi API học kỳ với maGv:', maGv); 
+    console.log('Gọi API học kỳ với maGv:', maGv);
     loadHocKyList(maGv);
   }, [isAuthenticated, maGv]);
 
@@ -242,10 +242,10 @@ export const DiemDanhComponents = () => {
     setLoading(prev => ({ ...prev, hocKy: true }));
     try {
       const data = await fetchHocKyList(maGv);
-      console.log('Danh sách học kỳ:', data); 
+      console.log('Danh sách học kỳ:', data);
       setHocKyList(data);
     } catch (error) {
-      console.error('Lỗi tải học kỳ:', error); 
+      console.error('Lỗi tải học kỳ:', error);
       message.error('Không thể tải danh sách học kỳ');
     } finally {
       setLoading(prev => ({ ...prev, hocKy: false }));
@@ -338,7 +338,7 @@ export const DiemDanhComponents = () => {
       //Lấy dssv điểm danh có chứa diemDanh1 diemDanh2 xem từ console log
       const data = await fetchSinhVienDiemDanh(selectedNgayData.maTkb);
       //Sắp xếp time điểm danh
-      const sortedData = [...data].sort((a,b) => {
+      const sortedData = [...data].sort((a, b) => {
         const fisrtTime = new Date(a.diemDanh2 || a.diemDanh1 || 0);
         const secondTime = new Date(b.diemDanh2 || b.diemDanh1 || 0);
         return secondTime - fisrtTime; //sort theo time điểm danh gần nhất
@@ -369,8 +369,8 @@ export const DiemDanhComponents = () => {
           maSv: maSv,
           ngayHoc: selectedNgayData.ngayHoc,
           ghiChu: typeof ghiChuThuCong[maSv] === 'string'
-      ? ghiChuThuCong[maSv].trim()
-      : 'Điểm danh thủ công' 
+            ? ghiChuThuCong[maSv].trim()
+            : 'Điểm danh thủ công'
         })
       );
 
@@ -392,7 +392,7 @@ export const DiemDanhComponents = () => {
       message.warning('Vui lòng chọn ít nhất một sinh viên để xóa điểm danh');
       return;
     }
-    console.log('selectedStudents' , selectedStudents.length);
+    console.log('selectedStudents', selectedStudents.length);
     const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
     if (!selectedNgayData) return;
 
@@ -408,8 +408,8 @@ export const DiemDanhComponents = () => {
     setLoading(prev => ({ ...prev, xoaDiemDanhThuCong: true }));
     try {
       const promises = attendedStudents.map(maSv =>
-        xoaDiemDanhThuCong(maSv, 
-          selectedNgayData.maTkb, 
+        xoaDiemDanhThuCong(maSv,
+          selectedNgayData.maTkb,
           selectedNgayData.ngayHoc,
           ghiChuThuCong[maSv])
       );
@@ -515,83 +515,83 @@ export const DiemDanhComponents = () => {
 
   // Table columns
   const studentColumns = [
-  {
-    title: (
-      <Checkbox
-        onChange={(e) => handleSelectAllStudents(e.target.checked)}
-        checked={selectedStudents.length > 0 && selectedStudents.length === danhSachSinhVien.length}
-        indeterminate={selectedStudents.length > 0 && selectedStudents.length < danhSachSinhVien.length}
-      >
-        Chọn
-      </Checkbox>
-    ),
-    dataIndex: 'select',
-    width: 80,
-    render: (_, record) => (
-      <Checkbox
-        checked={selectedStudents.includes(record.maSv)}
-        onChange={(e) => {
-          if (e.target.checked) {
-            setSelectedStudents([...selectedStudents, record.maSv]);
-          } else {
-            setSelectedStudents(selectedStudents.filter(id => id !== record.maSv));
-          }
-        }}
-      />
-    )
-  },
-  { title: 'MSSV', dataIndex: 'maSv', width: 120 },
-  { title: 'Họ tên', dataIndex: 'tenSv' },
-  { title: 'Lớp', dataIndex: 'tenLop', width: 100 },
-  { title: 'Khoa', dataIndex: 'tenKhoa', width: 150 },
+    {
+      title: (
+        <Checkbox
+          onChange={(e) => handleSelectAllStudents(e.target.checked)}
+          checked={selectedStudents.length > 0 && selectedStudents.length === danhSachSinhVien.length}
+          indeterminate={selectedStudents.length > 0 && selectedStudents.length < danhSachSinhVien.length}
+        >
+          Chọn
+        </Checkbox>
+      ),
+      dataIndex: 'select',
+      width: 80,
+      render: (_, record) => (
+        <Checkbox
+          checked={selectedStudents.includes(record.maSv)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedStudents([...selectedStudents, record.maSv]);
+            } else {
+              setSelectedStudents(selectedStudents.filter(id => id !== record.maSv));
+            }
+          }}
+        />
+      )
+    },
+    { title: 'MSSV', dataIndex: 'maSv', width: 120 },
+    { title: 'Họ tên', dataIndex: 'tenSv' },
+    { title: 'Lớp', dataIndex: 'tenLop', width: 100 },
+    { title: 'Khoa', dataIndex: 'tenKhoa', width: 150 },
 
- {
-  title: 'Ghi chú',
-  dataIndex: 'ghiChu',
-  width: 200,
-  render: (ghiChu, record) => {
-    const maSv = record.maSv;
-    const isSelected = selectedStudents.includes(maSv);
-    const currentValue = typeof ghiChuThuCong[maSv] === 'string'
-      ? ghiChuThuCong[maSv]
-      : (typeof ghiChu === 'string' ? ghiChu : '');
+    {
+      title: 'Ghi chú',
+      dataIndex: 'ghiChu',
+      width: 200,
+      render: (ghiChu, record) => {
+        const maSv = record.maSv;
+        const isSelected = selectedStudents.includes(maSv);
+        const currentValue = typeof ghiChuThuCong[maSv] === 'string'
+          ? ghiChuThuCong[maSv]
+          : (typeof ghiChu === 'string' ? ghiChu : '');
 
-    return (
-      <div
-        contentEditable={isSelected}
-        suppressContentEditableWarning={true}
-        style={{
-          fontSize: 13,
-          fontWeight: 'bold',
-          padding: '4px 6px',
-          border: isSelected ? '1px solid #d9d9d9' : 'none',
-          borderRadius: 4,
-          backgroundColor: isSelected ? '#fefefe' : 'transparent',
-          cursor: isSelected ? 'text' : 'default',
-          minHeight: 30
-        }}
-        onBlur={(e) => {
-          const value = e.target.innerText.trim();
-          setGhiChuThuCong(prev => ({
-            ...prev,
-            [maSv]: value // ✅ chỉ lưu chuỗi vào đúng sinh viên
-          }));
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            e.currentTarget.blur();
-          }
-        }}
-      >
-        {currentValue}
-      </div>
-    );
-  }
-}
+        return (
+          <div
+            contentEditable={isSelected}
+            suppressContentEditableWarning={true}
+            style={{
+              fontSize: 13,
+              fontWeight: 'bold',
+              padding: '4px 6px',
+              border: isSelected ? '1px solid #d9d9d9' : 'none',
+              borderRadius: 4,
+              backgroundColor: isSelected ? '#fefefe' : 'transparent',
+              cursor: isSelected ? 'text' : 'default',
+              minHeight: 30
+            }}
+            onBlur={(e) => {
+              const value = e.target.innerText.trim();
+              setGhiChuThuCong(prev => ({
+                ...prev,
+                [maSv]: value // ✅ chỉ lưu chuỗi vào đúng sinh viên
+              }));
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
+          >
+            {currentValue}
+          </div>
+        );
+      }
+    }
 
 
-];
+  ];
 
 
   // Validation
@@ -611,15 +611,19 @@ export const DiemDanhComponents = () => {
         <Form.Item label="Chọn học kỳ">
           <Select
             onChange={handleHocKyChange}
-            placeholder="Chọn học kỳ  "
+            placeholder="Chọn học kỳ"
             loading={loading.hocKy}
           >
             {hocKyList.map((hk) => (
-              <Option key={hk.hocKy} value={hk.hocKy}>
+              <Option
+                key={`${hk.hocKy}-${hk.namHoc}`}
+                value={`${hk.hocKy}-${hk.namHoc}`}
+              >
                 {hk.hocKyDisplay}
               </Option>
             ))}
           </Select>
+
         </Form.Item>
 
         <Form.Item label="Chọn môn học">
@@ -680,7 +684,7 @@ export const DiemDanhComponents = () => {
             }} value="svqr">Quét mã</Radio.Button>
           </Radio.Group>
         </Form.Item>
-        {mode === 'svqr' &&  (
+        {mode === 'svqr' && (
           <>
             <Modal
               title="Quét mã QR sinh viên"
@@ -704,7 +708,7 @@ export const DiemDanhComponents = () => {
                   >
                     {isScanning ? 'Đang quét...' : 'Bắt đầu quét mã QR sinh viên'}
                   </Button>
-                ) :(
+                ) : (
                   <>
                     <Scanner
                       onScan={handleScan}

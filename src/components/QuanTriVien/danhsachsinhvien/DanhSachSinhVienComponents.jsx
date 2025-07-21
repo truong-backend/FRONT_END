@@ -1,23 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Input, Space, Button, Popconfirm, message, Modal, Form, 
-  DatePicker, Radio, Upload, Avatar, Select 
+import {
+  Table, Input, Space, Button, Popconfirm, message, Modal, Form,
+  DatePicker, Radio, Upload, Avatar, Select, Divider
 } from 'antd';
-import { 
-  EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, 
-  UserOutlined, UploadOutlined, ImportOutlined, ExportOutlined, 
-  EyeOutlined, DownloadOutlined 
+import {
+  EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined,
+  UserOutlined, UploadOutlined, ImportOutlined, ExportOutlined,
+  EyeOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import { studentService } from '../../../services/Admin/studentService.js';
 import { lopService } from '../../../services/Admin/lopService.js';
 import { ChiTietSinhVienComponents } from './ChiTietSinhVienComponents.jsx';
 import moment from 'moment';
-// Import thư viện xuất Excel
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 
 export const DanhSachSinhVienComponents = () => {
-  // State management
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -26,25 +23,20 @@ export const DanhSachSinhVienComponents = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [importModalVisible, setImportModalVisible] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
   const [form] = Form.useForm();
-  
-  // Filters and search
   const [filters, setFilters] = useState({
     search: '',
     filterLop: null,
     filterKhoa: null
   });
-  
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0
   });
+  const [importPreviewData, setImportPreviewData] = useState([]);
+  const [importPreviewModalVisible, setImportPreviewModalVisible] = useState(false);
 
-  // Data fetching
   const fetchStudents = async () => {
     setLoading(true);
     try {
@@ -74,7 +66,6 @@ export const DanhSachSinhVienComponents = () => {
     fetchClasses();
   }, []);
 
-  // Table handlers
   const handleTableChange = (newPagination, tableFilters, sorter) => {
     setPagination({
       ...pagination,
@@ -83,23 +74,22 @@ export const DanhSachSinhVienComponents = () => {
     });
   };
 
-  // Filter data
   const getFilteredData = () => {
     return students.filter(student => {
       const searchLower = filters.search?.toLowerCase() || '';
-      const matchSearch = 
+      const phaiText = student.phai === 1 ? 'nam' : student.phai === 0 ? 'nữ' : '';
+      const matchSearch =
         student.maSv?.toLowerCase().includes(searchLower) ||
         student.tenSv?.toLowerCase().includes(searchLower) ||
-        student.email?.toLowerCase().includes(searchLower);
-      
+        student.ngaySinh?.toLowerCase().includes(searchLower) ||
+        phaiText.includes(searchLower) ||
+        student.diaChi?.toLowerCase().includes(searchLower);
       const matchLop = filters.filterLop ? student.tenLop === filters.filterLop : true;
       const matchKhoa = filters.filterKhoa ? student.tenKhoa === filters.filterKhoa : true;
-      
       return matchSearch && matchLop && matchKhoa;
     });
   };
 
-  // Modal handlers
   const openModal = (student = null) => {
     setEditingStudent(student);
     if (student) {
@@ -123,11 +113,9 @@ export const DanhSachSinhVienComponents = () => {
     setDetailModalVisible(true);
   };
 
-  // CRUD operations
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
       if (editingStudent) {
         const updateData = {
           tenSv: values.tenSv.trim(),
@@ -138,11 +126,9 @@ export const DanhSachSinhVienComponents = () => {
           email: values.email.trim(),
           maLop: values.maLop
         };
-        
         if (values.avatar?.length > 0) {
           updateData.avatar = values.avatar;
         }
-        
         await studentService.updateStudent(editingStudent.maSv, updateData);
         message.success('Cập nhật sinh viên thành công');
       } else {
@@ -153,7 +139,6 @@ export const DanhSachSinhVienComponents = () => {
         await studentService.createStudent(createData);
         message.success('Thêm sinh viên mới thành công');
       }
-      
       closeModal();
       fetchStudents();
     } catch (error) {
@@ -181,205 +166,205 @@ export const DanhSachSinhVienComponents = () => {
     }
   };
 
-  // Import/Export handlers
-  const openImportModal = () => {
-    setImportModalVisible(true);
-    setSelectedFile(null);
-  };
-
-  const closeImportModal = () => {
-    setImportModalVisible(false);
-    setSelectedFile(null);
-  };
-
-  const validateFile = (file) => {
-    const isValidType = ['csv', 'xls', 'xlsx'].includes(
-      file.name.split('.').pop().toLowerCase()
-    );
-    if (!isValidType) {
-      message.error('Chỉ hỗ trợ file CSV hoặc Excel (.xls, .xlsx)');
-      return false;
-    }
-    
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
-      message.error('File phải nhỏ hơn 2MB!');
-      return false;
-    }
-    
-    return true;
-  };
-
-  const handleFileSelect = (file) => {
-    if (validateFile(file)) {
-      setSelectedFile(file);
-    }
-    return Upload.LIST_IGNORE;
-  };
-
-  const handleImport = async () => {
-    if (!selectedFile) {
-      message.error('Vui lòng chọn file để import');
-      return;
-    }
-    
-    setImporting(true);
+  const exportToExcel = (dataToExport = null) => {
     try {
-      const response = await studentService.importStudents(selectedFile);
-      message.success(response || 'Import danh sách sinh viên thành công');
-      closeImportModal();
-      fetchStudents();
-    } catch (error) {
-      if (error.response?.data) {
-        message.error(`Lỗi: ${error.response.data}`);
-      } else {
-        message.error('Lỗi không xác định khi import danh sách sinh viên');
-      }
-      console.error('Import error:', error);
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const handleDownloadTemplate = async () => {
-    try {
-      await studentService.getImportTemplate();
-      message.success('Tải file mẫu thành công');
-    } catch (error) {
-      message.error('Lỗi khi tải file mẫu');
-    }
-  };
-
-  // Hàm xuất Excel mới sử dụng xlsx và file-saver
-  const handleExport = async () => {
-    setExportLoading(true);
-    try {
-      // Lấy dữ liệu đã được lọc
-      const filteredData = getFilteredData();
-      
-      if (filteredData.length === 0) {
+      const exportData = dataToExport || getFilteredData();
+      if (exportData.length === 0) {
         message.warning('Không có dữ liệu để xuất');
         return;
       }
-
-      // Chuẩn bị dữ liệu cho Excel
-      const exportData = filteredData.map((student, index) => ({
+      const excelData = exportData.map((student, index) => ({
         'STT': index + 1,
         'Mã sinh viên': student.maSv || '',
-        'Họ và tên': student.tenSv || '',
-        'Ngày sinh': student.ngaySinh ? moment(student.ngaySinh).format('DD/MM/YYYY') : '',
-        'Giới tính': student.phai === 1 ? 'Nam' : student.phai === 0 ? 'Nữ' : '',
-        'Lớp': student.tenLop || '',
-        'Khoa': student.tenKhoa || '',
-        'Địa chỉ': student.diaChi || '',
+        'Họ lót': student.hoLot || '',
+        'Tên': student.ten || student.tenSv || '',
+        'Mã lớp': student.maLop || '',
+        'Email': student.email || '',
+        'Phái': student.phai === 1 ? 1 : 0,
+        'Địa Chỉ': student.diaChi || '',
         'Số điện thoại': student.sdt || '',
-        'Email': student.email || ''
+        'Ngày Sinh': moment(student.ngaySinh).format('M/D/YYYY') || ''
       }));
-
-      // Tạo workbook và worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportData);
-
-      // Thiết lập độ rộng cột
       const colWidths = [
-        { wch: 5 },   // STT
-        { wch: 15 },  // Mả sinh viên
-        { wch: 25 },  // Họ và tên
-        { wch: 12 },  // Ngày sinh
-        { wch: 10 },  // Giới tính
-        { wch: 15 },  // Lớp
-        { wch: 20 },  // Khoa
-        { wch: 30 },  // Địa chỉ
-        { wch: 15 },  // Số điện thoại
-        { wch: 25 }   // Email
+        { wch: 5 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 12 },
+        { wch: 30 }, { wch: 8 }, { wch: 25 }, { wch: 15 }, { wch: 12 }
       ];
       ws['!cols'] = colWidths;
-
-      // Thiết lập style cho header (nếu cần)
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const address = XLSX.utils.encode_cell({ r: 0, c: C });
-        if (!ws[address]) continue;
-        ws[address].s = {
-          font: { bold: true },
-          fill: { fgColor: { rgb: "EEEEEE" } }
-        };
-      }
-
-      // Thêm worksheet vào workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Danh sách sinh viên');
-
-      // Tạo tên file với timestamp
-      const currentDate = moment().format('YYYY-MM-DD_HH-mm-ss');
-      const fileName = `Danh_sach_sinh_vien_${currentDate}.xlsx`;
-
-      // Xuất file
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const data = new Blob([excelBuffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      
-      saveAs(data, fileName);
-      message.success(`Xuất danh sách sinh viên thành công! File: ${fileName}`);
-
+      const fileName = `danh-sach-sinh-vien-${moment().format('YYYY-MM-DD-HH-mm-ss')}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      message.success(`Xuất Excel thành công: ${fileName}`);
     } catch (error) {
-      console.error('Export error:', error);
-      message.error('Lỗi khi xuất danh sách sinh viên');
-    } finally {
-      setExportLoading(false);
+      console.error('Error exporting to Excel:', error);
+      message.error('Có lỗi xảy ra khi xuất Excel');
     }
   };
 
-  // Hàm xuất Excel cho dữ liệu đã chọn (nếu cần)
-  const handleExportSelected = (selectedRows) => {
-    if (!selectedRows || selectedRows.length === 0) {
-      message.warning('Vui lòng chọn ít nhất một sinh viên để xuất');
-      return;
-    }
+  const handleImportExcel = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        if (jsonData.length < 2) {
+          message.error('File Excel không có dữ liệu hoặc định dạng không đúng');
+          return;
+        }
+        const headers = jsonData[0];
+        const dataRows = jsonData.slice(1);
+        const expectedHeaders = ['STT', 'Mã sinh viên', 'Họ lót', 'Tên', 'Mã lớp', 'Email', 'Phái', 'Địa Chỉ', 'Số điện thoại', 'Ngày Sinh'];
+        const isValidFormat = expectedHeaders.every(header => headers.includes(header));
+        if (!isValidFormat) {
+          message.error('Định dạng file Excel không đúng. Vui lòng sử dụng template có các cột: ' + expectedHeaders.join(', '));
+          return;
+        }
+        const importedStudents = dataRows
+          .filter(row => row.length > 1 && row[1]) // Lọc bỏ dòng trống và dòng không có mã sinh viên
+          .map((row) => {
+            const student = {};
+            headers.forEach((header, index) => {
+              switch (header) {
+                case 'STT':
+                  break;
+                case 'Mã sinh viên':
+                  student.maSv = row[index] ? String(row[index]).trim() : '';
+                  break;
+                case 'Họ lót':
+                  student.hoLot = row[index] ? String(row[index]).trim() : '';
+                  break;
+                case 'Tên':
+                  student.ten = row[index] ? String(row[index]).trim() : '';
+                  student.tenSv = `${student.hoLot || ''} ${student.ten || ''}`.trim();
+                  break;
+                case 'Mã lớp':
+                  student.maLop = row[index] ? String(row[index]).trim() : '';
+                  break;
+                case 'Email':
+                  student.email = row[index] ? String(row[index]).trim() : '';
+                  break;
+                case 'Phái':
+                  student.phai = row[index] === 1 || row[index] === '1' ? 1 : 0;
+                  break;
+                case 'Địa Chỉ':
+                  student.diaChi = row[index] && String(row[index]).trim() !== 'diaChi' ? String(row[index]).trim() : 'Chưa cập nhật';
+                  break;
+                case 'Số điện thoại':
+                  student.sdt = row[index] ? String(row[index]).trim() : '0000000000';
+                  break;
+                case 'Ngày Sinh':
+                  if (row[index]) {
+                    const dateValue = row[index];
+                    if (typeof dateValue === 'number') {
+                      // Excel date serial number
+                      student.ngaySinh = moment(new Date((dateValue - 25569) * 86400 * 1000)).format('YYYY-MM-DD');
+                    } else {
+                      student.ngaySinh = moment(dateValue, ['M/D/YYYY', 'MM/DD/YYYY', 'DD/MM/YYYY']).isValid()
+                        ? moment(dateValue, ['M/D/YYYY', 'MM/DD/YYYY', 'DD/MM/YYYY']).format('YYYY-MM-DD')
+                        : '2000-01-01';
+                    }
+                  } else {
+                    student.ngaySinh = '2000-01-01';
+                  }
+                  break;
+              }
+            });
+            return student;
+          });
+        if (importedStudents.length === 0) {
+          message.error('Không có dữ liệu hợp lệ để import');
+          return;
+        }
+        showImportPreview(importedStudents);
+      } catch (error) {
+        console.error('Error parsing Excel file:', error);
+        message.error('Có lỗi xảy ra khi đọc file Excel');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    return false;
+  };
 
+  const showImportPreview = (data) => {
+    setImportPreviewData(data);
+    setImportPreviewModalVisible(true);
+  };
+
+  const confirmImport = async () => {
     try {
-      const exportData = selectedRows.map((student, index) => ({
-        'STT': index + 1,
-        'Mã sinh viên': student.maSv || '',
-        'Họ và tên': student.tenSv || '',
-        'Ngày sinh': student.ngaySinh ? moment(student.ngaySinh).format('DD/MM/YYYY') : '',
-        'Giới tính': student.phai === 1 ? 'Nam' : student.phai === 0 ? 'Nữ' : '',
-        'Lớp': student.tenLop || '',
-        'Khoa': student.tenKhoa || '',
-        'Địa chỉ': student.diaChi || '',
-        'Số điện thoại': student.sdt || '',
-        'Email': student.email || ''
-      }));
-
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportData);
-
-      const colWidths = [
-        { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 10 },
-        { wch: 15 }, { wch: 20 }, { wch: 30 }, { wch: 15 }, { wch: 25 }
-      ];
-      ws['!cols'] = colWidths;
-
-      XLSX.utils.book_append_sheet(wb, ws, 'Sinh viên đã chọn');
-
-      const currentDate = moment().format('YYYY-MM-DD_HH-mm-ss');
-      const fileName = `Sinh_vien_da_chon_${currentDate}.xlsx`;
-
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const data = new Blob([excelBuffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      
-      saveAs(data, fileName);
-      message.success(`Xuất danh sách sinh viên đã chọn thành công! File: ${fileName}`);
-
+      setLoading(true);
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+      for (const student of importPreviewData) {
+        try {
+          // Validate required fields
+          if (!student.maSv || !student.tenSv || !student.email) {
+            errors.push(`Dòng có mã SV "${student.maSv || 'Trống'}": Thiếu thông tin bắt buộc`);
+            errorCount++;
+            continue;
+          }
+          // Validate email format
+          const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(student.email);
+          if (!emailValid) {
+            errors.push(`Mã SV "${student.maSv}": Email không hợp lệ`);
+            errorCount++;
+            continue;
+          }
+          // Validate phone number format (10 digits, starts with 0)
+          const sdtValid = /^[0][0-9]{9}$/.test(student.sdt);
+          if (!sdtValid) {
+            errors.push(`Mã SV "${student.maSv}": Số điện thoại không hợp lệ (phải có 10 chữ số, bắt đầu bằng 0)`);
+            errorCount++;
+            continue;
+          }
+          // Validate class
+          const foundClass = classes.find(cls => cls.maLop === student.maLop);
+          if (!foundClass) {
+            errors.push(`Mã SV "${student.maSv}": Mã lớp không hợp lệ`);
+            errorCount++;
+            continue;
+          }
+          const importData = {
+            maSv: student.maSv,
+            tenSv: student.tenSv,
+            email: student.email,
+            maLop: student.maLop,
+            ngaySinh: student.ngaySinh,
+            phai: student.phai,
+            diaChi: student.diaChi,
+            sdt: student.sdt
+          };
+          await studentService.createStudent(importData);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          const errorMsg = error.response?.data?.message || error.message;
+          errors.push(`Mã SV "${student.maSv}": ${errorMsg}`);
+        }
+      }
+      if (successCount > 0) {
+        message.success(`Import thành công ${successCount} sinh viên`);
+      }
+      if (errorCount > 0) {
+        console.error('Import errors:', errors);
+        message.error(`${errorCount} sinh viên import thất bại. Kiểm tra console để xem chi tiết.`);
+      }
+      await fetchStudents();
+      setImportPreviewModalVisible(false);
+      setImportModalVisible(false);
     } catch (error) {
-      console.error('Export selected error:', error);
-      message.error('Lỗi khi xuất danh sách sinh viên đã chọn');
+      console.error('Error during import:', error);
+      message.error('Có lỗi xảy ra trong quá trình import');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Table columns
   const columns = [
     {
       title: 'Mã SV',
@@ -461,7 +446,6 @@ export const DanhSachSinhVienComponents = () => {
     }
   ];
 
-  // Form validation rules
   const validationRules = {
     maSv: [
       { required: true, message: 'Mã sinh viên không được để trống' },
@@ -492,7 +476,7 @@ export const DanhSachSinhVienComponents = () => {
     ],
     sdt: [
       { required: true, message: 'Số điện thoại không được để trống' },
-      { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại không hợp lệ' }
+      { pattern: /^[0][0-9]{9}$/, message: 'Số điện thoại không hợp lệ (phải có 10 chữ số, bắt đầu bằng 0)' }
     ],
     email: [
       { required: true, message: 'Email không được để trống' },
@@ -503,11 +487,9 @@ export const DanhSachSinhVienComponents = () => {
 
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Danh sách Sinh viên</h2>
-        
-        <Space>
+        <Space wrap>
           <Input
             placeholder="Tìm theo MSSV, Họ tên, Email"
             allowClear
@@ -516,7 +498,6 @@ export const DanhSachSinhVienComponents = () => {
             style={{ width: 300 }}
             prefix={<SearchOutlined />}
           />
-          
           <Select
             placeholder="Lọc theo lớp"
             allowClear
@@ -524,7 +505,6 @@ export const DanhSachSinhVienComponents = () => {
             onChange={(value) => setFilters(prev => ({ ...prev, filterLop: value }))}
             options={classes.map(lop => ({ value: lop.tenLop, label: lop.tenLop }))}
           />
-          
           <Select
             placeholder="Lọc theo khoa"
             allowClear
@@ -535,19 +515,10 @@ export const DanhSachSinhVienComponents = () => {
               value: khoa
             }))}
           />
-          
-          <Button icon={<ImportOutlined />} onClick={openImportModal}>
-            Import Excel/CSV
-          </Button>
-          
-          <Button
-            icon={<ExportOutlined />}
-            onClick={handleExport}
-            loading={exportLoading}
-          >
-            Export Excel
-          </Button>
-          
+        </Space>
+      </div>
+      <div className="mb-4">
+        <Space wrap>
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -555,10 +526,21 @@ export const DanhSachSinhVienComponents = () => {
           >
             Thêm Sinh viên
           </Button>
+          <Divider type="vertical" />
+          <Button
+            icon={<ImportOutlined />}
+            onClick={() => setImportModalVisible(true)}
+          >
+            Import Excel
+          </Button>
+          <Button
+            icon={<ExportOutlined />}
+            onClick={() => exportToExcel()}
+          >
+            Xuất Excel
+          </Button>
         </Space>
       </div>
-
-      {/* Data Table */}
       <Table
         columns={columns}
         dataSource={getFilteredData()}
@@ -567,26 +549,12 @@ export const DanhSachSinhVienComponents = () => {
         onChange={handleTableChange}
         rowKey="maSv"
         scroll={{ x: 1500 }}
-        rowSelection={{
-          type: 'checkbox',
-          onChange: (selectedRowKeys, selectedRows) => {
-            // Có thể thêm state để lưu các hàng được chọn
-            console.log('Selected rows:', selectedRows);
-          },
-          getCheckboxProps: (record) => ({
-            name: record.maSv,
-          }),
-        }}
       />
-
-      {/* Detail Modal */}
       <ChiTietSinhVienComponents
         visible={detailModalVisible}
         onClose={() => setDetailModalVisible(false)}
         student={selectedStudent}
       />
-
-      {/* Form Modal */}
       <Modal
         title={editingStudent ? "Cập nhật Sinh viên" : "Thêm Sinh viên mới"}
         open={modalVisible}
@@ -600,22 +568,18 @@ export const DanhSachSinhVienComponents = () => {
               <Input />
             </Form.Item>
           )}
-          
           <Form.Item name="tenSv" label="Họ và tên" rules={validationRules.tenSv}>
             <Input />
           </Form.Item>
-          
           <Form.Item name="ngaySinh" label="Ngày sinh" rules={validationRules.ngaySinh}>
             <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
           </Form.Item>
-          
           <Form.Item name="phai" label="Giới tính" rules={validationRules.phai}>
             <Radio.Group>
               <Radio value={1}>Nam</Radio>
               <Radio value={0}>Nữ</Radio>
             </Radio.Group>
           </Form.Item>
-          
           <Form.Item name="maLop" label="Lớp" rules={validationRules.maLop}>
             <Select placeholder="Chọn lớp" showSearch optionFilterProp="children">
               {classes.map(lop => (
@@ -625,19 +589,15 @@ export const DanhSachSinhVienComponents = () => {
               ))}
             </Select>
           </Form.Item>
-          
           <Form.Item name="diaChi" label="Địa chỉ" rules={validationRules.diaChi}>
             <Input />
           </Form.Item>
-          
           <Form.Item name="sdt" label="Số điện thoại" rules={validationRules.sdt}>
             <Input />
           </Form.Item>
-          
           <Form.Item name="email" label="Email" rules={validationRules.email}>
             <Input />
           </Form.Item>
-          
           <Form.Item
             name="avatar"
             label="Avatar"
@@ -653,72 +613,137 @@ export const DanhSachSinhVienComponents = () => {
               <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
             </Upload>
           </Form.Item>
-          
-          {!editingStudent && (
-            <Form.Item name="createAccount" valuePropName="checked" initialValue={true}>
-              <Radio.Group>
-                <Radio value={true}>Tạo tài khoản</Radio>
-                <Radio value={false}>Không tạo tài khoản</Radio>
-              </Radio.Group>
-            </Form.Item>
-          )}
         </Form>
       </Modal>
-
-      {/* Import Modal */}
       <Modal
-        title="Import Danh Sách Sinh Viên"
+        title="Import Danh sách Sinh viên từ Excel"
         open={importModalVisible}
-        onCancel={closeImportModal}
+        onCancel={() => setImportModalVisible(false)}
         footer={[
-          <Button key="template" icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
-            Tải file mẫu
-          </Button>,
-          <Button key="cancel" onClick={closeImportModal}>
+          <Button key="cancel" onClick={() => setImportModalVisible(false)}>
             Hủy
           </Button>,
-          <Button
-            key="import"
-            type="primary"
-            loading={importing}
-            onClick={handleImport}
-            disabled={!selectedFile}
-          >
-            Import
-          </Button>
         ]}
       >
-        <div className="my-4">
-          <p className="mb-4">Lưu ý:</p>
-          <ul className="list-disc pl-6 mb-4">
-            <li>Chỉ hỗ trợ file Excel (.xls, .xlsx) hoặc CSV</li>
-            <li>Kích thước file tối đa 2MB</li>
-            <li>Vui lòng sử dụng đúng format mẫu</li>
-            <li>Các trường bắt buộc: Mã SV, Họ tên, Ngày sinh, Giới tính, Mã lớp</li>
-            <li>Ngày sinh phải theo định dạng DD/MM/YYYY</li>
-            <li>Giới tính: 1 (Nam) hoặc 0 (Nữ)</li>
-            <li className="text-blue-600">Hệ thống sẽ tự động tạo tài khoản cho sinh viên với:</li>
-            <ul className="list-circle pl-6">
-              <li>Tên đăng nhập: Mã sinh viên</li>
-              <li>Mật khẩu: Mã sinh viên</li>
-              <li>Email: Email đã nhập</li>
+        <div className="space-y-4">
+          <div>
+            <p className="mb-2 font-medium">Hướng dẫn Import:</p>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>1. Tải template Excel mẫu</li>
+              <li>2. Điền thông tin sinh viên theo đúng format</li>
+              <li>3. Upload file Excel đã hoàn thành</li>
+              <li>4. Kiểm tra và xác nhận import</li>
             </ul>
-          </ul>
-          
-          <Upload.Dragger
-            beforeUpload={handleFileSelect}
-            showUploadList={true}
-            maxCount={1}
-            fileList={selectedFile ? [selectedFile] : []}
-            onRemove={() => setSelectedFile(null)}
-            accept=".csv,.xls,.xlsx"
-          >
-            <p className="ant-upload-drag-icon">
-              <UploadOutlined />
+          </div>
+          <div>
+            <p className="mb-2 font-medium">Chọn file Excel:</p>
+            <Upload
+              accept=".xlsx,.xls"
+              beforeUpload={handleImportExcel}
+              showUploadList={false}
+            >
+              <Button icon={<FileExcelOutlined />} size="large" className="w-full">
+                Chọn file Excel để import
+              </Button>
+            </Upload>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        title="Xem trước dữ liệu Import"
+        open={importPreviewModalVisible}
+        onOk={confirmImport}
+        onCancel={() => setImportPreviewModalVisible(false)}
+        width={1000}
+        okText="Xác nhận Import"
+        cancelText="Hủy"
+        confirmLoading={loading}
+      >
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <p className="font-medium">
+              Sẽ import {importPreviewData.length} sinh viên
             </p>
-            <p className="ant-upload-text">Click hoặc kéo thả file vào đây</p>
-            <p className="ant-upload-hint">Hỗ trợ file Excel (.xls, .xlsx) hoặc CSV</p>
-          </Upload.Dragger>
+          </div>
+          <Table
+            dataSource={importPreviewData}
+            pagination={{ pageSize: 10 }}
+            size="small"
+            scroll={{ x: 800 }}
+            rowKey={(record, index) => `preview-${index}`}
+            columns={[
+              {
+                title: 'STT',
+                width: 60,
+                render: (_, record, index) => index + 1
+              },
+              {
+                title: 'Mã SV',
+                dataIndex: 'maSv',
+                width: 120
+              },
+              {
+                title: 'Họ và tên',
+                dataIndex: 'tenSv',
+                width: 180
+              },
+              {
+                title: 'Email',
+                dataIndex: 'email',
+                width: 200
+              },
+              {
+                title: 'Mã lớp',
+                dataIndex: 'maLop',
+                width: 100
+              },
+              {
+                title: 'Phái',
+                dataIndex: 'phai',
+                width: 80,
+                render: (phai) => phai === 1 ? 'Nam' : 'Nữ'
+              },
+              {
+                title: 'Ngày sinh',
+                dataIndex: 'ngaySinh',
+                width: 100,
+                render: (date) => date ? moment(date).format('DD/MM/YYYY') : ''
+              },
+              {
+                title: 'Địa chỉ',
+                dataIndex: 'diaChi',
+                width: 150
+              },
+              {
+                title: 'Số điện thoại',
+                dataIndex: 'sdt',
+                width: 120
+              },
+              {
+                title: 'Trạng thái',
+                width: 120,
+                render: (_, record) => {
+                  const hasRequiredFields = record.maSv && record.tenSv && record.email;
+                  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(record.email || '');
+                  const sdtValid = /^[0][0-9]{9}$/.test(record.sdt || '');
+                  const classValid = classes.find(cls => cls.maLop === record.maLop);
+                  if (!hasRequiredFields) {
+                    return <span className="text-red-500">Thiếu thông tin</span>;
+                  }
+                  if (!emailValid) {
+                    return <span className="text-orange-500">Email không hợp lệ</span>;
+                  }
+                  if (!sdtValid) {
+                    return <span className="text-orange-500">SĐT không hợp lệ</span>;
+                  }
+                  if (!classValid) {
+                    return <span className="text-orange-500">Lớp không hợp lệ</span>;
+                  }
+                  return <span className="text-green-500">Hợp lệ</span>;
+                }
+              }
+            ]}
+          />
         </div>
       </Modal>
     </div>

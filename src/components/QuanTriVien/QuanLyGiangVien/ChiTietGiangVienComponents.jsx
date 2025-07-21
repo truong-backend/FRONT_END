@@ -25,7 +25,7 @@ export const ChiTietGiangVienComponents = ({ visible, onClose, lecturer }) => {
   ];
 
   const accountInfo = [
-    { label: 'Tên đăng nhập', value: lecturer.maGv },
+    { label: 'Tên tài khoản', value: lecturer.maGv },
     { label: 'Email đăng nhập', value: lecturer.email },
     // { label: 'Trạng thái', value: <Tag color="green">Đã kích hoạt</Tag> }
   ];

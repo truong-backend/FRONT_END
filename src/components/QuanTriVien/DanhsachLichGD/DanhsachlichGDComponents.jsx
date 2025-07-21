@@ -52,7 +52,7 @@ const PERIOD_RANGE = { min: 1, max: 20 };
 const GROUP_COUNT = 100;
 
 export const DanhsachlichGDComponents = () => {
-  
+
   const [studentSearchText, setStudentSearchText] = useState('');
   const [addStudentModalVisible, setAddStudentModalVisible] = useState(false);
   const [selectedStudentsToAdd, setSelectedStudentsToAdd] = useState([]);
@@ -580,7 +580,7 @@ export const DanhsachlichGDComponents = () => {
           style={{ width: 300 }}
           allowClear
         />
-        
+
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -841,7 +841,6 @@ export const DanhsachlichGDComponents = () => {
         )}
       </Modal>
 
-      {/* Add Student Modal */}
       <Modal
         title="Thêm sinh viên vào lịch học"
         open={addStudentModalVisible}
@@ -858,6 +857,38 @@ export const DanhsachlichGDComponents = () => {
             value={studentSearchText}
             onChange={(e) => setStudentSearchText(e.target.value)}
             allowClear
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <p><strong>Nhập danh sách mã sinh viên (mỗi mã trên một dòng):</strong></p>
+          <Input.TextArea
+            rows={4}
+            placeholder="VD:\nSV001\nSV002\nSV003"
+            onBlur={(e) => {
+              const lines = e.target.value
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line !== '');
+
+              const uniqueMaSv = [...new Set(lines)]; // bỏ trùng
+
+              const matchedStudents = availableStudents.filter(sv =>
+                uniqueMaSv.includes(sv.maSv)
+              );
+
+              const notFound = uniqueMaSv.filter(ma => !matchedStudents.some(sv => sv.maSv === ma));
+              if (notFound.length > 0) {
+                message.warning(`Không tìm thấy: ${notFound.join(', ')}`);
+              }
+
+              // Thêm vào danh sách chọn, tránh thêm trùng
+              const newSelections = matchedStudents.filter(
+                sv => !selectedStudentsToAdd.some(sel => sel.maSv === sv.maSv)
+              );
+
+              setSelectedStudentsToAdd(prev => [...prev, ...newSelections]);
+            }}
           />
         </div>
 

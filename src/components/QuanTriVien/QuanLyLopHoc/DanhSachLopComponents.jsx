@@ -173,7 +173,7 @@ const validateExcelRow = (row, index, khoas) => {
 };
 
 // Components
-const Header = ({ onCreateClick, onExportClick, onImportClick, hasData }) => (
+const Header = ({ onCreateClick}) => (
   <div style={{ 
     marginBottom: '16px', 
     display: 'flex', 
@@ -183,14 +183,7 @@ const Header = ({ onCreateClick, onExportClick, onImportClick, hasData }) => (
     <Title level={2}>Quản lý Lớp</Title>
     <Space>
 
-      <Button 
-        type="default" 
-        icon={<DownloadOutlined />} 
-        onClick={onExportClick}
-        disabled={!hasData}
-      >
-        Xuất Excel
-      </Button>
+     
       <Button type="primary" icon={<PlusOutlined />} onClick={onCreateClick}>
         Thêm Lớp Mới
       </Button>
@@ -565,7 +558,7 @@ export const DanhSachLopComponents = () => {
     <div style={{ padding: '24px' }}>
       <Header 
         onCreateClick={handleCreate} 
-        onExportClick={exportToExcel}
+        
 
         hasData={hasData}
       />

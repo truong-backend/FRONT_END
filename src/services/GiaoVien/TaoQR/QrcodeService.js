@@ -127,3 +127,22 @@ export const createQRCode = async (maTkb, soPhut) => {
     throw error;
   }
 };
+
+// 8. Lấy mã giảng dạy theo học kỳ, môn học, giảng viên, nhóm
+export const fetchMaGd = async (hocKy, maMh, maGv, nhom) => {
+  try {
+    const response = await api.get(`/lichgd/ma-gd`, {
+      params: {
+        hocKy,
+        maMh,
+        maGv,
+        nhom
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy mã giảng dạy:', error);
+    throw error;
+  }
+};
+

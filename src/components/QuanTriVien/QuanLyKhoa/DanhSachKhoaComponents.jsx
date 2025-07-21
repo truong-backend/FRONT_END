@@ -19,18 +19,12 @@ import {
   DeleteOutlined, 
   PlusOutlined, 
   SearchOutlined, 
-  DownloadOutlined,
-  UploadOutlined,
-  InboxOutlined 
 } from '@ant-design/icons';
 import { khoaService } from '../../../services/Admin/khoaService.js';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
-import moment from 'moment';
+
 
 const { Title } = Typography;
-const { Search } = Input;
-const { Dragger } = Upload;
+const { Search } = Input
 
 
 
@@ -75,80 +69,7 @@ export const DanhSachKhoaComponents = () => {
     fetchKhoas();
   }, []);
 
-  // Excel export function
-  const exportToExcel = () => {
-    try {
-      // Prepare data for export
-      const exportData = filteredKhoas.map((item, index) => ({
-        'STT': index + 1,
-        'Mã khoa': item.maKhoa,
-        'Tên khoa': item.tenKhoa,
-      }));
 
-      // Create workbook and worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportData);
-
-      // Set column widths
-      const colWidths = [
-        { wch: 5 },  // STT
-        { wch: 15 }, // Mã khoa
-        { wch: 40 }, // Tên khoa
-      ];
-      ws['!cols'] = colWidths;
-
-      // Add title row
-      XLSX.utils.sheet_add_aoa(ws, [['DANH SÁCH KHOA']], { origin: 'A1' });
-      
-      // Merge title cells
-      if (!ws['!merges']) ws['!merges'] = [];
-      ws['!merges'].push({
-        s: { r: 0, c: 0 },
-        e: { r: 0, c: 2 }
-      });
-
-      // Style the title
-      if (ws['A1']) {
-        ws['A1'].s = {
-          font: { bold: true, sz: 16 },
-          alignment: { horizontal: 'center' }
-        };
-      }
-
-      // Shift data down to make room for title
-      XLSX.utils.sheet_add_json(ws, exportData, {
-        origin: 'A3',
-        skipHeader: false
-      });
-
-      // Add export info
-      const exportInfo = [
-        [`Ngày xuất: ${moment().format('DD/MM/YYYY HH:mm:ss')}`],
-        [`Tổng số khoa: ${filteredKhoas.length}`],
-        ['']
-      ];
-      
-      XLSX.utils.sheet_add_aoa(ws, exportInfo, { 
-        origin: `A${exportData.length + 5}` 
-      });
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Danh sách khoa');
-
-      // Generate file name with timestamp
-      const fileName = `DanhSachKhoa_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
-
-      // Save file
-      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([wbout], { type: 'application/octet-stream' });
-      saveAs(blob, fileName);
-
-      message.success(`Xuất báo cáo thành công! Tệp: ${fileName}`);
-    } catch (error) {
-      console.error('Export error:', error);
-      message.error('Lỗi khi xuất báo cáo Excel');
-    }
-  };
 
   // Search functionality
   const handleSearch = (value) => {
@@ -291,16 +212,6 @@ export const DanhSachKhoaComponents = () => {
       }}>
         <Title level={2}>Quản lý Khoa</Title>
         <Space>
-
-          <Button 
-            type="default" 
-            icon={<DownloadOutlined />} 
-            onClick={exportToExcel}
-            disabled={filteredKhoas.length === 0}
-            title="Xuất báo cáo Excel"
-          >
-            Xuất Excel
-          </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
             Thêm Khoa Mới
           </Button>
