@@ -30,5 +30,62 @@ export const GiaoVienService = {
             console.log('Lỗi điểm danh sinh viên' , error);
             throw error;
         }
+    },
+    getMonHocForDiemDanh : async() => {
+         try {
+            const res = await api.get('/monhoc/monHocKetQuaDiemDanh');
+            console.log('res data',res.data);
+            return res.data;
+        } catch (error) {
+            console.log('Lỗi lấy môn học cho kết quả điểm danh' , error);
+            throw error;
+        }
+    },
+    thongKeDiemDanh: async (maMh,nmh,maGd) => {
+        try {
+            const res = await api.get('/diemdanh/thongke_diemdanh', {
+            params: {
+                maMh: maMh,
+                nmh: nmh,
+                maGd: maGd
+            }});
+            console.log('thống kê điểm danh',res.data);
+            return res.data;
+        } catch (error) {
+            console.log('Lỗi thống kê điểm danh');
+            throw error;
+        }
+    },
+    GetLanDiemDanh: async (maTkb,maSv,ngayHoc) => {
+        try {
+            const res = await api.get('/diemdanh/getLanDiemDanh',{
+                params:{
+                    maTkb:maTkb,
+                    maSv:maSv,
+                    ngayHoc:ngayHoc
+                }
+            });
+            console.log('lan diem danh',res.data);
+            return res.data;
+        } catch (error) {
+            console.log('Lỗi lần điểm danh');
+            throw error;
+        }
+    },
+    ExportThongKe : async (maMh,nmh,maGd) =>{
+        try {
+            const res = await api.get('/diemdanh/export-thong-ke-excel', {
+            params: {
+                maMh: maMh,
+                nmh: nmh,
+                maGd: maGd
+            },
+            responseType:'blob',
+        });
+            return res.data;
+        } catch (error) {
+            console.log('xuất excel thống kê điểm danh thất bại',error);
+            throw error;
+        }
     }
 }

@@ -27,13 +27,13 @@ apiClient.interceptors.request.use(
 export const authService = {
   // Login endpoints
   loginStudent: (credentials) =>
-    apiClient.post('/sinh-vien/dang-nhap', credentials).then(res => res.data),
+    apiClient.post('/sinhvien/login', credentials).then(res => res.data),
   
   loginTeacher: (credentials) =>
-    apiClient.post('/giao-vien/dang-nhap', credentials).then(res => res.data),
+    apiClient.post('/giangvien/login', credentials).then(res => res.data),
   
   loginAdmin: (credentials) =>
-    apiClient.post('/quan-tri/dang-nhap', credentials).then(res => res.data),
+    apiClient.post('/admin/login', credentials).then(res => res.data),
 
   // Password reset endpoints
   requestOTP: (email, userType) => {

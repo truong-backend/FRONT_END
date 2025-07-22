@@ -28,6 +28,7 @@ import ThongTinQRPage from './pages/SinhVien/ThongTinQR/ThongTinQRPage.jsx';
 import { DsachDdanhPage } from './pages/Admin/danhsachdiemdanh/DsachDdanhPage.jsx';
 import { ThemSinhVienPage } from './pages/GiaoVien/ThemSinhVien/ThemSinhVienPage.jsx';
 import { ThoiKhoaBieuPage } from './pages/GiaoVien/ThoiKhoaBieu/ThoiKhoaBieuPage.jsx';
+import { KetQuaDiemDanhPage } from './pages/GiaoVien/KetQuaDiemDanh/KetQuaDiemDanhPage.jsx';
 
 // Component để bảo vệ các route đăng nhập
 const PublicRoute = ({ children }) => {
@@ -57,7 +58,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/sinh-vien/dang-nhap" replace />} />
             <Route
-              path="/sinh-vien/dang-nhap"
+              path="/sinhvien/login"
               element={
                 <PublicRoute>
                   <BieuMauDangNhap
@@ -69,7 +70,7 @@ function App() {
               }
             />
             <Route
-              path="/giao-vien/dang-nhap"
+              path="/giangvien/login"
               element={
                 <PublicRoute>
                   <BieuMauDangNhap
@@ -81,7 +82,7 @@ function App() {
               }
             />
             <Route
-              path="/quan-tri/dang-nhap"
+              path="/admin/login"
               element={
                 <PublicRoute>
                   <BieuMauDangNhap
@@ -94,7 +95,7 @@ function App() {
             />
 
             <Route
-              path="/sinh-vien/quen-mat-khau"
+              path="/student/forgot-password"
               element={
                 <PublicRoute>
                   <QuenMatKhauComponents
@@ -106,7 +107,7 @@ function App() {
               }
             />
             <Route
-              path="/sinh-vien/xac-thuc-otp"
+              path="/student/xac-thuc-otp"
               element={
                 <PublicRoute>
                   <XacThucOtpComponents
@@ -118,7 +119,7 @@ function App() {
               }
             />
             <Route
-              path="/sinh-vien/dat-lai-mat-khau"
+              path="/student/dat-lai-mat-khau"
               element={
                 <PublicRoute>
                   <DatLaiMatKhauComponents
@@ -132,7 +133,7 @@ function App() {
 
             {/* Password Reset Routes - Teacher */}
             <Route
-              path="/giao-vien/quen-mat-khau"
+              path="/teacher/forgot-password"
               element={
                 <PublicRoute>
                   <QuenMatKhauComponents
@@ -144,7 +145,7 @@ function App() {
               }
             />
             <Route
-              path="/giao-vien/xac-thuc-otp"
+              path="/teacher/xac-thuc-otp"
               element={
                 <PublicRoute>
                   <XacThucOtpComponents
@@ -156,7 +157,7 @@ function App() {
               }
             />
             <Route
-              path="/giao-vien/dat-lai-mat-khau"
+              path="/teacher/dat-lai-mat-khau"
               element={
                 <PublicRoute>
                   <DatLaiMatKhauComponents
@@ -170,7 +171,7 @@ function App() {
 
             {/* Password Reset Routes - Admin */}
             <Route
-              path="/quan-tri/quen-mat-khau"
+              path="/admin/forgot-password"
               element={
                 <PublicRoute>
                   <QuenMatKhauComponents
@@ -182,7 +183,7 @@ function App() {
               }
             />
             <Route
-              path="/quan-tri/xac-thuc-otp"
+              path="/admin/xac-thuc-otp"
               element={
                 <PublicRoute>
                   <XacThucOtpComponents
@@ -194,7 +195,7 @@ function App() {
               }
             />
             <Route
-              path="/quan-tri/dat-lai-mat-khau"
+              path="/admin/dat-lai-mat-khau"
               element={
                 <PublicRoute>
                   <DatLaiMatKhauComponents
@@ -342,7 +343,15 @@ function App() {
               path="/giao-vien/thoi-khoa-bieu"
               element={
                 <BaoVeDuongDan allowedRoles={['TEACHER']}>
-                  <ThoiKhoaBieuPage/>
+                  <ThoiKhoaBieuPage />
+                </BaoVeDuongDan>
+              }
+            />
+            <Route
+              path="/giao-vien/ket-qua-diem-danh"
+              element={
+                <BaoVeDuongDan allowedRoles={['TEACHER']}>
+                  <KetQuaDiemDanhPage />
                 </BaoVeDuongDan>
               }
             />

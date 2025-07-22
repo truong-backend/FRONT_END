@@ -82,7 +82,6 @@ export const fetchSinhVienDiemDanh = async (maTkb) => {
     throw error;
   }
 };
-
 // 6. Điểm danh thủ công
 export const markAttendanceManual = async (diemDanhData) => {
   try {

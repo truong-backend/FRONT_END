@@ -18,8 +18,7 @@ import {
 } from '../../../services/GiaoVien/TaoQR/QrcodeService.js';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
 import { GiaoVienService } from '../../../services/GiaoVien/HoSo/GiaoVienService.js';
-import { responsiveArray } from 'antd/es/_util/responsiveObserver.js';
-import { data } from 'autoprefixer';
+
 
 const { Option } = Select;
 const { Text, Title } = Typography;
@@ -36,18 +35,21 @@ export const DiemDanhComponents = () => {
   const [selectedNhom, setSelectedNhom] = useState(null);
   const [ngayList, setNgayList] = useState([]);
   const [selectedNgay, setSelectedNgay] = useState(null);
-
   // Mode and data
   const [mode, setMode] = useState('thuCong');
   const [danhSachSinhVien, setDanhSachSinhVien] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [selectedStudents2, setSelectedStudents2] = useState([]);
+
   const [thoiGianHetHan, setThoiGianHetHan] = useState(5);
   const [ghiChuThuCong, setGhiChuThuCong] = useState({});
-
+  const [soLanDiemDanh, setSoLanDiemDanh] = useState(0);
   // QR Code state
   const [qrCodeData, setQrCodeData] = useState(null);
   const [qrCodeExpired, setQrCodeExpired] = useState(false);
   const [remainingTime, setRemainingTime] = useState(null);
+  const [openQRModal, setOpenQRModal] = useState(true);
+
   //Dùng cho quét QR sinh viên
   const [showScanner, setShowScanner] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -65,6 +67,44 @@ export const DiemDanhComponents = () => {
     taoQR: false,
     xoaDiemDanhThuCong: false
   });
+  const soLuongDaDiemDanh = () => {
+    let count = 0;
+    danhSachSinhVien?.forEach(sv => {
+      if (sv.ghiChu && sv.ghiChu.trim() !== '') {
+        count += 1;
+      }
+    });
+    return count;
+  };
+ 
+  //load lại lần điểm danh
+  useEffect(() => {
+    if (selectedNgay) {
+      setSoLanDiemDanh(0);
+    }
+  }, [selectedNgay]);
+
+  // //reaload sau khi sinh viên quét qr buổi học (dành cho pp tạo qr)
+  useEffect(() => {
+    let intervalId;
+    const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
+    if (mode === 'qr' && qrCodeData && !qrCodeExpired && selectedNgayData) {
+      intervalId = setInterval(() => {
+        handleThuCong();
+      }, 3000)
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    }
+  }, [mode, qrCodeData, qrCodeExpired]);
+
+  //reload dssv sau đổi mode và chọn lại ngày giảng dạy
+  useEffect(() => {
+    const selectedNgayData = ngayList.find(ngay => ngay.maTkb === selectedNgay);
+    if (mode && selectedNgayData) {
+      handleThuCong();
+    }
+  }, [mode, selectedNgay]);
   //hook mở modal bật cam quét QR sinh viên
   useEffect(() => {
     if (mode === 'svqr') {
@@ -75,6 +115,7 @@ export const DiemDanhComponents = () => {
       setStartCamera(false);
     }
   }, [mode]);
+
 
   const stopScanning = () => {
     setShowScanner(false);
@@ -252,6 +293,23 @@ export const DiemDanhComponents = () => {
     }
   };
 
+  const handleSelectAllDiemDanh1 = (checked) => {
+    if (checked) {
+      const allIds = danhSachSinhVien.map(sv => sv.maSv);
+      setSelectedStudents(allIds);
+    } else {
+      setSelectedStudents([]);
+    }
+  };
+
+  const handleSelectAllDiemDanh2 = (checked) => {
+    if (checked) {
+      const allIds = danhSachSinhVien.map(sv => sv.maSv);
+      setSelectedStudents2(allIds);
+    } else {
+      setSelectedStudents2([]);
+    }
+  };
 
 
   const handleHocKyChange = async (value) => {
@@ -339,8 +397,8 @@ export const DiemDanhComponents = () => {
       const data = await fetchSinhVienDiemDanh(selectedNgayData.maTkb);
       //Sắp xếp time điểm danh
       const sortedData = [...data].sort((a, b) => {
-        const fisrtTime = new Date(a.diemDanh2 || a.diemDanh1 || 0);
-        const secondTime = new Date(b.diemDanh2 || b.diemDanh1 || 0);
+        const fisrtTime = new Date(a.diemDanh1 || 0);
+        const secondTime = new Date(b.diemDanh1 || 0);
         return secondTime - fisrtTime; //sort theo time điểm danh gần nhất
       });
       setDanhSachSinhVien(sortedData);
@@ -353,7 +411,9 @@ export const DiemDanhComponents = () => {
   };
 
   const handleDiemDanhThuCong = async () => {
-    if (selectedStudents.length === 0) {
+    const allSelected = [...new Set([...selectedStudents, ...selectedStudents2])];
+
+    if (allSelected.length === 0) {
       message.warning('Vui lòng chọn ít nhất một sinh viên để điểm danh');
       return;
     }
@@ -363,7 +423,8 @@ export const DiemDanhComponents = () => {
 
     setLoading(prev => ({ ...prev, diemDanh: true }));
     try {
-      const promises = selectedStudents.map(maSv =>
+      const allSelected = [...new Set([...selectedStudents, ...selectedStudents2])];
+      const promises = allSelected.map(maSv =>
         markAttendanceManual({
           maTkb: selectedNgayData.maTkb,
           maSv: maSv,
@@ -445,6 +506,7 @@ export const DiemDanhComponents = () => {
       const qrData = await createQRCode(selectedNgayData.maTkb, thoiGianHetHan);
       setQrCodeData(qrData);
       setQrCodeExpired(false);
+      setOpenQRModal(true);
       message.success('QR Code đã được tạo thành công!');
     } catch (error) {
       message.error('Không thể tạo QR Code');
@@ -503,14 +565,16 @@ export const DiemDanhComponents = () => {
   };
 
   const getUnattendedCount = () => {
-    return selectedStudents.filter(maSv =>
-      danhSachSinhVien.find(sv => sv.maSv === maSv)?.ghiChu !== 'Đã điểm danh lần 1'
+    const selectedAll = [...new Set([...selectedStudents, ...selectedStudents2])];
+    return selectedAll.filter(maSv =>
+      danhSachSinhVien.find(sv => sv.maSv === maSv)
     ).length;
   };
 
+
   const getAttendedCount = () => {
     return selectedStudents.filter(maSv =>
-      danhSachSinhVien.find(sv => sv.maSv === maSv));
+      danhSachSinhVien.find(sv => sv.maSv === maSv).ghiChu === 'Đã điểm danh');
   };
 
   // Table columns
@@ -518,43 +582,84 @@ export const DiemDanhComponents = () => {
     {
       title: (
         <Checkbox
-          onChange={(e) => handleSelectAllStudents(e.target.checked)}
+          onChange={(e) => handleSelectAllDiemDanh1(e.target.checked)}
           checked={selectedStudents.length > 0 && selectedStudents.length === danhSachSinhVien.length}
           indeterminate={selectedStudents.length > 0 && selectedStudents.length < danhSachSinhVien.length}
+          disabled={danhSachSinhVien.every(sv =>
+            ['Đã điểm danh', 'Điểm danh lần 2'].includes(sv.ghiChu?.trim())
+          )}
         >
-          Chọn
+          Điểm danh 1
         </Checkbox>
       ),
-      dataIndex: 'select',
-      width: 80,
-      render: (_, record) => (
+      dataIndex: 'diemDanh1',
+      width: 130,
+      render: (_, record) => {
+        const isDisabled = record.ghiChu?.trim() === 'Đã điểm danh' ||
+        record.ghiChu?.trim() === 'Điểm danh lần 2';
+
+        return (
+          <Checkbox
+            checked={selectedStudents.includes(record.maSv)}
+            disabled={isDisabled}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setSelectedStudents(prev =>
+                checked
+                  ? [...prev, record.maSv]
+                  : prev.filter(id => id !== record.maSv)
+              );
+            }}
+          />
+        );
+      }
+    },
+    {
+      title: (
         <Checkbox
-          checked={selectedStudents.includes(record.maSv)}
+          onChange={(e) => handleSelectAllDiemDanh2(e.target.checked)}
+          checked={selectedStudents2.length > 0 && selectedStudents2.length === danhSachSinhVien.length}
+          indeterminate={selectedStudents2.length > 0 && selectedStudents2.length < danhSachSinhVien.length}
+          disabled={danhSachSinhVien.every(sv =>
+            sv.ghiChu?.trim() === '' || sv.ghiChu?.trim() === 'Điểm danh lần 2'
+          )}
+
+          >
+          Điểm danh 2
+        </Checkbox>
+      ),
+      dataIndex: 'diemDanh2',
+      width: 130,
+      render: (_, record) => { 
+         const isDisabled2 = record.ghiChu?.trim() === 'Điểm danh lần 2'
+         || record.ghiChu?.trim() === '';
+        return(
+          <Checkbox
+          checked={selectedStudents2.includes(record.maSv)}
+          disabled={isDisabled2}
           onChange={(e) => {
-            if (e.target.checked) {
-              setSelectedStudents([...selectedStudents, record.maSv]);
-            } else {
-              setSelectedStudents(selectedStudents.filter(id => id !== record.maSv));
-            }
+            const checked = e.target.checked;
+            setSelectedStudents2(prev =>
+              checked
+                ? [...prev, record.maSv]
+                : prev.filter(id => id !== record.maSv)
+            );
           }}
         />
-      )
+        );
+      }
     },
     { title: 'MSSV', dataIndex: 'maSv', width: 120 },
     { title: 'Họ tên', dataIndex: 'tenSv' },
     { title: 'Lớp', dataIndex: 'tenLop', width: 100 },
-    { title: 'Khoa', dataIndex: 'tenKhoa', width: 150 },
-
     {
       title: 'Ghi chú',
       dataIndex: 'ghiChu',
       width: 200,
       render: (ghiChu, record) => {
         const maSv = record.maSv;
-        const isSelected = selectedStudents.includes(maSv);
-        const currentValue = typeof ghiChuThuCong[maSv] === 'string'
-          ? ghiChuThuCong[maSv]
-          : (typeof ghiChu === 'string' ? ghiChu : '');
+        const isSelected = selectedStudents.includes(maSv) || selectedStudents2.includes(maSv);
+        const currentValue = ghiChuThuCong[maSv] ?? ghiChu ?? '';
 
         return (
           <div
@@ -574,7 +679,7 @@ export const DiemDanhComponents = () => {
               const value = e.target.innerText.trim();
               setGhiChuThuCong(prev => ({
                 ...prev,
-                [maSv]: value // ✅ chỉ lưu chuỗi vào đúng sinh viên
+                [maSv]: value
               }));
             }}
             onKeyDown={(e) => {
@@ -589,9 +694,8 @@ export const DiemDanhComponents = () => {
         );
       }
     }
-
-
   ];
+
 
 
   // Validation
@@ -611,19 +715,15 @@ export const DiemDanhComponents = () => {
         <Form.Item label="Chọn học kỳ">
           <Select
             onChange={handleHocKyChange}
-            placeholder="Chọn học kỳ"
+            placeholder="Chọn học kỳ  "
             loading={loading.hocKy}
           >
             {hocKyList.map((hk) => (
-              <Option
-                key={`${hk.hocKy}-${hk.namHoc}`}
-                value={`${hk.hocKy}-${hk.namHoc}`}
-              >
+              <Option key={hk.hocKy} value={hk.hocKy}>
                 {hk.hocKyDisplay}
               </Option>
             ))}
           </Select>
-
         </Form.Item>
 
         <Form.Item label="Chọn môn học">
@@ -680,14 +780,18 @@ export const DiemDanhComponents = () => {
             <Radio.Button value="qr">Tạo QR</Radio.Button>
             <Radio.Button onClick={() => {
               setShowScanner(true);
+              setSoLanDiemDanh(prev => prev + 1);
               setStartCamera(false);
             }} value="svqr">Quét mã</Radio.Button>
           </Radio.Group>
+          {/* <div className="mt-8">
+            Đã điểm danh: <strong>{soLuongDaDiemDanh()}</strong> / <strong>{danhSachSinhVien.length}</strong> sinh viên lần <strong>...</strong>
+          </div> */}
         </Form.Item>
         {mode === 'svqr' && (
           <>
             <Modal
-              title="Quét mã QR sinh viên"
+              title={`Quét mã QR sinh viên - lần ${soLanDiemDanh}`}
               open={showScanner}
               onCancel={stopScanning}
               footer={null}
@@ -698,7 +802,9 @@ export const DiemDanhComponents = () => {
                   <Button
                     type="primary"
                     icon={<CameraOutlined />}
-                    onClick={() => setStartCamera(true)}
+                    onClick={() => {
+                      setStartCamera(true);
+                    }}
                     onCancel={() => {
                       setShowScanner(false);
                       setStartCamera(false);
@@ -762,7 +868,7 @@ export const DiemDanhComponents = () => {
                   loading={loading.xoaDiemDanhThuCong}
                   disabled={getAttendedCount() === 0}
                 >
-                  Xóa điểm danh ({getAttendedCount()})
+                  Xóa điểm danh
                 </Button>
               </Popconfirm>
             </div>
@@ -799,83 +905,67 @@ export const DiemDanhComponents = () => {
 
             {/* QR Code Display */}
             {qrCodeData && (
-              <Card title="QR Code điểm danh" style={{ marginTop: 16 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                  <div>
-                    <Text strong>ID:</Text> {qrCodeData.id}
-                  </div>
-                  <div>
-                    <Text strong>Mã TKB:</Text> {qrCodeData.maTkb}
-                  </div>
-                  <div>
-                    <Text strong>Ngày học:</Text> {moment(qrCodeData.ngayHoc).format('DD/MM/YYYY')}
-                  </div>
-                  <div>
-                    <Text strong>Phòng học:</Text> {qrCodeData.phongHoc}
-                  </div>
-                  <div>
-                    <Text strong>Hết hạn:</Text> {moment(qrCodeData.thoiGianKt).format('DD/MM/YYYY HH:mm:ss')}
-                  </div>
-                  <div>
-                    <Text strong>Còn lại:</Text>
-                    <span style={{
-                      color: qrCodeExpired ? 'red' : 'green',
-                      fontWeight: 'bold'
-                    }}>
-                      {remainingTime || 'Đang tính...'}
-                    </span>
-                  </div>
-                </div>
-
-
-                <Divider />
-
-
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    padding: 20,
-                    border: qrCodeExpired ? '2px dashed #ff4d4f' : '2px dashed #1890ff',
-                    borderRadius: 8,
-                    display: 'inline-block',
-                    position: 'relative'
-                  }}>
-                    <QRCodeSVG
-                      value={generateQRValue()}
-                      size={200}
-                      level="M"
-                      includeMargin={true}
-                    />
-                    {qrCodeExpired && (
-                      <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        color: '#ff4d4f'
-                      }}>
-                        ĐÃ HẾT HẠN
+              <Modal
+                title="QR Code điểm danh"
+                open={openQRModal}
+                onCancel={() => setOpenQRModal(false)}
+                footer={null}
+                centered
+                width={600}
+              >
+                {qrCodeData && (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                      <div>
+                        <Text strong>Còn lại:</Text>
+                        <span style={{
+                          color: qrCodeExpired ? 'red' : 'green',
+                          fontWeight: 'bold'
+                        }}>
+                          {remainingTime || 'Đang tính...'}
+                        </span>
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div style={{ marginTop: 16 }}>
-                    <Button
-                      icon={<CopyOutlined />}
-                      onClick={copyQRData}
-                      disabled={qrCodeExpired}
-                    >
-                      Sao chép dữ liệu QR
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                    <Divider />
+
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{
+                        padding: 20,
+                        border: qrCodeExpired ? '2px dashed #ff4d4f' : '2px dashed #1890ff',
+                        borderRadius: 8,
+                        display: 'inline-block',
+                        position: 'relative'
+                      }}>
+                        <QRCodeSVG
+                          value={generateQRValue()}
+                          size={500}
+                          level="M"
+                          includeMargin={true}
+                        />
+                        {qrCodeExpired && (
+                          <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            color: '#ff4d4f'
+                          }}>
+                            ĐÃ HẾT HẠN
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </Modal>
             )}
           </>
         )}
