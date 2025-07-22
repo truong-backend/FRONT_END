@@ -216,18 +216,18 @@ export const ThemSinhVienComponent = () => {
       width: 60,
       render: (_, record, index) => index + 1,
     },
-    {
-      title: 'Mã GV',
-      dataIndex: 'maGv',
-      key: 'maGv',
-      width: 100,
-    },
-    {
-      title: 'Tên GV',
-      dataIndex: 'tenGv',
-      key: 'tenGv',
-      width: 150,
-    },
+    // {
+    //   title: 'Mã GV',
+    //   dataIndex: 'maGv',
+    //   key: 'maGv',
+    //   width: 100,
+    // },
+    // {
+    //   title: 'Tên GV',
+    //   dataIndex: 'tenGv',
+    //   key: 'tenGv',
+    //   width: 150,
+    // },
     {
       title: 'Mã MH',
       dataIndex: 'maMh',
@@ -380,7 +380,7 @@ export const ThemSinhVienComponent = () => {
 
   return (
     <div>
-      <h2>Danh sách lịch giảng dạy</h2>
+      <h2>DANH SÁCH SINH VIÊN</h2>
 
       <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
         <Input

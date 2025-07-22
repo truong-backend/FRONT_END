@@ -199,25 +199,25 @@ export const BieuMauDangNhap = ({ userType, title, description }) => {
 
          <div className="flex justify-center gap-6 mt-8 pt-6 border-t border-white/10">
             <button
-              onClick={() => navigate("/student/login")}
+              onClick={() => navigate("/sinh-vien/dang-nhap")}
               className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition duration-300"
               title="Đăng nhập sinh viên"
             >
               Sinh viên
             </button>
             <button
-              onClick={() => navigate("/teacher/login")}
+              onClick={() => navigate("/giao-vien/dang-nhap")}
               className="px-4 py-2 rounded-lg bg-purple-500 text-white hover:bg-purple-600 transition duration-300"
               title="Đăng nhập giảng viên"
             >
               Giảng viên
             </button>
             <button
-              onClick={() => navigate("/admin/login")}
+              onClick={() => navigate("/quan-tri/dang-nhap")}
               className="px-4 py-2 rounded-lg bg-pink-500 text-white hover:bg-pink-600 transition duration-300"
               title="Đăng nhập quản trị viên"
             >
-              Admin
+              Quản trị viên
             </button>
           </div>
         </div>
