@@ -56,7 +56,7 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
-            <Route path="/" element={<Navigate to="/sinh-vien/dang-nhap" replace />} />
+            <Route path="/" element={<Navigate to="/sinhvien/login" replace />} />
             <Route
               path="/sinhvien/login"
               element={
