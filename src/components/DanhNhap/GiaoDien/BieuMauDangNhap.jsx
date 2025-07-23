@@ -47,13 +47,13 @@ export const BieuMauDangNhap = ({ userType, title, description }) => {
       await login(data, userType);
       switch (userType) {
         case 'STUDENT':
-          navigate('/student/dashboard');
+          navigate('/sinh-vien/trang-chu');
           break;
         case 'TEACHER':
-          navigate('/teacher/dashboard');
+          navigate('/giao-vien/trang-chu');
           break;
         case 'ADMIN':
-          navigate('/admin/dashboard');
+          navigate('/quan-tri/trang-chu');
           break;
         default:
           break;
@@ -199,14 +199,14 @@ export const BieuMauDangNhap = ({ userType, title, description }) => {
 
          <div className="flex justify-center gap-6 mt-8 pt-6 border-t border-white/10">
             <button
-              onClick={() => navigate("/sinhvien/login")}
+              onClick={() => navigate("/student/login")}
               className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition duration-300"
               title="Đăng nhập sinh viên"
             >
               Sinh viên
             </button>
             <button
-              onClick={() => navigate("/giangvien/login")}
+              onClick={() => navigate("/teacher/login")}
               className="px-4 py-2 rounded-lg bg-purple-500 text-white hover:bg-purple-600 transition duration-300"
               title="Đăng nhập giảng viên"
             >

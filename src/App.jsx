@@ -56,9 +56,9 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
-            <Route path="/" element={<Navigate to="/sinhvien/login" replace />} />
+            <Route path="/" element={<Navigate to="/student/login" replace />} />
             <Route
-              path="/sinhvien/login"
+              path="/student/login"
               element={
                 <PublicRoute>
                   <BieuMauDangNhap
@@ -70,7 +70,7 @@ function App() {
               }
             />
             <Route
-              path="/giangvien/login"
+              path="/teacher/login"
               element={
                 <PublicRoute>
                   <BieuMauDangNhap
@@ -107,7 +107,7 @@ function App() {
               }
             />
             <Route
-              path="/student/xac-thuc-otp"
+              path="/student/verify-otp"
               element={
                 <PublicRoute>
                   <XacThucOtpComponents
@@ -119,7 +119,7 @@ function App() {
               }
             />
             <Route
-              path="/student/dat-lai-mat-khau"
+              path="/student/reset-password"
               element={
                 <PublicRoute>
                   <DatLaiMatKhauComponents
@@ -145,7 +145,7 @@ function App() {
               }
             />
             <Route
-              path="/teacher/xac-thuc-otp"
+              path="/teacher/verify-otp"
               element={
                 <PublicRoute>
                   <XacThucOtpComponents
@@ -157,7 +157,7 @@ function App() {
               }
             />
             <Route
-              path="/teacher/dat-lai-mat-khau"
+              path="/teacher/reset-password"
               element={
                 <PublicRoute>
                   <DatLaiMatKhauComponents
@@ -183,7 +183,7 @@ function App() {
               }
             />
             <Route
-              path="/admin/xac-thuc-otp"
+              path="/admin/verify-otp"
               element={
                 <PublicRoute>
                   <XacThucOtpComponents
@@ -195,7 +195,7 @@ function App() {
               }
             />
             <Route
-              path="/admin/dat-lai-mat-khau"
+              path="/admin/reset-password"
               element={
                 <PublicRoute>
                   <DatLaiMatKhauComponents

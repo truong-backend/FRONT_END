@@ -481,7 +481,7 @@ export const DanhSachSinhVienComponents = () => {
     email: [
       { required: true, message: 'Email không được để trống' },
       { type: 'email', message: 'Email không hợp lệ' },
-      { max: 50, message: 'Email không được vượt quá 50 ký tự' }
+      { max: 100, message: 'Email không được vượt quá 50 ký tự' }
     ]
   };
 
