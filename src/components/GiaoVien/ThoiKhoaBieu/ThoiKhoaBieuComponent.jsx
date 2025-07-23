@@ -7,12 +7,12 @@ import {
     Modal,
     Button,
     Form,
-    DatePicker,
-    InputNumber,
     Space,
+    Popconfirm
 } from 'antd';
 import {
     SearchOutlined,
+    DeleteOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
@@ -32,8 +32,6 @@ export const ThoiKhoaBieuComponent = () => {
         setVisible(true);
     };
 
-
-    const [availableStudents, setAvailableStudents] = useState([]);
     const [currentMaGd, setCurrentMaGd] = useState(null);
     const [enrolledStudentSearchText, setEnrolledStudentSearchText] = useState('');
 
@@ -45,9 +43,10 @@ export const ThoiKhoaBieuComponent = () => {
     const [detailModalVisible, setDetailModalVisible] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState(null);
 
-
     // Loading state cho việc tạo TKB
     const [creatingTkb, setCreatingTkb] = useState(false);
+    // Loading state cho việc xóa TKB
+    const [deletingTkb, setDeletingTkb] = useState(false);
 
     // State cho danh sách TKB trong modal detail
     const [tkbList, setTkbList] = useState([]);
@@ -82,29 +81,12 @@ export const ThoiKhoaBieuComponent = () => {
         }
     }, []);
 
-
-    const createTkb = async (maGd, thu) => {
-        setCreatingTkb(true);
-        try {
-            const result = await ThoiKhoaBieuService.TaoThoiKhoaBieu(maGd, thu);
-            return result;
-        } catch (error) {
-            message.error(`Lỗi khi tạo thời khóa biểu: ${error.message}`);
-            return null;
-        } finally {
-            setCreatingTkb(false);
-        }
-    };
-
-
     // Initialize data
     useEffect(() => {
         Promise.all([
             fetchLichGdList(maGv),
         ]);
     }, [fetchLichGdList, maGv]);
-
-
 
     // Filter TKB list based on search
     const filteredTkbList = useMemo(() => {
@@ -137,12 +119,6 @@ export const ThoiKhoaBieuComponent = () => {
         }
     }, [originalData]);
 
-    const closeAddStudentModal = () => {
-        setAddStudentModalVisible(false);
-        setSelectedStudentsToAdd([]);
-        setAvailableStudents([]);
-    };
-
     const handleViewDetail = useCallback(async (record) => {
         setSelectedRecord(record);
         setCurrentMaGd(record.id);
@@ -151,27 +127,78 @@ export const ThoiKhoaBieuComponent = () => {
         setDetailModalVisible(true);
     }, [fetchTkbByMaGd]);
 
-    // Xử lý tạo thời khóa biểu
+    // Hàm tạo thời khóa biểu đã được sửa
     const handleCreateTkb = async (values) => {
+        setCreatingTkb(true);
         try {
             const { thu } = values;
 
-            if (!currentMaGd) {
-                message.error('Không tìm thấy thông tin lịch giảng dạy');
+            if (!currentMaGd || !selectedRecord?.maMh) {
+                message.error('Không đủ thông tin để tạo thời khóa biểu');
                 return;
             }
 
-            const result = await createTkb(currentMaGd, thu);
+            if (!thu || thu.length === 0) {
+                message.error('Vui lòng chọn ít nhất một thứ');
+                return;
+            }
 
-            message.success(`Đã tạo thành công ${result.length} buổi học cho thứ ${thu}`);
+            console.log('Dữ liệu gửi đi:', {
+                maGd: currentMaGd,
+                thu: thu,
+                maMh: selectedRecord.maMh
+            });
+
+            // Gọi API với dữ liệu đã được format đúng
+            const result = await ThoiKhoaBieuService.TaoTkb(currentMaGd, thu, selectedRecord.maMh);
+
+            // Sử dụng chuẩn ISO-8601 DayOfWeek values
+            const thuNames = {
+                1: 'Thứ hai',    // MONDAY
+                2: 'Thứ ba',     // TUESDAY
+                3: 'Thứ tư',     // WEDNESDAY
+                4: 'Thứ năm',    // THURSDAY
+                5: 'Thứ sáu',    // FRIDAY
+                6: 'Thứ bảy',    // SATURDAY
+                7: 'Chủ nhật'    // SUNDAY
+            };
+
+            const selectedThuNames = thu.map(t => thuNames[t]).join(', ');
+
+            message.success(`Đã tạo thành công ${Array.isArray(result) ? result.length : 'các'} buổi học cho các thứ: ${selectedThuNames}`);
+
             setVisible(false);
             form.resetFields();
-
-            // Refresh danh sách TKB trong modal detail
+            // Refresh danh sách TKB
             await fetchTkbByMaGd(currentMaGd);
 
         } catch (error) {
+            console.error('Lỗi khi tạo thời khóa biểu:', error);
             message.error(`Lỗi khi tạo thời khóa biểu: ${error.message}`);
+        } finally {
+            setCreatingTkb(false);
+        }
+    };
+
+    // Hàm xóa thời khóa biểu theo mã giảng dạy
+    const handleDeleteTkbByMaGd = async () => {
+        if (!currentMaGd) {
+            message.error('Không có thông tin mã giảng dạy');
+            return;
+        }
+
+        setDeletingTkb(true);
+        try {
+            await ThoiKhoaBieuService.XoaTkbTheoMaGd(currentMaGd);
+            message.success('Đã xóa tất cả thời khóa biểu của môn học này');
+            
+            // Refresh danh sách TKB
+            await fetchTkbByMaGd(currentMaGd);
+        } catch (error) {
+            console.error('Lỗi khi xóa thời khóa biểu:', error);
+            message.error(`Lỗi khi xóa thời khóa biểu: ${error.message}`);
+        } finally {
+            setDeletingTkb(false);
         }
     };
 
@@ -279,8 +306,18 @@ export const ThoiKhoaBieuComponent = () => {
             key: 'thu',
             render: (text) => {
                 const dayOfWeek = moment(text).day();
-                const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
-                return days[dayOfWeek];
+                // Chuyển đổi từ moment.day() (0=Sunday, 1=Monday) sang ISO-8601 (1=Monday, 7=Sunday)
+                const isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+                const days = {
+                    1: 'Thứ hai',
+                    2: 'Thứ ba', 
+                    3: 'Thứ tư',
+                    4: 'Thứ năm',
+                    5: 'Thứ sáu',
+                    6: 'Thứ bảy',
+                    7: 'Chủ nhật'
+                };
+                return days[isoDayOfWeek];
             },
         },
         {
@@ -298,27 +335,7 @@ export const ThoiKhoaBieuComponent = () => {
             dataIndex: 'stKt',
             key: 'stKt',
         },
-        // {
-        //     title: 'Thao tác',
-        //     key: 'actions',
-        //     render: (_, record) => (
-        //         <Button
-        //             danger
-        //             size="small"
-        //             onClick={() => {
-        //                 // Có thể thêm logic xóa TKB nếu cần
-        //                 message.info('Chức năng xóa sẽ được phát triển sau');
-        //             }}
-        //         >
-        //             Xóa
-        //         </Button>
-        //     ),
-        // },
     ], []);
-
-
-
-
 
     return (
         <div>
@@ -353,7 +370,10 @@ export const ThoiKhoaBieuComponent = () => {
             <Modal
                 title="Thêm thời khóa biểu"
                 open={visible}
-                onCancel={() => setVisible(false)}
+                onCancel={() => {
+                    setVisible(false);
+                    form.resetFields();
+                }}
                 onOk={() => {
                     form
                         .validateFields()
@@ -367,14 +387,25 @@ export const ThoiKhoaBieuComponent = () => {
                 okText="Tạo thời khóa biểu"
                 cancelText="Hủy"
                 confirmLoading={creatingTkb}
+                destroyOnClose={true}
             >
                 <Form form={form} layout="vertical">
                     <Form.Item
                         name="thu"
                         label="Chọn thứ"
-                        rules={[{ required: true, message: 'Vui lòng chọn thứ' }]}
+                        rules={[{
+                            required: true,
+                            message: 'Vui lòng chọn ít nhất một thứ'
+                        }]}
                     >
-                        <Select placeholder="Chọn thứ" style={{ width: '100%' }}>
+                        <Select
+                            mode="multiple"
+                            placeholder="Chọn một hoặc nhiều thứ"
+                            style={{ width: '100%' }}
+                            maxTagCount="responsive"
+                            allowClear
+                        >
+                            {/* Sử dụng chuẩn ISO-8601 DayOfWeek values */}
                             <Option value={1}>Thứ Hai</Option>
                             <Option value={2}>Thứ Ba</Option>
                             <Option value={3}>Thứ Tư</Option>
@@ -386,7 +417,12 @@ export const ThoiKhoaBieuComponent = () => {
                     </Form.Item>
 
                     {selectedRecord && (
-                        <div style={{ padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '6px', marginTop: '16px' }}>
+                        <div style={{
+                            padding: '16px',
+                            backgroundColor: '#f5f5f5',
+                            borderRadius: '6px',
+                            marginTop: '16px'
+                        }}>
                             <h4>Thông tin lịch giảng dạy:</h4>
                             <p><strong>Môn học:</strong> {selectedRecord.tenMh} ({selectedRecord.maMh})</p>
                             <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
@@ -399,7 +435,7 @@ export const ThoiKhoaBieuComponent = () => {
 
             {/* Detail Modal */}
             <Modal
-                // title="Chi tiết thời khóa biểu"
+                title={`Chi tiết thời khóa biểu - ${selectedRecord?.tenMh || ''}`}
                 open={detailModalVisible}
                 onCancel={() => setDetailModalVisible(false)}
                 footer={[
@@ -415,20 +451,27 @@ export const ThoiKhoaBieuComponent = () => {
                 {selectedRecord && (
                     <div>
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: 48 }}>
-
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                gap: 48,
+                                padding: '16px',
+                                backgroundColor: '#f0f8ff',
+                                borderRadius: '6px'
+                            }}>
                                 <div style={{ textAlign: 'left' }}>
-                                    {/* <p><strong>Giáo viên:</strong> {selectedRecord.tenGv}</p>
-                                    <p><strong>Môn học:</strong> {selectedRecord.tenMh} ({selectedRecord.maMh})</p> */}
+                                    <p><strong>Giáo viên:</strong> {selectedRecord.tenGv}</p>
+                                    <p><strong>Môn học:</strong> {selectedRecord.tenMh} ({selectedRecord.maMh})</p>
+                                    <p><strong>Nhóm MH:</strong> {selectedRecord.nmh}</p>
                                 </div>
                                 <div style={{ textAlign: 'left' }}>
-                                    {/* <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
-                                    <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).format('DD/MM/YYYY')}</p> */}
-                                </div>
-                                {/* <div style={{ textAlign: 'left' }}>
+                                    <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
+                                    <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).format('DD/MM/YYYY')}</p>
                                     <p><strong>Tiết học:</strong> {selectedRecord.stBd} - {selectedRecord.stKt}</p>
+                                </div>
+                                <div style={{ textAlign: 'left' }}>
                                     <p><strong>Học kỳ:</strong> {selectedRecord.hocKy}</p>
-                                </div> */}
+                                </div>
                             </div>
                         </div>
 
@@ -442,6 +485,33 @@ export const ThoiKhoaBieuComponent = () => {
                                 onChange={(e) => setEnrolledStudentSearchText(e.target.value)}
                                 style={{ width: 400, marginBottom: 12 }}
                             />
+
+                            <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+                                <Button
+                                    type="primary"
+                                    onClick={handleAddTKB}
+                                >
+                                    Thêm thời khóa biểu
+                                </Button>
+
+                                <Popconfirm
+                                    title="Xóa tất cả thời khóa biểu"
+                                    description="Bạn có chắc chắn muốn xóa tất cả thời khóa biểu của môn học này không?"
+                                    onConfirm={handleDeleteTkbByMaGd}
+                                    okText="Có"
+                                    cancelText="Không"
+                                    placement="topRight"
+                                >
+                                    <Button
+                                        type="primary"
+                                        danger
+                                        icon={<DeleteOutlined />}
+                                        loading={deletingTkb}
+                                    >
+                                        Xóa tất cả TKB
+                                    </Button>
+                                </Popconfirm>
+                            </div>
 
                             <Table
                                 rowKey="id"

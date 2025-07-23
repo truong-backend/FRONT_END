@@ -40,6 +40,9 @@ export const DiemDanhComponents = () => {
   const [danhSachSinhVien, setDanhSachSinhVien] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectedStudents2, setSelectedStudents2] = useState([]);
+  const [isCheckedDiemDanh, setIsCheckedDiemDanh] = useState(false);
+  const [isCheckedDiemDanh2, setIsCheckedDiemDanh2] = useState(false);
+
 
   const [thoiGianHetHan, setThoiGianHetHan] = useState(5);
   const [ghiChuThuCong, setGhiChuThuCong] = useState({});
@@ -76,7 +79,18 @@ export const DiemDanhComponents = () => {
     });
     return count;
   };
- 
+
+  useEffect(() => {
+    setIsCheckedDiemDanh(true);
+    setIsCheckedDiemDanh2(false);
+    const ghiChuTrim = danhSachSinhVien.map(sv => sv.ghiChu?.trim());
+    const disableDiemdanh1 = ghiChuTrim.every(ghiChu => ghiChu === 'Điểm danh lần 1' || ghiChu === 'Điểm danh lần 2');
+    const disableDiemDanh2 = ghiChuTrim.every(ghiChu => ghiChu === 'Điểm danh lần 2');
+    
+    setIsCheckedDiemDanh(disableDiemdanh1);
+    setIsCheckedDiemDanh2(disableDiemDanh2);
+  }, [selectedNgay,danhSachSinhVien]);
+
   //load lại lần điểm danh
   useEffect(() => {
     if (selectedNgay) {
@@ -127,7 +141,7 @@ export const DiemDanhComponents = () => {
       if (isScanning || qrData === lastScanned) return;
 
       setIsScanning(true);
-      setLastScanned(qrData);
+      setLuseEffastScanned(qrData);
 
       try {
         await processAttendance(qrData);
@@ -585,9 +599,7 @@ export const DiemDanhComponents = () => {
           onChange={(e) => handleSelectAllDiemDanh1(e.target.checked)}
           checked={selectedStudents.length > 0 && selectedStudents.length === danhSachSinhVien.length}
           indeterminate={selectedStudents.length > 0 && selectedStudents.length < danhSachSinhVien.length}
-          disabled={danhSachSinhVien.every(sv =>
-            ['Đã điểm danh', 'Điểm danh lần 2'].includes(sv.ghiChu?.trim())
-          )}
+          disabled={isCheckedDiemDanh}
         >
           Điểm danh 1
         </Checkbox>
@@ -595,13 +607,10 @@ export const DiemDanhComponents = () => {
       dataIndex: 'diemDanh1',
       width: 130,
       render: (_, record) => {
-        const isDisabled = record.ghiChu?.trim() === 'Đã điểm danh' ||
-        record.ghiChu?.trim() === 'Điểm danh lần 2';
-
         return (
           <Checkbox
             checked={selectedStudents.includes(record.maSv)}
-            disabled={isDisabled}
+            disabled={isCheckedDiemDanh}
             onChange={(e) => {
               const checked = e.target.checked;
               setSelectedStudents(prev =>
@@ -620,32 +629,28 @@ export const DiemDanhComponents = () => {
           onChange={(e) => handleSelectAllDiemDanh2(e.target.checked)}
           checked={selectedStudents2.length > 0 && selectedStudents2.length === danhSachSinhVien.length}
           indeterminate={selectedStudents2.length > 0 && selectedStudents2.length < danhSachSinhVien.length}
-          disabled={danhSachSinhVien.every(sv =>
-            sv.ghiChu?.trim() === '' || sv.ghiChu?.trim() === 'Điểm danh lần 2'
-          )}
-
-          >
+          disabled={isCheckedDiemDanh2}
+        >
           Điểm danh 2
         </Checkbox>
       ),
       dataIndex: 'diemDanh2',
       width: 130,
-      render: (_, record) => { 
-         const isDisabled2 = record.ghiChu?.trim() === 'Điểm danh lần 2'
-         || record.ghiChu?.trim() === '';
-        return(
+      render: (_, record) => {
+
+        return (
           <Checkbox
-          checked={selectedStudents2.includes(record.maSv)}
-          disabled={isDisabled2}
-          onChange={(e) => {
-            const checked = e.target.checked;
-            setSelectedStudents2(prev =>
-              checked
-                ? [...prev, record.maSv]
-                : prev.filter(id => id !== record.maSv)
-            );
-          }}
-        />
+            checked={selectedStudents2.includes(record.maSv)}
+            disabled={isCheckedDiemDanh2}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setSelectedStudents2(prev =>
+                checked
+                  ? [...prev, record.maSv]
+                  : prev.filter(id => id !== record.maSv)
+              );
+            }}
+          />
         );
       }
     },
@@ -855,7 +860,7 @@ export const DiemDanhComponents = () => {
                 Điểm danh
               </Button>
 
-              <Popconfirm
+              {/* <Popconfirm
                 title={`Bạn có chắc muốn xóa điểm danh của ${getAttendedCount()} sinh viên đã chọn?`}
                 onConfirm={handleDeleteMultipleAttendance}
                 okText="Xóa"
@@ -870,7 +875,7 @@ export const DiemDanhComponents = () => {
                 >
                   Xóa điểm danh
                 </Button>
-              </Popconfirm>
+              </Popconfirm> */}
             </div>
           </>
         )}
