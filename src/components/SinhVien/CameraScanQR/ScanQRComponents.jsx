@@ -21,39 +21,20 @@ export const ScanQRComponents = () => {
         }
     };
     const processAttendance = async (qrData) => {
-        
-
         setIsLoading(true);
-
         try {
-            // Tách và kiểm tra dữ liệu QR
             let parsedData;
-            try {
-                parsedData = JSON.parse(qrData);
-            } catch {
-                message.error('QR Code không hợp lệ');
-                return;
-            }
-
+            parsedData = JSON.parse(qrData);
             const { id: qrId } = parsedData;
-            if (!qrId) {
-                message.error('QR Code thiếu ID');
-                return;
-            }
-
             const requestData = {
                 qrId,
                 maSv
             };
-
             await ScanQRService.markAttendanceByQR(requestData);
             message.success('Điểm danh thành công!');
-
         } catch (error) {
             console.error('Lỗi điểm danh:', error);
             message.error(error.message || 'Điểm danh thất bại');
-        } finally {
-            setIsLoading(false);
         }
     };
     const startScanning = () => {
@@ -97,9 +78,9 @@ export const ScanQRComponents = () => {
                     )}
                 </div>
                 {isLoading && (
-                    <div className="text-center py-4">
-                        <Spin size="large" />
-                        <p className="mt-2 text-gray-600">Đang xử lý điểm danh...</p>
+                    <div >
+                        <Spin />
+                        <p >Đang xử lý điểm danh...</p>
                     </div>
                 )}
             </Card>
@@ -112,7 +93,7 @@ export const ScanQRComponents = () => {
                 footer={null}
                 width={400}
             >
-                <div className="text-center">
+                <div>
                     <Scanner
                         onScan={handleScan}
                         constraints={{
@@ -124,11 +105,9 @@ export const ScanQRComponents = () => {
                             audio: false,
                             finder: true
                         }}
-                        styles={{
-                            container: { width: '100%', height: '300px' }
-                        }}
+                        
                     />
-                    <p className="mt-3 text-gray-600">
+                    <p>
                         Đưa QR code vào khung để scan
                     </p>
                 </div>

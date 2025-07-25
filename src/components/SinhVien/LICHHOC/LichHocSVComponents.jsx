@@ -92,26 +92,26 @@ export const LichHocSVComponents = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold text-blue-600 mb-4 text-center">
+    <div >
+      <div >
+        <h2 >
           Lịch Học Hôm Nay ({thuHomNay} - {todayStr})
         </h2>
 
         {danhSachHomNay.length > 0 ? (
-          <ul className="ml-4 mt-2 list-disc text-gray-700">
+          <ul >
             {danhSachHomNay.map((mon, i) => (
               <li key={i}>
-                <span className="font-medium">{mon.tenMonHoc}</span>
+                <span >{mon.tenMonHoc}</span>
                 {mon.tenGiaoVien && (
-                  <span className="text-gray-600"> - GV: {mon.tenGiaoVien}</span>
+                  <span > - GV: {mon.tenGiaoVien}</span>
                 )}
                 <span> - Tiết {mon.tietBatDau} đến {mon.tietKetThuc}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="ml-4 text-gray-400 italic">Hôm nay không có lịch học.</p>
+          <p >Hôm nay không có lịch học.</p>
         )}
       </div>
     </div>
