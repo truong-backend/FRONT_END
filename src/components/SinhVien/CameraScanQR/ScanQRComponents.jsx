@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { message, Button, Card, Input, Modal, Spin, Alert } from 'antd';
 import { CameraOutlined, ReloadOutlined, UserOutlined, QrcodeOutlined } from '@ant-design/icons';
@@ -6,38 +6,22 @@ import { ScanQRService } from '../../../services/SinhVien/CameraScanQR/ScanQRSer
 import { useAuth } from '../../../contexts/AuthContext.jsx';
 
 export const ScanQRComponents = () => {
-    const { user, isAuthenticated } = useAuth();
+    const { user } = useAuth();
     const [isScanning, setIsScanning] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [scannedData, setScannedData] = useState('');
     const [showScanner, setShowScanner] = useState(false);
 
-    // Lấy mã sinh viên từ context
     const maSv = user?.maSv || user?.id || user?.username;
 
-    useEffect(() => {
-        if (!isAuthenticated) {
-            message.error('Vui lòng đăng nhập để sử dụng chức năng này');
-        }
-    }, [isAuthenticated]);
-
-    // Xử lý khi scan được QR code
     const handleScan = async (result) => {
         if (result && result.length > 0) {
             const qrData = result[0].rawValue;
-            setScannedData(qrData);
             setShowScanner(false);
-            
             await processAttendance(qrData);
         }
     };
-
-    // Xử lý điểm danh
     const processAttendance = async (qrData) => {
-        if (!maSv) {
-            message.error('Không tìm thấy thông tin sinh viên');
-            return;
-        }
+        
 
         setIsLoading(true);
 
@@ -72,74 +56,26 @@ export const ScanQRComponents = () => {
             setIsLoading(false);
         }
     };
-
-    // Bắt đầu scan
     const startScanning = () => {
         setShowScanner(true);
         setIsScanning(true);
-        setScannedData('');
     };
-
-    // Dừng scan
     const stopScanning = () => {
         setShowScanner(false);
         setIsScanning(false);
     };
-
-    // Xử lý lỗi scanner
-    const handleError = (error) => {
-        console.error('Scanner error:', error);
-        message.error('Lỗi camera: ' + error.message);
-        setShowScanner(false);
-        setIsScanning(false);
-    };
-
-    // Nhập QR code thủ công
-    const handleManualInput = async () => {
-        if (!scannedData.trim()) {
-            message.warning('Vui lòng nhập mã QR');
-            return;
-        }
-        await processAttendance(scannedData);
-    };
-
-    if (!isAuthenticated) {
-        return (
-            <Card className="max-w-md mx-auto mt-8">
-                <Alert
-                    message="Chưa đăng nhập"
-                    description="Vui lòng đăng nhập để sử dụng chức năng điểm danh QR"
-                    type="warning"
-                    showIcon
-                />
-            </Card>
-        );
-    }
-
     return (
-        <div className="max-w-2xl mx-auto p-4">
-            <Card 
+        <div >
+            <Card
                 title={
-                    <div className="flex items-center gap-2">
+                    <div >
                         <QrcodeOutlined />
                         <span>Điểm danh bằng QR Code</span>
                     </div>
                 }
-                className="mb-4"
-            >
-                {/* Thông tin sinh viên */}
-                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                        <UserOutlined />
-                        <span className="font-medium">Thông tin sinh viên:</span>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                        Mã SV: <span className="font-medium text-blue-600">{maSv}</span>
-                    </p>
-                </div>
 
-                {/* Buttons điều khiển */}
-                <div className="flex gap-3 mb-4">
+            >
+                <div >
                     <Button
                         type="primary"
                         icon={<CameraOutlined />}
@@ -149,7 +85,7 @@ export const ScanQRComponents = () => {
                     >
                         {isScanning ? 'Đang scan...' : 'Bắt đầu scan QR'}
                     </Button>
-                    
+
                     {isScanning && (
                         <Button
                             icon={<ReloadOutlined />}
@@ -160,21 +96,6 @@ export const ScanQRComponents = () => {
                         </Button>
                     )}
                 </div>
-
-                {/* Nhập thủ công */}
-                <div className="mb-4">
-                    <Input.Search
-                        placeholder="Hoặc nhập mã QR thủ công"
-                        value={scannedData}
-                        onChange={(e) => setScannedData(e.target.value)}
-                        onSearch={handleManualInput}
-                        enterButton="Điểm danh"
-                        disabled={isLoading}
-                        loading={isLoading}
-                    />
-                </div>
-
-                {/* Loading spinner */}
                 {isLoading && (
                     <div className="text-center py-4">
                         <Spin size="large" />
@@ -194,7 +115,6 @@ export const ScanQRComponents = () => {
                 <div className="text-center">
                     <Scanner
                         onScan={handleScan}
-                        onError={handleError}
                         constraints={{
                             video: {
                                 facingMode: 'environment' // Camera sau
