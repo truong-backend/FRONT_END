@@ -86,10 +86,10 @@ export const DiemDanhComponents = () => {
     const ghiChuTrim = danhSachSinhVien.map(sv => sv.ghiChu?.trim());
     const disableDiemdanh1 = ghiChuTrim.every(ghiChu => ghiChu === 'Điểm danh lần 1' || ghiChu === 'Điểm danh lần 2');
     const disableDiemDanh2 = ghiChuTrim.every(ghiChu => ghiChu === 'Điểm danh lần 2');
-    
+
     setIsCheckedDiemDanh(disableDiemdanh1);
     setIsCheckedDiemDanh2(disableDiemDanh2);
-  }, [selectedNgay,danhSachSinhVien]);
+  }, [selectedNgay, danhSachSinhVien]);
 
   //load lại lần điểm danh
   useEffect(() => {
@@ -141,8 +141,7 @@ export const DiemDanhComponents = () => {
       if (isScanning || qrData === lastScanned) return;
 
       setIsScanning(true);
-      setLuseEffastScanned(qrData);
-
+      setLastScanned(qrData);
       try {
         await processAttendance(qrData);
       } catch (error) {
@@ -326,53 +325,62 @@ export const DiemDanhComponents = () => {
   };
 
 
-  const handleHocKyChange = async (value) => {
-    if (!maGv) return;
+const handleHocKyChange = async (value) => {
+  if (!maGv) return;
 
-    const selectedHocKyData = hocKyList.find(hk => hk.hocKy === value);
-    if (!selectedHocKyData) return;
+  // Tách value để lấy hocKy và namHoc
+  const [hocKy, namHoc] = value.split('-').map(Number);
+  const selectedHocKyData = hocKyList.find(
+    hk => hk.hocKy === hocKy && hk.namHoc === namHoc
+  );
+  
+  if (!selectedHocKyData) return;
 
-    resetSelections();
-    setSelectedHocKy(value);
+  resetSelections();
+  setSelectedHocKy(value);
 
-    setLoading(prev => ({ ...prev, monHoc: true }));
-    try {
-      const data = await fetchMonHocByGiaoVien(maGv, selectedHocKyData.hocKy, selectedHocKyData.namHoc);
-      setMonHocList(data);
-    } catch (error) {
-      message.error('Không thể tải danh sách môn học');
-    } finally {
-      setLoading(prev => ({ ...prev, monHoc: false }));
-    }
-  };
+  setLoading(prev => ({ ...prev, monHoc: true }));
+  try {
+    const data = await fetchMonHocByGiaoVien(maGv, selectedHocKyData.hocKy, selectedHocKyData.namHoc);
+    setMonHocList(data);
+  } catch (error) {
+    message.error('Không thể tải danh sách môn học');
+  } finally {
+    setLoading(prev => ({ ...prev, monHoc: false }));
+  }
+};
 
-  const handleMonHocChange = async (value) => {
-    if (!maGv) return;
+const handleMonHocChange = async (value) => {
+  if (!maGv) return;
 
-    const selectedMonHocData = monHocList.find(mh => mh.maMh === value);
-    const selectedHocKyData = hocKyList.find(hk => hk.hocKy === selectedHocKy);
+  const selectedMonHocData = monHocList.find(mh => mh.maMh === value);
+  
+  // Tách value để lấy hocKy và namHoc từ selectedHocKy
+  const [hocKy, namHoc] = selectedHocKy.split('-').map(Number);
+  const selectedHocKyData = hocKyList.find(
+    hk => hk.hocKy === hocKy && hk.namHoc === namHoc
+  );
 
+  if (!selectedMonHocData || !selectedHocKyData) return;
 
-    if (!selectedMonHocData || !selectedHocKyData) return;
+  setSelectedMonHoc(value);
+  resetSubSelections();
 
-    setSelectedMonHoc(value);
-    resetSubSelections();
-
-    setLoading(prev => ({ ...prev, nhom: true }));
-    try {
-      const data = await fetchNhomMonHoc(
-        maGv,
-        selectedMonHocData.maMh,
-        selectedHocKyData.hocKy,
-        selectedHocKyData.namHoc
-      );
-      setNhomList(data);
-    } catch (error) {
-      message.error('Không thể tải danh sách nhóm môn học');
-    } finally {
-      setLoading(prev => ({ ...prev, nhom: false }));
-    }
-  };
+  setLoading(prev => ({ ...prev, nhom: true }));
+  try {
+    const data = await fetchNhomMonHoc(
+      maGv,
+      selectedMonHocData.maMh,
+      selectedHocKyData.hocKy,
+      selectedHocKyData.namHoc
+    );
+    setNhomList(data);
+  } catch (error) {
+    message.error('Không thể tải danh sách nhóm môn học');
+  } finally {
+    setLoading(prev => ({ ...prev, nhom: false }));
+  }
+};
 
   const handleNhomChange = async (value) => {
     const selectedNhomData = nhomList.find(nhom => nhom.maGd === value);
@@ -719,12 +727,13 @@ export const DiemDanhComponents = () => {
         {/* Form Controls */}
         <Form.Item label="Chọn học kỳ">
           <Select
+            value={selectedHocKy}
             onChange={handleHocKyChange}
             placeholder="Chọn học kỳ  "
             loading={loading.hocKy}
           >
             {hocKyList.map((hk) => (
-              <Option key={hk.hocKy} value={hk.hocKy}>
+              <Option key={`${hk.hocKy}-${hk.namHoc}`}  value={`${hk.hocKy}-${hk.namHoc}`} >
                 {hk.hocKyDisplay}
               </Option>
             ))}

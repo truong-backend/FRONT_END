@@ -40,8 +40,8 @@ const menuItemsByRole = {
     { title: 'Trang Chủ', shortTitle: 'TC', icon: <FileText size={20} />, path: '/giao-vien/trang-chu' },
     { title: 'Điểm Danh', shortTitle: 'DD', icon: <QrCodeIcon size={20} />, path: '/giao-vien/diem-danh' },
     { title: 'Kết Quả Điểm Danh', shortTitle: 'KQDD', icon: <UserCheckIcon size={20} />, path: '/giao-vien/ket-qua-diem-danh' },
-    { title: 'Quản lý sinh viên', shortTitle: 'QLSV', icon: <Calendar size={20} />, path: '/giao-vien/them-sinh-vien' },
-    { title: 'Quản lý thời khóa biểu', shortTitle: 'QLTKB', icon: <Calendar size={20} />, path: '/giao-vien/thoi-khoa-bieu' },
+    { title: 'Lịch học & Sinh viên', shortTitle: 'QLSV', icon: <Calendar size={20} />, path: '/giao-vien/them-sinh-vien' },
+    // { title: 'Quản lý thời khóa biểu', shortTitle: 'QLTKB', icon: <Calendar size={20} />, path: '/giao-vien/thoi-khoa-bieu' },
     { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <UserIcon size={20} />, path: '/giao-vien/thong-tin-ca-nhan' },
   ],
   student: [

@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// const API_BASE_URL = "http://localhost:8080/api";
-const API_BASE_URL = "https://api.diemdanhstu.online/api";
+const API_BASE_URL = "http://localhost:8080/api";
+// const API_BASE_URL = "https://api.diemdanhstu.online/api";
 
 // Create axios instance with common configuration
 const apiClient = axios.create({
@@ -25,6 +25,31 @@ apiClient.interceptors.request.use(
 
 // Authentication API endpoints
 export const authService = {
+  // Login attempts tracking
+  getLoginAttempts: (email) => {
+    const attempts = localStorage.getItem(`loginAttempts_${email}`);
+    return attempts ? JSON.parse(attempts) : { count: 0, timestamp: null };
+  },
+
+  incrementLoginAttempts: (email) => {
+    const attempts = authService.getLoginAttempts(email);
+    const now = new Date().getTime();
+    
+    // Reset attempts if it's been more than 30 minutes
+    if (attempts.timestamp && (now - attempts.timestamp) > 1) {
+      localStorage.setItem(`loginAttempts_${email}`, JSON.stringify({ count: 1, timestamp: now }));
+      return 1;
+    }
+    
+    const newCount = attempts.count + 1;
+    localStorage.setItem(`loginAttempts_${email}`, JSON.stringify({ count: newCount, timestamp: now }));
+    return newCount;
+  },
+
+  resetLoginAttempts: (email) => {
+    localStorage.removeItem(`loginAttempts_${email}`);
+  },
+
   // Login endpoints
   loginStudent: (credentials) =>
     apiClient.post('/sinhvien/login', credentials).then(res => res.data),

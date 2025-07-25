@@ -7,12 +7,13 @@ import {
   Modal,
   Button,
   Form,
-  DatePicker,
-  InputNumber,
   Space,
+  Popconfirm,
+  Tabs
 } from 'antd';
 import {
   SearchOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
@@ -21,30 +22,43 @@ import { useAuth } from '../../../contexts/AuthContext.jsx';
 import { lichGDService } from '../../../services/GiaoVien/LichGD/lichGDService.js';
 import { studentService } from '../../../services/Admin/studentService.js';
 import { lichHocService } from '../../../services/Admin/lichHocService.js';
+import { ThoiKhoaBieuService } from '../../../services/GiaoVien/ThoiKhoaBieu/ThoiKhoaBieuService.js';
+
+const { Option } = Select;
+const { TabPane } = Tabs;
 
 export const ThemSinhVienComponent = () => {
+  // Student management states
   const [studentSearchText, setStudentSearchText] = useState('');
   const [addStudentModalVisible, setAddStudentModalVisible] = useState(false);
   const [selectedStudentsToAdd, setSelectedStudentsToAdd] = useState([]);
   const [availableStudents, setAvailableStudents] = useState([]);
-  const [currentMaGd, setCurrentMaGd] = useState(null);
   const [enrolledStudentSearchText, setEnrolledStudentSearchText] = useState('');
+  const [studentList, setStudentList] = useState([]);
+  const [enrolledStudents, setEnrolledStudents] = useState([]);
 
+  // Shared states
+  const [currentMaGd, setCurrentMaGd] = useState(null);
   const [data, setData] = useState([]);
   const [originalData, setOriginalData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
-  const [studentList, setStudentList] = useState([]);
-  const [enrolledStudents, setEnrolledStudents] = useState([]);
+  // ThoiKhoaBieu states
+  const [tkbModalVisible, setTkbModalVisible] = useState(false);
+  const [tkbForm] = Form.useForm();
+  const [creatingTkb, setCreatingTkb] = useState(false);
+  const [deletingTkb, setDeletingTkb] = useState(false);
+  const [tkbList, setTkbList] = useState([]);
+  const [loadingTkb, setLoadingTkb] = useState(false);
+  const [tkbSearchText, setTkbSearchText] = useState('');
 
   const { user } = useAuth();
-
   const maGv = user.maGv || user.username || user.id;
 
+  // Fetch functions
   const fetchLichGdList = useCallback(async (maGv) => {
     setLoading(true);
     try {
@@ -58,9 +72,6 @@ export const ThemSinhVienComponent = () => {
     }
   }, []);
 
-
-
-  // Fetch enrolled students for a specific teaching schedule
   const fetchEnrolledStudents = useCallback(async (maGd) => {
     try {
       const response = await lichHocService.getSinhVienDaHoc(maGd);
@@ -70,13 +81,24 @@ export const ThemSinhVienComponent = () => {
     }
   }, []);
 
-  // Fetch available students (not enrolled yet)
   const fetchAvailableStudents = useCallback(async (maGd) => {
     try {
       const response = await lichHocService.getSinhVienChuaHoc(maGd);
       setAvailableStudents(response || []);
     } catch (error) {
       message.error(`Lỗi khi tải danh sách sinh viên chưa học: ${error.message}`);
+    }
+  }, []);
+
+  const fetchTkbByMaGd = useCallback(async (maGd) => {
+    setLoadingTkb(true);
+    try {
+      const result = await ThoiKhoaBieuService.LayTkbTheoMaGd(maGd);
+      setTkbList(result);
+    } catch {
+      setTkbList([]);
+    } finally {
+      setLoadingTkb(false);
     }
   }, []);
 
@@ -87,7 +109,7 @@ export const ThemSinhVienComponent = () => {
     ]);
   }, [fetchLichGdList, maGv]);
 
-  // Filter available students based on search
+  // Filter functions
   const filteredAvailableStudents = useMemo(() => {
     if (!studentSearchText) return availableStudents;
     return availableStudents.filter(sv => {
@@ -113,6 +135,19 @@ export const ThemSinhVienComponent = () => {
     });
   }, [enrolledStudentSearchText, enrolledStudents, studentList]);
 
+  const filteredTkbList = useMemo(() => {
+    if (!tkbSearchText) return tkbList;
+    return tkbList.filter(tkb => {
+      const search = tkbSearchText.toLowerCase();
+      return (
+        tkb.phongHoc?.toLowerCase().includes(search) ||
+        moment(tkb.ngayHoc).format('DD/MM/YYYY').includes(search) ||
+        tkb.stBd?.toString().includes(search) ||
+        tkb.stKt?.toString().includes(search)
+      );
+    });
+  }, [tkbSearchText, tkbList]);
+
   // Search functionality
   const handleSearch = useCallback((e) => {
     const value = e.target.value.toLowerCase();
@@ -130,7 +165,7 @@ export const ThemSinhVienComponent = () => {
     }
   }, [originalData]);
 
-  // Remove student from teaching schedule
+  // Student management functions
   const handleXoaSinhVien = useCallback(async (maSv) => {
     Modal.confirm({
       title: 'Xác nhận xóa',
@@ -142,9 +177,7 @@ export const ThemSinhVienComponent = () => {
         try {
           await lichHocService.xoaSinhVien(maSv, currentMaGd);
           message.success('✅ Đã xóa sinh viên khỏi lịch học');
-          // Refresh enrolled students list
           await fetchEnrolledStudents(currentMaGd);
-          // Refresh available students if modal is open
           if (addStudentModalVisible) {
             await fetchAvailableStudents(currentMaGd);
           }
@@ -156,7 +189,6 @@ export const ThemSinhVienComponent = () => {
     });
   }, [currentMaGd, fetchEnrolledStudents, fetchAvailableStudents, addStudentModalVisible]);
 
-  // Student modal handlers
   const openAddStudentModal = async () => {
     if (!currentMaGd) {
       message.error('Không tìm thấy mã giảng dạy');
@@ -192,7 +224,6 @@ export const ThemSinhVienComponent = () => {
       await Promise.all(promises);
       message.success(`Đã thêm ${selectedStudentsToAdd.length} sinh viên vào lịch học`);
 
-      // Refresh enrolled students list
       await fetchEnrolledStudents(currentMaGd);
       closeAddStudentModal();
     } catch (error) {
@@ -201,12 +232,83 @@ export const ThemSinhVienComponent = () => {
     }
   };
 
+  // ThoiKhoaBieu functions
+  const handleAddTKB = () => {
+    setTkbModalVisible(true);
+  };
+
+  const handleCreateTkb = async (values) => {
+    setCreatingTkb(true);
+    try {
+      const { thu } = values;
+
+      if (!currentMaGd || !selectedRecord?.maMh) {
+        message.error('Không đủ thông tin để tạo thời khóa biểu');
+        return;
+      }
+
+      if (!thu || thu.length === 0) {
+        message.error('Vui lòng chọn ít nhất một thứ');
+        return;
+      }
+
+      const result = await ThoiKhoaBieuService.TaoTkb(currentMaGd, thu, selectedRecord.maMh);
+
+      const thuNames = {
+        1: 'Thứ hai',
+        2: 'Thứ ba',
+        3: 'Thứ tư',
+        4: 'Thứ năm',
+        5: 'Thứ sáu',
+        6: 'Thứ bảy',
+        7: 'Chủ nhật'
+      };
+
+      const selectedThuNames = thu.map(t => thuNames[t]).join(', ');
+
+      message.success(`Đã tạo thành công ${Array.isArray(result) ? result.length : 'các'} buổi học cho các thứ: ${selectedThuNames}`);
+
+      setTkbModalVisible(false);
+      tkbForm.resetFields();
+      await fetchTkbByMaGd(currentMaGd);
+
+    } catch (error) {
+      console.error('Lỗi khi tạo thời khóa biểu:', error);
+      message.error(`Lỗi khi tạo thời khóa biểu: ${error.message}`);
+    } finally {
+      setCreatingTkb(false);
+    }
+  };
+
+  const handleDeleteTkbByMaGd = async () => {
+    if (!currentMaGd) {
+      message.error('Không có thông tin mã giảng dạy');
+      return;
+    }
+
+    setDeletingTkb(true);
+    try {
+      await ThoiKhoaBieuService.XoaTkbTheoMaGd(currentMaGd);
+      message.success('Đã xóa tất cả thời khóa biểu của môn học này');
+      
+      await fetchTkbByMaGd(currentMaGd);
+    } catch (error) {
+      console.error('Lỗi khi xóa thời khóa biểu:', error);
+      message.error(`Lỗi khi xóa thời khóa biểu: ${error.message}`);
+    } finally {
+      setDeletingTkb(false);
+    }
+  };
+
   const handleViewDetail = useCallback(async (record) => {
     setSelectedRecord(record);
     setCurrentMaGd(record.id);
-    await fetchEnrolledStudents(record.id);
+    await Promise.all([
+      fetchEnrolledStudents(record.id),
+      fetchTkbByMaGd(record.id)
+    ]);
     setDetailModalVisible(true);
-  }, [fetchEnrolledStudents]);
+  }, [fetchEnrolledStudents, fetchTkbByMaGd]);
 
   // Table columns
   const columns = useMemo(() => [
@@ -216,18 +318,6 @@ export const ThemSinhVienComponent = () => {
       width: 60,
       render: (_, record, index) => index + 1,
     },
-    // {
-    //   title: 'Mã GV',
-    //   dataIndex: 'maGv',
-    //   key: 'maGv',
-    //   width: 100,
-    // },
-    // {
-    //   title: 'Tên GV',
-    //   dataIndex: 'tenGv',
-    //   key: 'tenGv',
-    //   width: 150,
-    // },
     {
       title: 'Mã MH',
       dataIndex: 'maMh',
@@ -378,9 +468,59 @@ export const ThemSinhVienComponent = () => {
     },
   ], [selectedStudentsToAdd]);
 
+  // TKB columns
+  const tkbColumns = useMemo(() => [
+    {
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      render: (_, record, index) => index + 1,
+    },
+    {
+      title: 'Ngày học',
+      dataIndex: 'ngayHoc',
+      key: 'ngayHoc',
+      render: (text) => moment(text).format('DD/MM/YYYY'),
+    },
+    {
+      title: 'Thứ',
+      dataIndex: 'ngayHoc',
+      key: 'thu',
+      render: (text) => {
+        const dayOfWeek = moment(text).day();
+        const isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+        const days = {
+          1: 'Thứ hai',
+          2: 'Thứ ba', 
+          3: 'Thứ tư',
+          4: 'Thứ năm',
+          5: 'Thứ sáu',
+          6: 'Thứ bảy',
+          7: 'Chủ nhật'
+        };
+        return days[isoDayOfWeek];
+      },
+    },
+    {
+      title: 'Phòng học',
+      dataIndex: 'phongHoc',
+      key: 'phongHoc',
+    },
+    {
+      title: 'Tiết bắt đầu',
+      dataIndex: 'stBd',
+      key: 'stBd',
+    },
+    {
+      title: 'Tiết kết thúc',
+      dataIndex: 'stKt',
+      key: 'stKt',
+    },
+  ], []);
+
   return (
     <div>
-      <h2>DANH SÁCH SINH VIÊN</h2>
+      <h2>QUẢN LÝ LỊCH GIẢNG DẠY</h2>
 
       <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
         <Input
@@ -409,57 +549,124 @@ export const ThemSinhVienComponent = () => {
 
       {/* Detail Modal */}
       <Modal
-        title="Chi tiết lịch giảng dạy"
+        title={`Chi tiết lịch giảng dạy - ${selectedRecord?.tenMh || ''}`}
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
-
         footer={[
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
             Đóng
           </Button>,
-          <Button key="add" type="primary" onClick={openAddStudentModal}>
-            Thêm sinh viên
-          </Button>,
         ]}
-        width={900}
+        width={1200}
       >
-        <Button type="primary">
-          Thời khóa biểu
-        </Button>
         {selectedRecord && (
           <div>
             <div style={{ marginBottom: 16 }}>
-              <h3>Thông tin lịch giảng dạy:</h3>
-              <p><strong>Giáo viên:</strong> {selectedRecord.tenGv} ({selectedRecord.maGv})</p>
-              <p><strong>Môn học:</strong> {selectedRecord.tenMh} ({selectedRecord.maMh})</p>
-              <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
-              <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).format('DD/MM/YYYY')}</p>
-              <p><strong>Tiết học:</strong> {selectedRecord.stBd} - {selectedRecord.stKt}</p>
-              <p><strong>Học kỳ:</strong> {selectedRecord.hocKy}</p>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 48,
+                padding: '16px',
+                backgroundColor: '#f0f8ff',
+                borderRadius: '6px'
+              }}>
+                <div style={{ textAlign: 'left' }}>
+                  <p><strong>Giáo viên:</strong> {selectedRecord.tenGv}</p>
+                  <p><strong>Môn học:</strong> {selectedRecord.tenMh} ({selectedRecord.maMh})</p>
+                  <p><strong>Nhóm MH:</strong> {selectedRecord.nmh}</p>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
+                  <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).format('DD/MM/YYYY')}</p>
+                  <p><strong>Tiết học:</strong> {selectedRecord.stBd} - {selectedRecord.stKt}</p>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <p><strong>Học kỳ:</strong> {selectedRecord.hocKy}</p>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <h3>Danh sách sinh viên đã đăng ký ({enrolledStudents.length} sinh viên):</h3>
-              <Input
-                placeholder="Tìm kiếm sinh viên đã đăng ký (MSSV, tên, email)"
-                prefix={<SearchOutlined />}
-                allowClear
-                value={enrolledStudentSearchText}
-                onChange={(e) => setEnrolledStudentSearchText(e.target.value)}
-                style={{ width: 400, marginBottom: 12 }}
-              />
+            <Tabs defaultActiveKey="1">
+              <TabPane tab="Danh sách sinh viên" key="1">
+                <div>
+                  <h3>Danh sách sinh viên đã đăng ký ({enrolledStudents.length} sinh viên):</h3>
+                  
+                  <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+                    <Input
+                      placeholder="Tìm kiếm sinh viên đã đăng ký (MSSV, tên, email)"
+                      prefix={<SearchOutlined />}
+                      allowClear
+                      value={enrolledStudentSearchText}
+                      onChange={(e) => setEnrolledStudentSearchText(e.target.value)}
+                      style={{ width: 400 }}
+                    />
+                    <Button type="primary" onClick={openAddStudentModal}>
+                      Thêm sinh viên
+                    </Button>
+                  </div>
 
-              <Table
-                rowKey="maSv"
-                columns={studentColumns}
-                dataSource={filteredEnrolledStudents}
-                pagination={{
-                  pageSize: 5,
-                  showSizeChanger: true,
-                  showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} sinh viên`,
-                }}
-              />
-            </div>
+                  <Table
+                    rowKey="maSv"
+                    columns={studentColumns}
+                    dataSource={filteredEnrolledStudents}
+                    pagination={{
+                      pageSize: 5,
+                      showSizeChanger: true,
+                      showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} sinh viên`,
+                    }}
+                  />
+                </div>
+              </TabPane>
+
+              <TabPane tab="Thời khóa biểu" key="2">
+                <div>
+                  <h3>Danh sách thời khóa biểu</h3>
+                  
+                  <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+                    <Input
+                      placeholder="Tìm kiếm theo phòng học, ngày học, tiết học"
+                      prefix={<SearchOutlined />}
+                      allowClear
+                      value={tkbSearchText}
+                      onChange={(e) => setTkbSearchText(e.target.value)}
+                      style={{ width: 400 }}
+                    />
+                    <Button type="primary" onClick={handleAddTKB}>
+                      Thêm thời khóa biểu
+                    </Button>
+                    <Popconfirm
+                      title="Xóa tất cả thời khóa biểu"
+                      description="Bạn có chắc chắn muốn xóa tất cả thời khóa biểu của môn học này không?"
+                      onConfirm={handleDeleteTkbByMaGd}
+                      okText="Có"
+                      cancelText="Không"
+                      placement="topRight"
+                    >
+                      <Button
+                        type="primary"
+                        danger
+                        icon={<DeleteOutlined />}
+                        loading={deletingTkb}
+                      >
+                        Xóa tất cả TKB
+                      </Button>
+                    </Popconfirm>
+                  </div>
+
+                  <Table
+                    rowKey="id"
+                    columns={tkbColumns}
+                    dataSource={filteredTkbList}
+                    loading={loadingTkb}
+                    pagination={{
+                      pageSize: 10,
+                      showSizeChanger: true,
+                      showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} buổi học`,
+                    }}
+                  />
+                </div>
+              </TabPane>
+            </Tabs>
           </div>
         )}
       </Modal>
@@ -538,6 +745,72 @@ export const ThemSinhVienComponent = () => {
             </div>
           )}
         </div>
+      </Modal>
+
+      {/* Add TKB Modal */}
+      <Modal
+        title="Thêm thời khóa biểu"
+        open={tkbModalVisible}
+        onCancel={() => {
+          setTkbModalVisible(false);
+          tkbForm.resetFields();
+        }}
+        onOk={() => {
+          tkbForm
+            .validateFields()
+            .then(values => {
+              handleCreateTkb(values);
+            })
+            .catch(err => {
+              console.error('❌ Lỗi validate:', err);
+            });
+        }}
+        okText="Tạo thời khóa biểu"
+        cancelText="Hủy"
+        confirmLoading={creatingTkb}
+        destroyOnClose={true}
+      >
+        <Form form={tkbForm} layout="vertical">
+          <Form.Item
+            name="thu"
+            label="Chọn thứ"
+            rules={[{
+              required: true,
+              message: 'Vui lòng chọn ít nhất một thứ'
+            }]}
+          >
+            <Select
+              mode="multiple"
+              placeholder="Chọn một hoặc nhiều thứ"
+              style={{ width: '100%' }}
+              maxTagCount="responsive"
+              allowClear
+            >
+              <Option value={1}>Thứ Hai</Option>
+              <Option value={2}>Thứ Ba</Option>
+              <Option value={3}>Thứ Tư</Option>
+              <Option value={4}>Thứ Năm</Option>
+              <Option value={5}>Thứ Sáu</Option>
+              <Option value={6}>Thứ Bảy</Option>
+              <Option value={7}>Chủ Nhật</Option>
+            </Select>
+          </Form.Item>
+
+          {selectedRecord && (
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '6px',
+              marginTop: '16px'
+            }}>
+              <h4>Thông tin lịch giảng dạy:</h4>
+              <p><strong>Môn học:</strong> {selectedRecord.tenMh} ({selectedRecord.maMh})</p>
+              <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
+              <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).format('DD/MM/YYYY')}</p>
+              <p><strong>Tiết:</strong> {selectedRecord.stBd} - {selectedRecord.stKt}</p>
+            </div>
+          )}
+        </Form>
       </Modal>
     </div>
   );
