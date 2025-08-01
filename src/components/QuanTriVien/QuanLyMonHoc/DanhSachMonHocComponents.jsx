@@ -4,11 +4,9 @@ import {
   message, Popconfirm, Typography, Alert, Spin
 } from 'antd';
 import { 
-  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, DownloadOutlined 
+  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined 
 } from '@ant-design/icons';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
-import moment from 'moment';
+
 import { monHocService } from '../../../services/Admin/monHocService.js';
 
 const { Title } = Typography;
@@ -177,7 +175,6 @@ export const DanhSachMonHocComponents = () => {
       setMonHocs(data);
       setFilteredData(data);
     } catch (error) {
-      console.error('Error fetching monhocs:', error);
       setError('Không thể tải danh sách môn học. Vui lòng thử lại sau.');
       message.error('Không thể tải danh sách môn học');
     } finally {

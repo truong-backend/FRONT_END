@@ -67,11 +67,10 @@ export const LichHocSVComponents = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Đang tải lịch học...</p>
+      <div>
+        <div >
+          <div >
+            <p >Đang tải lịch học...</p>
           </div>
         </div>
       </div>
@@ -80,10 +79,10 @@ export const LichHocSVComponents = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
-          <div className="text-center text-red-600">
-            <p className="text-lg font-semibold">Có lỗi xảy ra</p>
+      <div>
+        <div>
+          <div>
+            <p>Có lỗi xảy ra</p>
             <p>{error}</p>
           </div>
         </div>

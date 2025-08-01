@@ -26,32 +26,32 @@ import {
 
 const menuItemsByRole = {
   admin: [
-    { title: 'Trang Chủ', shortTitle: 'TrCh', icon: <LayoutDashboard size={20} />, path: '/quan-tri/trang-chu' },
+    { title: 'Trang Chủ',  icon: <LayoutDashboard size={20} />, path: '/quan-tri/trang-chu' },
     { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} />, path: '/quan-tri/tai-khoan-quan-tri' },
-    { title: 'Quản Lý Điểm Danh', shortTitle: 'DD', icon: <ClipboardCheck size={20} />, path: '/quan-tri/quan-ly-diem-danh' },
-    { title: 'Quản Lý Lịch GD', shortTitle: 'LGd', icon: <Presentation size={20} />, path: '/quan-tri/quan-ly-lich-giang-day' },
-    { title: 'Quản Lý Giáo Viên', shortTitle: 'GiVi', icon: <Presentation size={20} />, path: '/quan-tri/danh-sach-giao-vien' },
-    { title: 'Quản Lý Sinh Viên', shortTitle: 'SV', icon: <GraduationCap size={20} />, path: '/quan-tri/danh-sach-sinh-vien' },
-    { title: 'Quản Lý Lớp Học', shortTitle: 'LoHo', icon: <Users size={20} />, path: '/quan-tri/quan-ly-lop' },
-    { title: 'Quản Lý Khoa', shortTitle: 'Kh', icon: <Building size={20} />, path: '/quan-tri/quan-ly-khoa' },
-    { title: 'Quản Lý Môn Học', shortTitle: 'MoHo', icon: <Book size={20} />, path: '/quan-tri/quan-ly-mon-hoc' },
+    { title: 'Báo Cáo Điểm Danh',  icon: <ClipboardCheck size={20} />, path: '/quan-tri/quan-ly-diem-danh' },
+    { title: 'Quản Lý Lịch GD', icon: <Presentation size={20} />, path: '/quan-tri/quan-ly-lich-giang-day' },
+    { title: 'Quản Lý Giáo Viên', icon: <Presentation size={20} />, path: '/quan-tri/danh-sach-giao-vien' },
+    { title: 'Quản Lý Sinh Viên', icon: <GraduationCap size={20} />, path: '/quan-tri/danh-sach-sinh-vien' },
+    { title: 'Quản Lý Lớp SV',  icon: <Users size={20} />, path: '/quan-tri/quan-ly-lop' },
+    { title: 'Quản Lý Khoa', icon: <Building size={20} />, path: '/quan-tri/quan-ly-khoa' },
+    { title: 'Quản Lý Môn Học',  icon: <Book size={20} />, path: '/quan-tri/quan-ly-mon-hoc' },
   ],
   teacher: [
-    { title: 'Trang Chủ', shortTitle: 'TC', icon: <FileText size={20} />, path: '/giao-vien/trang-chu' },
-    { title: 'Điểm Danh', shortTitle: 'DD', icon: <QrCodeIcon size={20} />, path: '/giao-vien/diem-danh' },
-    { title: 'Kết Quả Điểm Danh', shortTitle: 'KQDD', icon: <UserCheckIcon size={20} />, path: '/giao-vien/ket-qua-diem-danh' },
-    { title: 'Lịch học & Sinh viên', shortTitle: 'QLSV', icon: <Calendar size={20} />, path: '/giao-vien/them-sinh-vien' },
+    { title: 'Trang Chủ', icon: <FileText size={20} />, path: '/giao-vien/trang-chu' },
+    { title: 'Điểm Danh', icon: <QrCodeIcon size={20} />, path: '/giao-vien/diem-danh' },
+    { title: 'Kết Quả Điểm Danh',  icon: <UserCheckIcon size={20} />, path: '/giao-vien/ket-qua-diem-danh' },
+    { title: 'Lịch học & Sinh viên',  icon: <Calendar size={20} />, path: '/giao-vien/them-sinh-vien' },
     // { title: 'Quản lý thời khóa biểu', shortTitle: 'QLTKB', icon: <Calendar size={20} />, path: '/giao-vien/thoi-khoa-bieu' },
-    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <UserIcon size={20} />, path: '/giao-vien/thong-tin-ca-nhan' },
+    { title: 'Thông Tin Cá Nhân', icon: <UserIcon size={20} />, path: '/giao-vien/thong-tin-ca-nhan' },
   ],
   student: [
-    { title: 'Trang Chủ', shortTitle: 'TC', icon: <BookOpen size={20} />, path: '/sinh-vien/trang-chu' },
-    { title: 'Điểm Danh QR', shortTitle: 'ĐD', icon: <Calendar size={20} />, path: '/sinh-vien/quet-ma-qr' },
-    { title: 'Thời Khóa Biểu', shortTitle: 'TKB', icon: <ClipboardList size={20} />, path: '/sinh-vien/thoi-khoa-bieu' },
-    { title: 'Lịch Học Hôm Nay', shortTitle: 'LH', icon: <Calendar size={20} />, path: '/sinh-vien/lich-hoc' },
-    { title: 'Lịch Sử Điểm Danh', shortTitle: 'LSDD', icon: <MessageSquare size={20} />, path: '/sinh-vien/lich-su-diem-danh' },
-    { title: 'QR Code', shortTitle: 'QR', icon: <QrCodeIcon size={20} />, path: '/sinh-vien/ma-qr' },
-    { title: 'Thông Tin Cá Nhân', shortTitle: 'TTCN', icon: <MessageSquare size={20} />, path: '/sinh-vien/thong-tin-ca-nhan' },
+    { title: 'Trang Chủ',  icon: <BookOpen size={20} />, path: '/sinh-vien/trang-chu' },
+    { title: 'Điểm Danh QR', icon: <Calendar size={20} />, path: '/sinh-vien/quet-ma-qr' },
+    { title: 'Thời Khóa Biểu', icon: <ClipboardList size={20} />, path: '/sinh-vien/thoi-khoa-bieu' },
+    { title: 'Lịch Học Hôm Nay',  icon: <Calendar size={20} />, path: '/sinh-vien/lich-hoc' },
+    { title: 'Lịch Sử Điểm Danh',  icon: <MessageSquare size={20} />, path: '/sinh-vien/lich-su-diem-danh' },
+    { title: 'QR Code',  icon: <QrCodeIcon size={20} />, path: '/sinh-vien/ma-qr' },
+    { title: 'Thông Tin Cá Nhân',  icon: <MessageSquare size={20} />, path: '/sinh-vien/thong-tin-ca-nhan' },
   ]
 };
 
@@ -118,7 +118,7 @@ const MenuItem = ({ item, isExpanded, isOpen, toggleOpen }) => {
 
       {/* Submenu */}
       {hasSubItems && isExpanded && isOpen && (
-        <div className="ml-4 pl-4 border-l border-gray-200">
+        <div>
           {item.subItems.map((subItem, index) => (
             <Link
               key={index}
@@ -182,7 +182,6 @@ const Sidebar = ({ role, isExpanded, onToggle }) => {
         ))}
       </nav>
 
-      {/* Toggle Button */}
       <button
         onClick={onToggle}
         className="absolute -right-3 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-all duration-300"
@@ -194,7 +193,7 @@ const Sidebar = ({ role, isExpanded, onToggle }) => {
         >
           {'❯'}
         </div>
-      </button>
+      </button> 
     </div>
   );
 };

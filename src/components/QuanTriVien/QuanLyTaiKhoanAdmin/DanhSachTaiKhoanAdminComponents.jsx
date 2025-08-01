@@ -20,10 +20,9 @@ export const DanhSachTaiKhoanAdminComponents = () => {
     try {
       setLoading(true);
       const data = await adminService.getAdminsKphanTrang();
-      setAdmins(data.content || data); // tùy theo backend trả về object hay array
+      setAdmins(data.content || data);
     } catch (error) {
       message.error('Lỗi khi tải danh sách quản trị viên');
-      console.error('Error fetching admins:', error);
     } finally {
       setLoading(false);
     }
@@ -44,15 +43,17 @@ export const DanhSachTaiKhoanAdminComponents = () => {
   );
 
   const showModal = (record = null) => {
-    setEditingAdmin(record);
-    if (record) {
+    if (record && Object.keys(record).length > 0) {
+      setEditingAdmin(record);
       form.setFieldsValue({
         username: record.username,
         email: record.email,
         fullName: record.fullName,
         role: record.role,
+        avatar: undefined
       });
     } else {
+      setEditingAdmin(null);
       form.resetFields();
     }
     setModalVisible(true);
@@ -84,7 +85,7 @@ export const DanhSachTaiKhoanAdminComponents = () => {
       setModalVisible(false);
       fetchAdmins();
     } catch (error) {
-      message.error('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
+      message.error( (error.response?.data?.message || error.message));
     }
   };
 
@@ -95,7 +96,6 @@ export const DanhSachTaiKhoanAdminComponents = () => {
       fetchAdmins();
     } catch (error) {
       message.error('Lỗi khi xóa quản trị viên');
-      console.error('Error deleting admin:', error);
     }
   };
 
@@ -179,9 +179,7 @@ export const DanhSachTaiKhoanAdminComponents = () => {
   ];
 
   const normFile = (e) => {
-    if (Array.isArray(e)) {
-      return e;
-    }
+    if (Array.isArray(e)) return e;
     return e?.fileList;
   };
 
@@ -223,8 +221,13 @@ export const DanhSachTaiKhoanAdminComponents = () => {
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
         width={600}
+        destroyOnClose
       >
-        <Form form={form} layout="vertical">
+        <Form
+          key={editingAdmin?.id || 'new'} // force render Form mỗi lần
+          form={form}
+          layout="vertical"
+        >
           <Form.Item
             name="username"
             label="Username"

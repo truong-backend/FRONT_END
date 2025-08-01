@@ -34,20 +34,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials, userType) => {
     try {
-      // Check login attempts
-      const attempts = authService.getLoginAttempts(credentials.email);
-      if (attempts.count >= 5) {
-        const now = new Date().getTime();
-        const timeDiff = now - attempts.timestamp;
-        if (timeDiff < 30 * 60 * 1000) { // 30 minutes
-          const remainingTime = Math.ceil((30 * 60 * 1000 - timeDiff) / 60000);
-          throw new Error(`Tài khoản đã bị khóa do đăng nhập sai quá 5 lần. Vui lòng thử lại sau ${remainingTime} phút.`);
-        } else {
-          // Reset attempts after 30 minutes
-          authService.resetLoginAttempts(credentials.email);
-        }
-      }
-
       let response;
       
       switch (userType) {
@@ -64,9 +50,6 @@ export const AuthProvider = ({ children }) => {
           throw new Error('Invalid user type');
       }
 
-      // Reset login attempts on successful login
-      authService.resetLoginAttempts(credentials.email);
-
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('user', JSON.stringify(response));
       localStorage.setItem('userRole', userType);
@@ -74,18 +57,11 @@ export const AuthProvider = ({ children }) => {
       setUser(response);
       setUserRole(userType);
     } catch (error) {
-      // Increment login attempts on failure
-      if (error.message !== 'Invalid user type') {
-        const attempts = authService.incrementLoginAttempts(credentials.email);
-        const remainingAttempts = 5 - attempts;
-        
-        let errorMessage = error?.response?.data || 'Đăng nhập thất bại';
-        if (remainingAttempts > 0) {
-          errorMessage += `. Còn ${remainingAttempts} lần thử.`;
-        }
-        throw new Error(errorMessage);
+      let errorMessage = 'Đăng nhập thất bại';
+      if (error?.response?.data) {
+        errorMessage = error.response.data;
       }
-      throw error;
+      throw new Error(errorMessage);
     }
   };
 

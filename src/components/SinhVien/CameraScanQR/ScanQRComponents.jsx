@@ -49,7 +49,7 @@ export const ScanQRComponents = () => {
         <div >
             <Card
                 title={
-                    <div >
+                    <div>
                         <QrcodeOutlined />
                         <span>Điểm danh bằng QR Code</span>
                     </div>
@@ -113,5 +113,5 @@ export const ScanQRComponents = () => {
                 </div>
             </Modal>
         </div>
-    );
+    );  
 };
