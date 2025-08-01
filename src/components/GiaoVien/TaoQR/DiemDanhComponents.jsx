@@ -105,7 +105,7 @@ export const DiemDanhComponents = () => {
     if (mode === 'qr' && qrCodeData && !qrCodeExpired && selectedNgayData) {
       intervalId = setInterval(() => {
         handleThuCong();
-      }, 3000)
+      }, 2000)
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
@@ -141,7 +141,7 @@ export const DiemDanhComponents = () => {
       if (isScanning || qrData === lastScanned) return;
 
       setIsScanning(true);
-      setLuseEffastScanned(qrData);
+      setLastScanned(qrData);
 
       try {
         await processAttendance(qrData);
@@ -209,8 +209,8 @@ export const DiemDanhComponents = () => {
       const requestData = {
         maSv,
         maTkb: selectedNgayData.maTkb,
-        ngayHoc: new Date().toISOString().split('T')[0],
-        //ngayHoc:selectedNgayData.ngayHoc
+        //ngayHoc: new Date().toISOString().split('T')[0],
+        ngayHoc:selectedNgayData.ngayHoc
       };
 
       await GiaoVienService.diemdanhQRSinhVien(requestData);
@@ -796,7 +796,7 @@ export const DiemDanhComponents = () => {
         {mode === 'svqr' && (
           <>
             <Modal
-              title={`Quét mã QR sinh viên - lần ${soLanDiemDanh}`}
+              title={`Quét mã QR sinh viên`}
               open={showScanner}
               onCancel={stopScanning}
               footer={null}
