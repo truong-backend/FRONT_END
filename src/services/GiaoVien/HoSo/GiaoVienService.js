@@ -34,7 +34,7 @@ export const GiaoVienService = {
     getMonHocForDiemDanh : async() => {
          try {
             const res = await api.get('/monhoc/monHocKetQuaDiemDanh');
-            console.log('res data',res.data);
+            console.log('data môn học kết quả điểm danh: ',res.data);
             return res.data;
         } catch (error) {
             console.log('Lỗi lấy môn học cho kết quả điểm danh' , error);
