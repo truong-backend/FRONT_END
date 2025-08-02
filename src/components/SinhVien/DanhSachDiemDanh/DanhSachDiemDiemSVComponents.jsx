@@ -12,6 +12,7 @@ export const DanhSachDiemDiemSVComponents = () => {
   const [monHocs, setMonHocs] = useState([]);
   const [selectedMaMh, setSelectedMaMh] = useState(null);
   const [selectedTenMh, setSelectedTenMh] = useState("");
+  const [selectedNhomMh, setSelectedNhomMh] = useState(null);
   const [dsDiemDanh, setDsDiemDanh] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -25,19 +26,28 @@ export const DanhSachDiemDiemSVComponents = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (selectedMaMh) {
-      setLoading(true);
-      getDiemDanhByMonHoc(selectedMaMh)
-        .then(setDsDiemDanh)
-        .catch(error => console.error("Lỗi khi tải điểm danh:", error))
-        .finally(() => setLoading(false));
-    }
-  }, [selectedMaMh]);
+ useEffect(() => {
+  if (selectedMaMh && selectedNhomMh !== null) {
+    setLoading(true);
+    getDiemDanhByMonHoc(selectedMaMh, selectedNhomMh)
+      .then((data) => {
+        setDsDiemDanh(data);
+        console.log("Danh sách các buổi học điểm danh:", data);
+      })
+      .catch(error => {
+        console.error("Lỗi khi tải điểm danh:", error);
+      })
+      .finally(() => setLoading(false));
+  } else {
+    console.log("selectedMaMh hoặc selectedNhomMh đang null", selectedMaMh, selectedNhomMh);
+  }
+}, [selectedMaMh, selectedNhomMh]);
 
-  const handleSelectMonHoc = (maMh, tenMh) => {
+
+  const handleSelectMonHoc = (maMh, tenMh,nhm) => {
     setSelectedMaMh(maMh);
     setSelectedTenMh(tenMh);
+    setSelectedNhomMh(nhm);
   };
 
   return (
@@ -62,8 +72,8 @@ export const DanhSachDiemDiemSVComponents = () => {
               <div className="space-y-3">
                 {monHocs.map((mh) => (
                   <div
-                    key={mh.maMh}
-                    onClick={() => handleSelectMonHoc(mh.maMh, mh.tenMh)}
+                    key={`${mh.maMh}-${mh.nmh}`}
+                    onClick={() => handleSelectMonHoc(mh.maMh, mh.tenMh, mh.nmh)}
                     className={`cursor-pointer p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${mh.maMh === selectedMaMh
                         ? "bg-blue-50 border-blue-300 shadow-md"
                         : "bg-gray-50 border-gray-200 hover:bg-gray-100"
