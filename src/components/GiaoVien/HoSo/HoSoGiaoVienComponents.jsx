@@ -121,7 +121,7 @@ export const HoSoGiaoVienComponents = () => {
         <div className="bg-white rounded-lg shadow-sm border p-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Avatar Section */}
-            <div className="lg:col-span-1">
+            {/* <div className="lg:col-span-1">
               <div className="flex flex-col items-center">
                 <div className="relative mb-4">
                   <div className="w-48 h-48 bg-gray-100 rounded-lg border-2 border-gray-200 flex items-center justify-center overflow-hidden">
@@ -149,7 +149,7 @@ export const HoSoGiaoVienComponents = () => {
                 </div>
 
               </div>
-            </div>
+            </div> */}
 
             {/* Information Section */}
             <div className="lg:col-span-2">
