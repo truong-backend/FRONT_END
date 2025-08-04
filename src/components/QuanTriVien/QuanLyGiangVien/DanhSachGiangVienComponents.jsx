@@ -1,38 +1,253 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Table, Input, Space, Button, Popconfirm, message, Modal, Form,
-  DatePicker, Radio, Upload, Avatar, Progress, List, Typography
+  Table, Button, Space, Modal, Form, Input, DatePicker, Radio, Upload,
+  message, Popconfirm, Typography, Alert, Spin, Avatar, Descriptions
 } from 'antd';
 import {
-  EditOutlined, DeleteOutlined, PlusOutlined, UserOutlined,
-  UploadOutlined, EyeOutlined, SearchOutlined, DownloadOutlined,
-  ImportOutlined, InboxOutlined
+  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined,
+  UserOutlined, UploadOutlined, EyeOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import { teacherService } from '../../../services/Admin/teacherService.js';
-import { ChiTietGiangVienComponents } from './ChiTietGiangVienComponents.jsx';
 
+const { Title } = Typography;
+const { Search } = Input;
+
+// ==================== CONFIGURATION ====================
+const PAGE_SIZE = 10;
+const FORM_RULES = {
+  maGv: [
+    { required: true, message: 'Vui lòng nhập mã giáo viên' },
+    { max: 20, message: 'Mã giáo viên không vượt quá 20 ký tự' }
+  ],
+  tenGv: [
+    { required: true, message: 'Vui lòng nhập họ tên giáo viên' },
+    { max: 100, message: 'Tên giáo viên không vượt quá 100 ký tự' }
+  ],
+  ngaySinh: [
+    { required: true, message: 'Vui lòng chọn ngày sinh' }
+  ],
+  phai: [
+    { required: true, message: 'Vui lòng chọn giới tính' }
+  ],
+  diaChi: [
+    { required: true, message: 'Vui lòng nhập địa chỉ' }
+  ],
+  sdt: [
+    { required: true, message: 'Vui lòng nhập số điện thoại' },
+    { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại phải có 10-11 chữ số' }
+  ],
+  email: [
+    { required: true, message: 'Vui lòng nhập email' },
+    { type: 'email', message: 'Email không hợp lệ' }
+  ]
+};
+
+// ==================== UTILITY FUNCTIONS ====================
+const filterData = (data, searchText) => {
+  if (!searchText) return data;
+  const lowerSearch = searchText.toLowerCase();
+  return data.filter(item =>
+    item.tenGv.toLowerCase().includes(lowerSearch) ||
+    item.maGv.toLowerCase().includes(lowerSearch) ||
+    item.email.toLowerCase().includes(lowerSearch)
+  );
+};
+
+const createTableColumns = (onView, onEdit, onDelete) => [
+  {
+    title: 'Mã GV',
+    dataIndex: 'maGv',
+    width: '10%',
+    sorter: (a, b) => a.maGv.localeCompare(b.maGv),
+  },
+  
+  {
+    title: 'Họ và tên',
+    dataIndex: 'tenGv',
+    width: '20%',
+    sorter: (a, b) => a.tenGv.localeCompare(b.tenGv),
+  },
+  {
+    title: 'Ngày sinh',
+    dataIndex: 'ngaySinh',
+    width: '12%',
+    render: (date) => moment(date).format('DD/MM/YYYY'),
+  },
+  {
+    title: 'Giới tính',
+    dataIndex: 'phai',
+    width: '8%',
+    render: (phai) => phai === 1 ? 'Nam' : 'Nữ',
+  },
+  {
+    title: 'Email',
+    dataIndex: 'email',
+    width: '18%',
+  },
+  {
+    title: 'Số điện thoại',
+    dataIndex: 'sdt',
+    width: '12%',
+  },
+  {
+    title: 'Thao tác',
+    key: 'action',
+    width: '22%',
+    render: (_, record) => (
+      <Space size="middle">
+        <Button icon={<EyeOutlined />} onClick={() => onView(record)}>
+          Xem
+        </Button>
+        <Button type="primary" icon={<EditOutlined />} onClick={() => onEdit(record)}>
+          Sửa
+        </Button>
+        <Popconfirm
+          title="Bạn có chắc chắn muốn xóa?"
+          onConfirm={() => onDelete(record.maGv)}
+        >
+          <Button type="primary" danger icon={<DeleteOutlined />}>
+            Xóa
+          </Button>
+        </Popconfirm>
+      </Space>
+    ),
+  },
+];
+
+// ==================== UI COMPONENTS ====================
+const SearchBar = ({ onChange }) => (
+  <Search
+    placeholder="Tìm theo mã GV, họ tên, email"
+    onSearch={onChange}
+    onChange={(e) => onChange(e.target.value)}
+    allowClear
+    enterButton={<SearchOutlined />}
+    style={{ marginBottom: '16px', width: 400 }}
+  />
+);
+
+const Header = ({ onCreateClick }) => (
+  <div style={{
+    marginBottom: '16px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  }}>
+    <Title level={2}>Quản lý Giáo viên</Title>
+    <Space>
+      <Button type="primary" icon={<PlusOutlined />} onClick={onCreateClick}>
+        Thêm Giáo viên
+      </Button>
+    </Space>
+  </div>
+);
+
+const ErrorAlert = ({ error }) => {
+  if (!error) return null;
+  return (
+    <Alert
+      message="Lỗi"
+      description={error}
+      type="error"
+      showIcon
+      style={{ marginBottom: '16px' }}
+    />
+  );
+};
+
+const TeacherForm = ({ form, editingMaGv }) => (
+  <Form form={form} layout="vertical">
+    {!editingMaGv && (
+      <Form.Item name="maGv" label="Mã giáo viên" rules={FORM_RULES.maGv}>
+        <Input />
+      </Form.Item>
+    )}
+    <Form.Item name="tenGv" label="Họ và tên" rules={FORM_RULES.tenGv}>
+      <Input />
+    </Form.Item>
+    <Form.Item name="ngaySinh" label="Ngày sinh" rules={FORM_RULES.ngaySinh}>
+      <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
+    </Form.Item>
+    <Form.Item name="phai" label="Giới tính" rules={FORM_RULES.phai}>
+      <Radio.Group>
+        <Radio value={1}>Nam</Radio>
+        <Radio value={0}>Nữ</Radio>
+      </Radio.Group>
+    </Form.Item>
+    <Form.Item name="diaChi" label="Địa chỉ" rules={FORM_RULES.diaChi}>
+      <Input.TextArea rows={2} />
+    </Form.Item>
+    <Form.Item name="sdt" label="Số điện thoại" rules={FORM_RULES.sdt}>
+      <Input />
+    </Form.Item>
+    <Form.Item name="email" label="Email" rules={FORM_RULES.email}>
+      <Input />
+    </Form.Item>
+   
+  </Form>
+);
+
+const TeacherModal = ({ visible, title, onOk, onCancel, form, editingMaGv }) => (
+  <Modal
+    title={title}
+    open={visible}
+    onOk={onOk}
+    onCancel={onCancel}
+    destroyOnClose
+    width={600}
+  >
+    <TeacherForm form={form} editingMaGv={editingMaGv} />
+  </Modal>
+);
+
+// ==================== DETAILS MODAL ====================
+const TeacherDetailsModal = ({ visible, onClose, teacher }) => (
+  <Modal
+    title={`Chi tiết Giáo viên - ${teacher?.maGv}`}
+    open={visible}
+    onCancel={onClose}
+    footer={null}
+    width={600}
+  >
+    {teacher && (
+      <Descriptions bordered column={1}>
+        
+        <Descriptions.Item label="Họ và tên">{teacher.tenGv}</Descriptions.Item>
+        <Descriptions.Item label="Ngày sinh">{moment(teacher.ngaySinh).format('DD/MM/YYYY')}</Descriptions.Item>
+        <Descriptions.Item label="Giới tính">{teacher.phai === 1 ? 'Nam' : 'Nữ'}</Descriptions.Item>
+        <Descriptions.Item label="Địa chỉ">{teacher.diaChi}</Descriptions.Item>
+        <Descriptions.Item label="Số điện thoại">{teacher.sdt}</Descriptions.Item>
+        <Descriptions.Item label="Email">{teacher.email}</Descriptions.Item>
+      </Descriptions>
+    )}
+  </Modal>
+);
+
+// ==================== MAIN COMPONENT ====================
 export const DanhSachGiangVienComponents = () => {
-  // State management
   const [teachers, setTeachers] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [addModalVisible, setAddModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [error, setError] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingMaGv, setEditingMaGv] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
-  const [searchText, setSearchText] = useState('');
-  const [addForm] = Form.useForm();
-  const [editForm] = Form.useForm();
+  const [form] = Form.useForm();
 
   const fetchTeachers = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await teacherService.getListGiaoVien();
       setTeachers(data);
+      setFilteredData(data);
     } catch (error) {
-      console.error(error);
-      message.error('Lỗi khi tải danh sách giáo viên');
+      setError('Không thể tải danh sách giáo viên. Vui lòng thử lại sau.');
+      message.error('Không thể tải danh sách giáo viên');
     } finally {
       setLoading(false);
     }
@@ -42,372 +257,105 @@ export const DanhSachGiangVienComponents = () => {
     fetchTeachers();
   }, []);
 
-  // Search functionality
-  const filteredData = teachers.filter((teacher) =>
-    teacher.maGv?.toLowerCase().includes(searchText) ||
-    teacher.tenGv?.toLowerCase().includes(searchText) ||
-    teacher.email?.toLowerCase().includes(searchText)
-  );
-
-  // Add Modal handlers
-  const showAddModal = () => {
-    addForm.resetFields();
-    setAddModalVisible(true);
+  const handleSearch = (value) => {
+    setSearchText(value);
+    const filtered = filterData(teachers, value);
+    setFilteredData(filtered);
+    setCurrentPage(1);
   };
 
-  const handleAddModalOk = async () => {
-    try {
-      const values = await addForm.validateFields();
-      const formattedData = {
-        ...values,
-        tenGv: values.tenGv.trim(),
-        diaChi: values.diaChi.trim(),
-        sdt: values.sdt.trim(),
-        email: values.email.trim(),
-        ngaySinh: values.ngaySinh.format('YYYY-MM-DD')
-      };
-
-      await teacherService.createTeacher(formattedData);
-      message.success('Thêm giáo viên mới thành công');
-      setAddModalVisible(false);
-      fetchTeachers();
-    } catch (error) {
-      console.error(error);
-      message.error('Lỗi khi thêm giáo viên');
-    }
+  const handleCreate = () => {
+    form.resetFields();
+    setEditingMaGv(null);
+    setModalVisible(true);
   };
 
-  const handleAddModalCancel = () => {
-    setAddModalVisible(false);
-    addForm.resetFields();
-  };
-
-  // Edit Modal handlers
-  const showEditModal = (record) => {
-    setEditingTeacher(record);
-    editForm.setFieldsValue({
+  const handleEdit = (record) => {
+    form.setFieldsValue({
       ...record,
       ngaySinh: moment(record.ngaySinh)
     });
-    setEditModalVisible(true);
+    setEditingMaGv(record.maGv);
+    setModalVisible(true);
   };
 
-  const handleEditModalOk = async () => {
-    try {
-      const values = await editForm.validateFields();
-      const formattedData = {
-        ...values,
-        tenGv: values.tenGv.trim(),
-        diaChi: values.diaChi.trim(),
-        sdt: values.sdt.trim(),
-        email: values.email.trim(),
-        ngaySinh: values.ngaySinh.format('YYYY-MM-DD')
-      };
-
-      await teacherService.updateTeacher(editingTeacher.maGv, formattedData);
-      message.success('Cập nhật giáo viên thành công');
-      setEditModalVisible(false);
-      fetchTeachers();
-    } catch (error) {
-      console.error(error);
-      message.error('Lỗi khi cập nhật giáo viên');
-    }
+  const handleView = (record) => {
+    setSelectedTeacher(record);
+    setDetailsVisible(true);
   };
 
-  const handleEditModalCancel = () => {
-    setEditModalVisible(false);
-    setEditingTeacher(null);
-    editForm.resetFields();
-  };
-
-  // Delete handler
   const handleDelete = async (maGv) => {
     try {
       await teacherService.deleteTeacher(maGv);
       message.success('Xóa giáo viên thành công');
       fetchTeachers();
     } catch (error) {
-      console.error(error);
-      message.error('Lỗi khi xóa giáo viên');
+      message.error(error.response?.data || 'Không thể xóa giáo viên');
     }
   };
 
-  // Details handler
-  const showDetails = (record) => {
-    setSelectedTeacher(record);
-    setDetailsVisible(true);
+  const handleModalOk = async () => {
+    try {
+      const values = await form.validateFields();
+      const formattedData = {
+        ...values,
+        ngaySinh: values.ngaySinh.format('YYYY-MM-DD')
+      };
+      if (editingMaGv) {
+        await teacherService.updateTeacher(editingMaGv, formattedData);
+        message.success('Cập nhật giáo viên thành công');
+      } else {
+        await teacherService.createTeacher(formattedData);
+        message.success('Thêm giáo viên mới thành công');
+      }
+      setModalVisible(false);
+      form.resetFields();
+      fetchTeachers();
+    } catch (error) {
+      message.error(error.response?.data || 'Có lỗi xảy ra');
+    }
   };
 
-  // Table configuration
-  const columns = [
-    {
-      title: 'Mã GV',
-      dataIndex: 'maGv',
-      width: '10%'
-    },
-    {
-      title: 'Avatar',
-      dataIndex: 'avatar',
-      width: '8%',
-      render: (avatar) => <Avatar src={avatar} icon={<UserOutlined />} />
-    },
-    {
-      title: 'Họ và tên',
-      dataIndex: 'tenGv',
-      width: '18%'
-    },
-    {
-      title: 'Ngày sinh',
-      dataIndex: 'ngaySinh',
-      width: '12%',
-      render: (date) => moment(date).format('DD/MM/YYYY')
-    },
-    {
-      title: 'Giới tính',
-      dataIndex: 'phai',
-      width: '8%',
-      render: (phai) => phai === 1 ? 'Nam' : 'Nữ'
-    },
-    {
-      title: 'Địa chỉ',
-      dataIndex: 'diaChi',
-      width: '15%'
-    },
-    {
-      title: 'SĐT',
-      dataIndex: 'sdt',
-      width: '12%'
-    },
-    {
-      title: 'Email',
-      dataIndex: 'email',
-      width: '18%'
-    },
-    {
-      title: 'Thao tác',
-      width: '15%',
-      render: (_, record) => (
-        <Space>
-          <Button 
-            icon={<EyeOutlined />} 
-            onClick={() => showDetails(record)}
-            title="Xem chi tiết"
-          />
-          <Button 
-            icon={<EditOutlined />} 
-            onClick={() => showEditModal(record)}
-            title="Chỉnh sửa"
-          />
-          <Popconfirm
-            title="Xác nhận xóa giáo viên?"
-            onConfirm={() => handleDelete(record.maGv)}
-          >
-            <Button danger icon={<DeleteOutlined />} title="Xóa" />
-          </Popconfirm>
-        </Space>
-      )
-    }
-  ];
+  const handleModalCancel = () => {
+    setModalVisible(false);
+    form.resetFields();
+  };
 
-  // Common form fields (for both add and edit)
-  const getFormFields = (isEdit = false) => [
-    // Mã giáo viên chỉ hiển thị khi thêm mới
-    !isEdit && {
-      name: 'maGv',
-      label: 'Mã giáo viên',
-      rules: [
-        { required: true, message: 'Vui lòng nhập mã giáo viên' },
-        { pattern: /^[A-Za-z0-9]+$/, message: 'Mã giáo viên chỉ chứa chữ và số' }
-      ],
-      component: <Input placeholder="Nhập mã giáo viên" maxLength={20} />
-    },
-    {
-      name: 'tenGv',
-      label: 'Họ và tên',
-      rules: [
-        { required: true, message: 'Vui lòng nhập họ tên' },
-        { min: 2, message: 'Họ tên phải có ít nhất 2 ký tự' }
-      ],
-      component: <Input placeholder="Nhập họ và tên" maxLength={100} />
-    },
-    {
-      name: 'ngaySinh',
-      label: 'Ngày sinh',
-      rules: [{ required: true, message: 'Vui lòng chọn ngày sinh' }],
-      component: (
-        <DatePicker 
-          format="DD/MM/YYYY" 
-          style={{ width: '100%' }} 
-          placeholder="Chọn ngày sinh"
-          
-        />
-      )
-    },
-    {
-      name: 'phai',
-      label: 'Giới tính',
-      rules: [{ required: true, message: 'Vui lòng chọn giới tính' }],
-      component: (
-        <Radio.Group>
-          <Radio value={1}>Nam</Radio>
-          <Radio value={0}>Nữ</Radio>
-        </Radio.Group>
-      )
-    },
-    {
-      name: 'diaChi',
-      label: 'Địa chỉ',
-      rules: [{ required: true, message: 'Vui lòng nhập địa chỉ' }],
-      component: <Input.TextArea placeholder="Nhập địa chỉ" rows={2} maxLength={200} />
-    },
-    {
-      name: 'sdt',
-      label: 'Số điện thoại',
-      rules: [
-        { required: true, message: 'Vui lòng nhập số điện thoại' },
-        { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại phải có 10-11 chữ số' }
-      ],
-      component: <Input placeholder="Nhập số điện thoại" maxLength={11} />
-    },
-    {
-      name: 'email',
-      label: 'Email',
-      rules: [
-        { required: true, message: 'Vui lòng nhập email' },
-        { type: 'email', message: 'Email không hợp lệ' }
-      ],
-      component: <Input placeholder="Nhập email" maxLength={100} />
-    },
-    {
-      name: 'avatar',
-      label: 'Avatar',
-      valuePropName: 'fileList',
-      component: (
-        <Upload 
-          listType="picture" 
-          beforeUpload={() => false} 
-          maxCount={1}
-          accept="image/*"
-        >
-          <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
-        </Upload>
-      )
-    }
-  ].filter(Boolean);
+  const columns = createTableColumns(handleView, handleEdit, handleDelete);
+  const modalTitle = editingMaGv ? 'Cập nhật Giáo viên' : 'Thêm Giáo viên Mới';
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Danh sách Giáo viên</h2>
-        <Space>
-          <Input
-            prefix={<SearchOutlined />}
-            placeholder="Tìm theo mã GV, họ tên, email"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value.toLowerCase())}
-            allowClear
-            style={{ width: 300 }}
-          />
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={showAddModal}
-          >
-            Thêm Giáo viên
-          </Button>
-        </Space>
-      </div>
+    <div style={{ padding: '24px' }}>
+      <Header onCreateClick={handleCreate} />
+      <SearchBar value={searchText} onChange={handleSearch} />
+      <ErrorAlert error={error} />
 
-      {/* Table */}
-      <Table
-        columns={columns}
-        dataSource={filteredData}
-        rowKey="maGv"
-        pagination={{ 
-          pageSize: 10, 
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} giáo viên`
-        }}
-        loading={loading}
-        scroll={{ x: 1200 }}
+      <Spin spinning={loading}>
+        <Table
+          columns={columns}
+          dataSource={filteredData}
+          rowKey="maGv"
+          pagination={{
+            pageSize: PAGE_SIZE,
+            current: currentPage,
+            onChange: setCurrentPage,
+          }}
+        />
+      </Spin>
+
+      <TeacherModal
+        visible={modalVisible}
+        title={modalTitle}
+        onOk={handleModalOk}
+        onCancel={handleModalCancel}
+        form={form}
+        editingMaGv={editingMaGv}
       />
 
-      {/* Add Teacher Modal */}
-      <Modal
-        title={
-          <div className="flex items-center">
-            <PlusOutlined className="mr-2" />
-            Thêm Giáo viên mới
-          </div>
-        }
-        open={addModalVisible}
-        onOk={handleAddModalOk}
-        onCancel={handleAddModalCancel}
-        width={600}
-        destroyOnClose
-        okText="Thêm"
-        cancelText="Hủy"
-        confirmLoading={loading}
-      >
-        <Form form={addForm} layout="vertical">
-          {getFormFields(false).map((field, index) => (
-            <Form.Item
-              key={`add-${index}`}
-              name={field.name}
-              label={field.label}
-              rules={field.rules}
-              valuePropName={field.valuePropName}
-            >
-              {field.component}
-            </Form.Item>
-          ))}
-        </Form>
-      </Modal>
-
-      {/* Edit Teacher Modal */}
-      <Modal
-        title={
-          <div className="flex items-center">
-            <EditOutlined className="mr-2" />
-            Chỉnh sửa Giáo viên - {editingTeacher?.maGv}
-          </div>
-        }
-        open={editModalVisible}
-        onOk={handleEditModalOk}
-        onCancel={handleEditModalCancel}
-        width={600}
-        destroyOnClose
-        okText="Cập nhật"
-        cancelText="Hủy"
-        confirmLoading={loading}
-      >
-        <Form form={editForm} layout="vertical">
-          {/* Hiển thị mã giáo viên nhưng không cho chỉnh sửa */}
-          <Form.Item label="Mã giáo viên">
-            <Input value={editingTeacher?.maGv} disabled />
-          </Form.Item>
-          
-          {getFormFields(true).map((field, index) => (
-            <Form.Item
-              key={`edit-${index}`}
-              name={field.name}
-              label={field.label}
-              rules={field.rules}
-              valuePropName={field.valuePropName}
-            >
-              {field.component}
-            </Form.Item>
-          ))}
-        </Form>
-      </Modal>
-
-      {/* Details Modal */}
-      <ChiTietGiangVienComponents
+      <TeacherDetailsModal
         visible={detailsVisible}
         onClose={() => setDetailsVisible(false)}
-        lecturer={selectedTeacher}
+        teacher={selectedTeacher}
       />
     </div>
   );
