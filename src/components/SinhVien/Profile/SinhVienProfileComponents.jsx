@@ -18,6 +18,7 @@ export default function SinhVienProfileComponents() {
     });
 
     useEffect(() => {
+        document.title = 'Thông tin cá nhân';
         fetchProfile();
     }, []);
 

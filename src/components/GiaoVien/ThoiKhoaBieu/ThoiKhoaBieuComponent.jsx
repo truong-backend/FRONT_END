@@ -31,7 +31,9 @@ export const ThoiKhoaBieuComponent = () => {
     const handleAddTKB = () => {
         setVisible(true);
     };
-
+    useEffect(() => {
+        document.title = 'Quản lý thời khóa biểu';
+    }, []);
     const [currentMaGd, setCurrentMaGd] = useState(null);
     const [enrolledStudentSearchText, setEnrolledStudentSearchText] = useState('');
 

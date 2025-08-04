@@ -13,7 +13,9 @@ export default function KetQuaDiemDanhComponents() {
     pageSize: 10,
     total: 0,
   });
-
+  useEffect(() => {
+    document.title = 'Kết quả điểm danh';
+  }, []);
   const handleTableChange = (newPagination) => {
     setPagination({
       ...pagination,

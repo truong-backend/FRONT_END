@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { BookOpen, Calendar, CheckCircle, Bell, LogOut, GraduationCap, TrendingUp, Clock } from 'lucide-react';
 import { BocCucChinh } from '../../components/BoCuc/BocCucChinh.jsx';
 
 export const TrangChuSinhVienPage = () => {
   const { logout } = useAuth();
-
+  useEffect(() => {
+    document.title = 'Trang Sinh Viên - Trang Chủ';
+  }, []);
   return (
     <BocCucChinh>
       <div >

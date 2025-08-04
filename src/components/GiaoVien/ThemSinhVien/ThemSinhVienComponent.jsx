@@ -58,7 +58,9 @@ export const ThemSinhVienComponent = () => {
     }
   }, []);
 
-
+  useEffect(() => {
+    document.title = 'Quản lý  sinh viên vào lịch học';
+  }, []);
 
   // Fetch enrolled students for a specific teaching schedule
   const fetchEnrolledStudents = useCallback(async (maGd) => {

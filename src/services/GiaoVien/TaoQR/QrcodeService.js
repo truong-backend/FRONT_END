@@ -31,16 +31,17 @@ export const fetchMonHocByGiaoVien = async (maGv, hocKy, namHoc) => {
 };
 
 // 3. Lấy danh sách nhóm môn học
-export const fetchNhomMonHoc = async (teacherId, subjectId, semester, year) => {
+export const fetchNhomMonHoc = async (maGv, maMh, hocKy, namHoc) => {
   try {
     const response = await api.get(`/monhoc/danh-sach-nhom-mon-hoc`, {
       params: {
-        teacherId,
-        subjectId,
-        semester,
-        year
+        maGv: maGv,
+        maMh: maMh,
+        hocKy: hocKy,
+        namHoc: namHoc
       }
     });
+    console.log('Nhom mon hoc', response.data);
     return response.data;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách nhóm môn học:', error);

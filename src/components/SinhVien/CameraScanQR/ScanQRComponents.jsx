@@ -14,7 +14,9 @@ export const ScanQRComponents = () => {
 
     // Lấy mã sinh viên từ context
     const maSv = user?.maSv || user?.id || user?.username;
-
+    useEffect(() => {
+        document.title = 'Điểm danh QR';
+      }, []);
     useEffect(() => {
         if (!isAuthenticated) {
             message.error('Vui lòng đăng nhập để sử dụng chức năng này');

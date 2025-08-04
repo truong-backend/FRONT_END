@@ -17,7 +17,9 @@ export const DanhSachDiemDiemSVComponents = () => {
   const [loading, setLoading] = useState(false);
 
   const maSv = user?.maSv || user?.id || user?.username;
-
+  useEffect(() => {
+      document.title = 'Lịch sử điểm danh';
+    }, []);
   useEffect(() => {
     setLoading(true);
     getMonHocBySinhVien(maSv)

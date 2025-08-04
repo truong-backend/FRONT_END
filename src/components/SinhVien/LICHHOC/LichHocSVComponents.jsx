@@ -31,7 +31,9 @@ export const LichHocSVComponents = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const todayStr = getCurrentDate();
-
+  useEffect(() => {
+      document.title = 'Lịch Học Hôm Nay';
+    }, []);
   useEffect(() => {
     const fetchLichHoc = async () => {
       try {

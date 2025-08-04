@@ -10,7 +10,9 @@ export default function QRSinhVienComponent() {
         tenLop: ''
     });
     const [loading, setLoading] = useState(true);
-
+    useEffect(() => {
+        document.title = 'QR Code';
+    }, []);
     const qrRef = useRef();
     const downloadQRCodeAsPNG = () => {
         const svg = qrRef.current.querySelector('svg');

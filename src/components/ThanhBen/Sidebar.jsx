@@ -141,8 +141,10 @@ const MenuItem = ({ item, isExpanded, isOpen, toggleOpen }) => {
   );
 };
 
-const Sidebar = ({ role, isExpanded, onToggle }) => {
+const Sidebar = ({ role }) => {
+  const isExpanded = true;
   const [openMenus, setOpenMenus] = useState(new Set(['Dashboard']));
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggleMenu = (title) => {
     setOpenMenus((prev) => {
@@ -157,16 +159,30 @@ const Sidebar = ({ role, isExpanded, onToggle }) => {
   };
 
   return (
+  <div className="relative">
+    {/* Toggle button for mobile */}
+    <div className="sm:hidden p-2">
+      <button
+        onClick={() => setMobileOpen(!mobileOpen)}
+        className="text-gray-800"
+      >
+        {mobileOpen ? 'Đóng Menu' : '☰ Menu'}
+      </button>
+    </div>
+
+    {/* Sidebar content */}
     <div
-      className={`relative bg-white shadow-lg transition-all duration-300 ease-in-out ${
-        isExpanded ? 'w-64' : 'w-16'
-      }`}
+      className={`
+        bg-white shadow-lg
+        sm:block ${mobileOpen ? 'block' : 'hidden'}
+        !sm:relative sm:w-64 w-full
+        fixed sm:static top-0 left-0 h-full z-40
+        transition-all duration-300
+      `}
     >
       {/* Sidebar Header */}
       <div className="p-4 border-b">
-        <h2 className={`font-bold text-gray-800 ${!isExpanded && 'hidden'}`}>
-          Menu
-        </h2>
+        <h2 className="font-bold text-gray-800">Menu</h2>
       </div>
 
       {/* Menu Items */}
@@ -181,22 +197,11 @@ const Sidebar = ({ role, isExpanded, onToggle }) => {
           />
         ))}
       </nav>
-
-      {/* Toggle Button */}
-      <button
-        onClick={onToggle}
-        className="absolute -right-3 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-all duration-300"
-      >
-        <div
-          className={`transform transition-transform duration-300 ${
-            isExpanded ? 'rotate-0' : 'rotate-180'
-          }`}
-        >
-          {'❯'}
-        </div>
-      </button>
     </div>
-  );
+  </div>
+);
+
 };
+
 
 export default Sidebar;

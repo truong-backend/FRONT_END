@@ -1,13 +1,15 @@
-import React from 'react';
+import {useEffect} from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { BookOpen, Calendar, CheckCircle, Bell, LogOut, GraduationCap, TrendingUp, Clock } from 'lucide-react';
 import { BocCucChinh } from '../../components/BoCuc/BocCucChinh.jsx';
 
 export const TrangChuGVPage = () => {
   const { logout } = useAuth();
-
+  useEffect(() => {
+    document.title = 'Trang Giảng Viên - Trang Chủ';
+  }, []);
   return (
-    <BocCucChinh>
+    <BocCucChinh> 
       <div >
         {/* Enhanced Header */}
         <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 py-4 sticky top-0 z-40 shadow-sm">
@@ -18,7 +20,7 @@ export const TrangChuGVPage = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Trang Giảng Viên</h1>
-                <p className="text-sm text-gray-600">Chào mừng trở lại!</p>
+                <p className="text-sm text-gray-600">Giảng viên</p>
               </div>
             </div>
             <button

@@ -88,7 +88,9 @@ export const DiemDanhComponents = () => {
     });
     return count;
   };
-
+  useEffect(() => {
+    document.title = ' Quản lý điểm danh';
+  }, []);
   //hook dùng face api
   useEffect(() => {
     const loadModels = async () => {
@@ -752,11 +754,7 @@ export const DiemDanhComponents = () => {
       title: 'Ghi chú',
       dataIndex: 'ghiChu',
       width: 200,
-      render: (ghiChu, record) => {
-        const maSv = record.maSv;
-        const isSelected = selectedStudents.includes(maSv) || selectedStudents2.includes(maSv);
-        const currentValue = ghiChuThuCong[maSv] ?? ghiChu ?? '';
-      }
+
     }
   ];
 

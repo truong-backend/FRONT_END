@@ -16,6 +16,7 @@ export const HoSoGiaoVienComponents = () => {
   });
 
   useEffect(() => {
+    document.title = 'Thông tin cá nhân';
     fetchProfile();
   }, []);
 
