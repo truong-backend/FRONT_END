@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Table, Input, Space, Button, Popconfirm, message, Modal, Form,
-  DatePicker, Radio, Upload, Avatar, Select, Divider
+  Table, Button, Space, Modal, Form, Input, DatePicker, Radio, 
+  Select, Upload, Avatar, message, Popconfirm, Typography, Alert, Spin, Divider
 } from 'antd';
-import {
-  EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined,
-  UserOutlined, UploadOutlined, ImportOutlined, ExportOutlined,
-  EyeOutlined, FileExcelOutlined
+import { 
+  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, UserOutlined,
+  UploadOutlined, ImportOutlined, ExportOutlined, EyeOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import { studentService } from '../../../services/Admin/studentService.js';
 import { lopService } from '../../../services/Admin/lopService.js';
@@ -14,38 +13,450 @@ import { ChiTietSinhVienComponents } from './ChiTietSinhVienComponents.jsx';
 import moment from 'moment';
 import * as XLSX from 'xlsx';
 
+const { Title } = Typography;
+const { Search } = Input;
+
+// Configuration
+const PAGE_SIZE = 10;
+const FORM_RULES = {
+  maSv: [
+    { required: true, message: 'Vui lòng nhập mã sinh viên' },
+    { max: 10, message: 'Mã sinh viên không được vượt quá 10 ký tự' }
+  ],
+  tenSv: [
+    { required: true, message: 'Vui lòng nhập tên sinh viên' },
+    { max: 150, message: 'Tên sinh viên không được vượt quá 150 ký tự' },
+    { whitespace: true, message: 'Tên sinh viên không được chỉ chứa khoảng trắng' }
+  ],
+  ngaySinh: [
+    { required: true, message: 'Vui lòng chọn ngày sinh' },
+    {
+      validator: (_, value) => {
+        if (value && value.isAfter(moment())) {
+          return Promise.reject('Ngày sinh phải là ngày trong quá khứ');
+        }
+        return Promise.resolve();
+      }
+    }
+  ],
+  phai: [{ required: true, message: 'Vui lòng chọn giới tính' }],
+  maLop: [{ required: true, message: 'Vui lòng chọn lớp' }],
+  diaChi: [
+    { required: true, message: 'Vui lòng nhập địa chỉ' },
+    { max: 300, message: 'Địa chỉ không được vượt quá 300 ký tự' },
+    { whitespace: true, message: 'Địa chỉ không được chỉ chứa khoảng trắng' }
+  ],
+  sdt: [
+    { required: true, message: 'Vui lòng nhập số điện thoại' },
+    { pattern: /^[0][0-9]{9}$/, message: 'Số điện thoại không hợp lệ (phải có 10 chữ số, bắt đầu bằng 0)' }
+  ],
+  email: [
+    { required: true, message: 'Vui lòng nhập email' },
+    { type: 'email', message: 'Email không hợp lệ' },
+    { max: 100, message: 'Email không được vượt quá 100 ký tự' }
+  ]
+};
+
+// Utility functions
+const filterData = (data, filters) => {
+  return data.filter(student => {
+    const searchLower = filters.search?.toLowerCase() || '';
+    const phaiText = student.phai === 1 ? 'nam' : student.phai === 0 ? 'nữ' : '';
+    
+    const matchSearch = !filters.search || 
+      student.maSv?.toLowerCase().includes(searchLower) ||
+      student.tenSv?.toLowerCase().includes(searchLower) ||
+      student.ngaySinh?.toLowerCase().includes(searchLower) ||
+      phaiText.includes(searchLower) ||
+      student.diaChi?.toLowerCase().includes(searchLower) ||
+      student.email?.toLowerCase().includes(searchLower);
+    
+    const matchLop = !filters.filterLop || student.tenLop === filters.filterLop;
+    const matchKhoa = !filters.filterKhoa || student.tenKhoa === filters.filterKhoa;
+    
+    return matchSearch && matchLop && matchKhoa;
+  });
+};
+
+const createTableColumns = (onEdit, onDelete, onViewDetail) => [
+  {
+    title: 'Mã SV',
+    dataIndex: 'maSv',
+    width: '10%',
+    sorter: (a, b) => a.maSv.localeCompare(b.maSv),
+  },
+  {
+    title: 'Avatar',
+    dataIndex: 'avatar',
+    width: '8%',
+    render: (avatar, record) => (
+      <Avatar
+        src={avatar}
+        icon={<UserOutlined />}
+        alt={`Avatar của ${record.tenSv}`}
+      />
+    ),
+  },
+  {
+    title: 'Họ và tên',
+    dataIndex: 'tenSv',
+    width: '15%',
+    sorter: (a, b) => a.tenSv.localeCompare(b.tenSv),
+  },
+  {
+    title: 'Ngày sinh',
+    dataIndex: 'ngaySinh',
+    width: '10%',
+    sorter: (a, b) => moment(a.ngaySinh).unix() - moment(b.ngaySinh).unix(),
+    render: (date) => moment(date).format('DD/MM/YYYY')
+  },
+  {
+    title: 'Giới tính',
+    dataIndex: 'phai',
+    width: '8%',
+    render: (phai) => phai === 1 ? 'Nam' : 'Nữ'
+  },
+  {
+    title: 'Lớp',
+    dataIndex: 'tenLop',
+    width: '10%',
+  },
+  {
+    title: 'Khoa',
+    dataIndex: 'tenKhoa',
+    width: '15%',
+  },
+  {
+    title: 'Email',
+    dataIndex: 'email',
+    width: '15%',
+  },
+  {
+    title: 'Thao tác',
+    key: 'action',
+    width: '12%',
+    render: (_, record) => (
+      <Space size="small">
+        <Button type="text" icon={<EyeOutlined />} onClick={() => onViewDetail(record)}>
+        </Button>
+        <Button type="primary" icon={<EditOutlined />} onClick={() => onEdit(record)}>
+        </Button>
+        <Popconfirm
+          title="Bạn có chắc chắn muốn xóa sinh viên này?"
+          onConfirm={() => onDelete(record.maSv)}
+          okText="Có"
+          cancelText="Không"
+        >
+          <Button type="primary" danger icon={<DeleteOutlined />}>
+          </Button>
+        </Popconfirm>
+      </Space>
+    ),
+  },
+];
+
+const SearchAndFilterBar = ({ filters, onChange, classes }) => {
+  const uniqueKhoas = Array.from(new Set(classes.map(lop => lop.tenKhoa)));
+  
+  return (
+    <Space wrap style={{ marginBottom: '16px', width: '100%', justifyContent: 'space-between' }}>
+      <Search
+        placeholder="Tìm theo MSSV, Họ tên, Email"
+        allowClear
+        value={filters.search}
+        onChange={(e) => onChange({ ...filters, search: e.target.value })}
+        style={{ width: 300 }}
+        enterButton={<SearchOutlined />}
+      />
+      <Space>
+        <Select
+          placeholder="Lọc theo lớp"
+          allowClear
+          style={{ width: 180 }}
+          value={filters.filterLop}
+          onChange={(value) => onChange({ ...filters, filterLop: value })}
+          options={classes.map(lop => ({ value: lop.tenLop, label: lop.tenLop }))}
+        />
+        <Select
+          placeholder="Lọc theo khoa"
+          allowClear
+          style={{ width: 180 }}
+          value={filters.filterKhoa}
+          onChange={(value) => onChange({ ...filters, filterKhoa: value })}
+          options={uniqueKhoas.map(khoa => ({ label: khoa, value: khoa }))}
+        />
+      </Space>
+    </Space>
+  );
+};
+
+const Header = ({ onCreateClick, onImportClick, onExportClick }) => (
+  <div style={{ 
+    marginBottom: '16px', 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center' 
+  }}>
+    <Title level={2}>Quản lý Sinh viên</Title>
+    <Space wrap>
+      <Button type="primary" icon={<PlusOutlined />} onClick={onCreateClick}>
+        Thêm Sinh viên
+      </Button>
+      <Divider type="vertical" />
+      <Button icon={<ImportOutlined />} onClick={onImportClick}>
+        Import Excel
+      </Button>
+      <Button icon={<ExportOutlined />} onClick={onExportClick}>
+        Xuất Excel
+      </Button>
+    </Space>
+  </div>
+);
+
+const ErrorAlert = ({ error }) => {
+  if (!error) return null;
+  return (
+    <Alert
+      message="Lỗi"
+      description={error}
+      type="error"
+      showIcon
+      style={{ marginBottom: '16px' }}
+    />
+  );
+};
+
+const SinhVienForm = ({ form, editingSinhVien, classes }) => (
+  <Form form={form} layout="vertical">
+    {!editingSinhVien && (
+      <Form.Item name="maSv" label="Mã sinh viên" rules={FORM_RULES.maSv}>
+        <Input placeholder="Nhập mã sinh viên" />
+      </Form.Item>
+    )}
+    <Form.Item name="tenSv" label="Họ và tên" rules={FORM_RULES.tenSv}>
+      <Input placeholder="Nhập họ và tên" />
+    </Form.Item>
+    <Form.Item name="ngaySinh" label="Ngày sinh" rules={FORM_RULES.ngaySinh}>
+      <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} placeholder="Chọn ngày sinh" />
+    </Form.Item>
+    <Form.Item name="phai" label="Giới tính" rules={FORM_RULES.phai}>
+      <Radio.Group>
+        <Radio value={1}>Nam</Radio>
+        <Radio value={0}>Nữ</Radio>
+      </Radio.Group>
+    </Form.Item>
+    <Form.Item name="maLop" label="Lớp" rules={FORM_RULES.maLop}>
+      <Select placeholder="Chọn lớp" showSearch optionFilterProp="children">
+        {classes.map(lop => (
+          <Select.Option key={lop.maLop} value={lop.maLop}>
+            {lop.tenLop} - {lop.tenKhoa}
+          </Select.Option>
+        ))}
+      </Select>
+    </Form.Item>
+    <Form.Item name="diaChi" label="Địa chỉ" rules={FORM_RULES.diaChi}>
+      <Input placeholder="Nhập địa chỉ" />
+    </Form.Item>
+    <Form.Item name="sdt" label="Số điện thoại" rules={FORM_RULES.sdt}>
+      <Input placeholder="Nhập số điện thoại" />
+    </Form.Item>
+    <Form.Item name="email" label="Email" rules={FORM_RULES.email}>
+      <Input placeholder="Nhập email" />
+    </Form.Item>
+    <Form.Item
+      name="avatar"
+      label="Avatar"
+      valuePropName="fileList"
+      getValueFromEvent={(e) => Array.isArray(e) ? e : e?.fileList}
+    >
+      <Upload
+        name="avatar"
+        listType="picture"
+        maxCount={1}
+        beforeUpload={() => false}
+      >
+        <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
+      </Upload>
+    </Form.Item>
+  </Form>
+);
+
+const SinhVienModal = ({ visible, title, onOk, onCancel, form, editingSinhVien, classes }) => (
+  <Modal
+    title={title}
+    open={visible}
+    onOk={onOk}
+    onCancel={onCancel}
+    destroyOnClose
+    width={600}
+  >
+    <SinhVienForm form={form} editingSinhVien={editingSinhVien} classes={classes} />
+  </Modal>
+);
+
+const ImportModal = ({ visible, onCancel, onImportFile }) => (
+  <Modal
+    title="Import Danh sách Sinh viên từ Excel"
+    open={visible}
+    onCancel={onCancel}
+    footer={[
+      <Button key="cancel" onClick={onCancel}>
+        Hủy
+      </Button>,
+    ]}
+  >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div>
+        <p style={{ marginBottom: '8px', fontWeight: 'medium' }}>Hướng dẫn Import:</p>
+        <ul style={{ fontSize: '14px', color: '#666', lineHeight: '1.5' }}>
+          <li>1. Tải template Excel mẫu</li>
+          <li>2. Điền thông tin sinh viên theo đúng format</li>
+          <li>3. Upload file Excel đã hoàn thành</li>
+          <li>4. Kiểm tra và xác nhận import</li>
+        </ul>
+      </div>
+      <div>
+        <p style={{ marginBottom: '8px', fontWeight: 'medium' }}>Chọn file Excel:</p>
+        <Upload
+          accept=".xlsx,.xls"
+          beforeUpload={onImportFile}
+          showUploadList={false}
+        >
+          <Button icon={<FileExcelOutlined />} size="large" style={{ width: '100%' }}>
+            Chọn file Excel để import
+          </Button>
+        </Upload>
+      </div>
+    </div>
+  </Modal>
+);
+
+const ImportPreviewModal = ({ visible, data, onConfirm, onCancel, loading, classes }) => (
+  <Modal
+    title="Xem trước dữ liệu Import"
+    open={visible}
+    onOk={onConfirm}
+    onCancel={onCancel}
+    width={1000}
+    okText="Xác nhận Import"
+    cancelText="Hủy"
+    confirmLoading={loading}
+  >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <p style={{ fontWeight: 'medium' }}>
+          Sẽ import {data.length} sinh viên
+        </p>
+      </div>
+      <Table
+        dataSource={data}
+        pagination={{ pageSize: 10 }}
+        size="small"
+        scroll={{ x: 800 }}
+        rowKey={(record, index) => `preview-${index}`}
+        columns={[
+          {
+            title: 'STT',
+            width: 60,
+            render: (_, record, index) => index + 1
+          },
+          {
+            title: 'Mã SV',
+            dataIndex: 'maSv',
+            width: 120
+          },
+          {
+            title: 'Họ và tên',
+            dataIndex: 'tenSv',
+            width: 180
+          },
+          {
+            title: 'Email',
+            dataIndex: 'email',
+            width: 200
+          },
+          {
+            title: 'Mã lớp',
+            dataIndex: 'maLop',
+            width: 100
+          },
+          {
+            title: 'Phái',
+            dataIndex: 'phai',
+            width: 80,
+            render: (phai) => phai === 1 ? 'Nam' : 'Nữ'
+          },
+          {
+            title: 'Ngày sinh',
+            dataIndex: 'ngaySinh',
+            width: 100,
+            render: (date) => date ? moment(date).format('DD/MM/YYYY') : ''
+          },
+          {
+            title: 'Trạng thái',
+            width: 120,
+            render: (_, record) => {
+              const hasRequiredFields = record.maSv && record.tenSv && record.email;
+              const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(record.email || '');
+              const sdtValid = /^[0][0-9]{9}$/.test(record.sdt || '');
+              const classValid = classes.find(cls => cls.maLop === record.maLop);
+              
+              if (!hasRequiredFields) {
+                return <span style={{ color: '#f5222d' }}>Thiếu thông tin</span>;
+              }
+              if (!emailValid) {
+                return <span style={{ color: '#fa8c16' }}>Email không hợp lệ</span>;
+              }
+              if (!sdtValid) {
+                return <span style={{ color: '#fa8c16' }}>SĐT không hợp lệ</span>;
+              }
+              if (!classValid) {
+                return <span style={{ color: '#fa8c16' }}>Lớp không hợp lệ</span>;
+              }
+              return <span style={{ color: '#52c41a' }}>Hợp lệ</span>;
+            }
+          }
+        ]}
+      />
+    </div>
+  </Modal>
+);
+
+// Main Component
 export const DanhSachSinhVienComponents = () => {
+  // State management
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingStudent, setEditingStudent] = useState(null);
+  const [editingSinhVien, setEditingSinhVien] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [importModalVisible, setImportModalVisible] = useState(false);
-  const [form] = Form.useForm();
+  const [importPreviewModalVisible, setImportPreviewModalVisible] = useState(false);
+  const [importPreviewData, setImportPreviewData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     search: '',
     filterLop: null,
     filterKhoa: null
   });
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
-    total: 0
-  });
-  const [importPreviewData, setImportPreviewData] = useState([]);
-  const [importPreviewModalVisible, setImportPreviewModalVisible] = useState(false);
+  const [form] = Form.useForm();
 
+  // Data fetching
   const fetchStudents = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setError(null);
       const data = await studentService.getAllStudentsNoPagination();
       setStudents(data);
-      setPagination(prev => ({ ...prev, total: data.length }));
+      const filtered = filterData(data, filters);
+      setFilteredData(filtered);
     } catch (error) {
-      message.error('Lỗi khi tải danh sách sinh viên');
-      console.error('Error fetching students:', error);
+      setError('Không thể tải danh sách sinh viên. Vui lòng thử lại sau.');
+      message.error('Không thể tải danh sách sinh viên');
     } finally {
       setLoading(false);
     }
@@ -66,57 +477,53 @@ export const DanhSachSinhVienComponents = () => {
     fetchClasses();
   }, []);
 
-  const handleTableChange = (newPagination, tableFilters, sorter) => {
-    setPagination({
-      ...pagination,
-      current: newPagination.current,
-      pageSize: newPagination.pageSize,
-    });
+  useEffect(() => {
+    const filtered = filterData(students, filters);
+    setFilteredData(filtered);
+    setCurrentPage(1);
+  }, [students, filters]);
+
+  // Event handlers
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters);
   };
 
-  const getFilteredData = () => {
-    return students.filter(student => {
-      const searchLower = filters.search?.toLowerCase() || '';
-      const phaiText = student.phai === 1 ? 'nam' : student.phai === 0 ? 'nữ' : '';
-      const matchSearch =
-        student.maSv?.toLowerCase().includes(searchLower) ||
-        student.tenSv?.toLowerCase().includes(searchLower) ||
-        student.ngaySinh?.toLowerCase().includes(searchLower) ||
-        phaiText.includes(searchLower) ||
-        student.diaChi?.toLowerCase().includes(searchLower);
-      const matchLop = filters.filterLop ? student.tenLop === filters.filterLop : true;
-      const matchKhoa = filters.filterKhoa ? student.tenKhoa === filters.filterKhoa : true;
-      return matchSearch && matchLop && matchKhoa;
-    });
-  };
-
-  const openModal = (student = null) => {
-    setEditingStudent(student);
-    if (student) {
-      form.setFieldsValue({
-        ...student,
-        ngaySinh: moment(student.ngaySinh)
-      });
-    } else {
-      form.resetFields();
-    }
+  const handleCreate = () => {
+    form.resetFields();
+    setEditingSinhVien(null);
     setModalVisible(true);
   };
 
-  const closeModal = () => {
-    setModalVisible(false);
-    form.resetFields();
+  const handleEdit = (record) => {
+    form.setFieldsValue({
+      ...record,
+      ngaySinh: moment(record.ngaySinh)
+    });
+    setEditingSinhVien(record);
+    setModalVisible(true);
   };
 
-  const openDetailModal = (student) => {
-    setSelectedStudent(student);
+  const handleViewDetail = (record) => {
+    setSelectedStudent(record);
     setDetailModalVisible(true);
   };
 
-  const handleSubmit = async () => {
+  const handleDelete = async (maSv) => {
+    try {
+      await studentService.deleteStudent(maSv);
+      message.success('Xóa sinh viên thành công');
+      fetchStudents();
+    } catch (error) {
+      message.error('Lỗi khi xóa sinh viên');
+      console.error('Error deleting student:', error);
+    }
+  };
+
+  const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      if (editingStudent) {
+      
+      if (editingSinhVien) {
         const updateData = {
           tenSv: values.tenSv.trim(),
           ngaySinh: values.ngaySinh.format('YYYY-MM-DD'),
@@ -129,7 +536,7 @@ export const DanhSachSinhVienComponents = () => {
         if (values.avatar?.length > 0) {
           updateData.avatar = values.avatar;
         }
-        await studentService.updateStudent(editingStudent.maSv, updateData);
+        await studentService.updateStudent(editingSinhVien.maSv, updateData);
         message.success('Cập nhật sinh viên thành công');
       } else {
         const createData = {
@@ -139,7 +546,9 @@ export const DanhSachSinhVienComponents = () => {
         await studentService.createStudent(createData);
         message.success('Thêm sinh viên mới thành công');
       }
-      closeModal();
+      
+      setModalVisible(false);
+      form.resetFields();
       fetchStudents();
     } catch (error) {
       console.error('Error in handleSubmit:', error);
@@ -155,24 +564,19 @@ export const DanhSachSinhVienComponents = () => {
     }
   };
 
-  const handleDelete = async (maSv) => {
-    try {
-      await studentService.deleteStudent(maSv);
-      message.success('Xóa sinh viên thành công');
-      fetchStudents();
-    } catch (error) {
-      message.error('Lỗi khi xóa sinh viên');
-      console.error('Error deleting student:', error);
-    }
+  const handleModalCancel = () => {
+    setModalVisible(false);
+    form.resetFields();
   };
 
-  const exportToExcel = (dataToExport = null) => {
+  const handleExportExcel = () => {
     try {
-      const exportData = dataToExport || getFilteredData();
+      const exportData = filteredData;
       if (exportData.length === 0) {
         message.warning('Không có dữ liệu để xuất');
         return;
       }
+      
       const excelData = exportData.map((student, index) => ({
         'STT': index + 1,
         'Mã sinh viên': student.maSv || '',
@@ -185,6 +589,7 @@ export const DanhSachSinhVienComponents = () => {
         'Số điện thoại': student.sdt || '',
         'Ngày Sinh': moment(student.ngaySinh).format('M/D/YYYY') || ''
       }));
+      
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
       const colWidths = [
@@ -202,7 +607,7 @@ export const DanhSachSinhVienComponents = () => {
     }
   };
 
-  const handleImportExcel = (file) => {
+  const handleImportFile = (file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -211,20 +616,24 @@ export const DanhSachSinhVienComponents = () => {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
         if (jsonData.length < 2) {
           message.error('File Excel không có dữ liệu hoặc định dạng không đúng');
           return;
         }
+        
         const headers = jsonData[0];
         const dataRows = jsonData.slice(1);
         const expectedHeaders = ['STT', 'Mã sinh viên', 'Họ lót', 'Tên', 'Mã lớp', 'Email', 'Phái', 'Địa Chỉ', 'Số điện thoại', 'Ngày Sinh'];
         const isValidFormat = expectedHeaders.every(header => headers.includes(header));
+        
         if (!isValidFormat) {
           message.error('Định dạng file Excel không đúng. Vui lòng sử dụng template có các cột: ' + expectedHeaders.join(', '));
           return;
         }
+        
         const importedStudents = dataRows
-          .filter(row => row.length > 1 && row[1]) // Lọc bỏ dòng trống và dòng không có mã sinh viên
+          .filter(row => row.length > 1 && row[1])
           .map((row) => {
             const student = {};
             headers.forEach((header, index) => {
@@ -260,7 +669,6 @@ export const DanhSachSinhVienComponents = () => {
                   if (row[index]) {
                     const dateValue = row[index];
                     if (typeof dateValue === 'number') {
-                      // Excel date serial number
                       student.ngaySinh = moment(new Date((dateValue - 25569) * 86400 * 1000)).format('YYYY-MM-DD');
                     } else {
                       student.ngaySinh = moment(dateValue, ['M/D/YYYY', 'MM/DD/YYYY', 'DD/MM/YYYY']).isValid()
@@ -275,11 +683,14 @@ export const DanhSachSinhVienComponents = () => {
             });
             return student;
           });
+        
         if (importedStudents.length === 0) {
           message.error('Không có dữ liệu hợp lệ để import');
           return;
         }
-        showImportPreview(importedStudents);
+        
+        setImportPreviewData(importedStudents);
+        setImportPreviewModalVisible(true);
       } catch (error) {
         console.error('Error parsing Excel file:', error);
         message.error('Có lỗi xảy ra khi đọc file Excel');
@@ -289,17 +700,13 @@ export const DanhSachSinhVienComponents = () => {
     return false;
   };
 
-  const showImportPreview = (data) => {
-    setImportPreviewData(data);
-    setImportPreviewModalVisible(true);
-  };
-
-  const confirmImport = async () => {
+  const handleConfirmImport = async () => {
     try {
       setLoading(true);
       let successCount = 0;
       let errorCount = 0;
       const errors = [];
+      
       for (const student of importPreviewData) {
         try {
           // Validate required fields
@@ -308,6 +715,7 @@ export const DanhSachSinhVienComponents = () => {
             errorCount++;
             continue;
           }
+          
           // Validate email format
           const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(student.email);
           if (!emailValid) {
@@ -315,13 +723,15 @@ export const DanhSachSinhVienComponents = () => {
             errorCount++;
             continue;
           }
-          // Validate phone number format (10 digits, starts with 0)
+          
+          // Validate phone number format
           const sdtValid = /^[0][0-9]{9}$/.test(student.sdt);
           if (!sdtValid) {
-            errors.push(`Mã SV "${student.maSv}": Số điện thoại không hợp lệ (phải có 10 chữ số, bắt đầu bằng 0)`);
+            errors.push(`Mã SV "${student.maSv}": Số điện thoại không hợp lệ`);
             errorCount++;
             continue;
           }
+          
           // Validate class
           const foundClass = classes.find(cls => cls.maLop === student.maLop);
           if (!foundClass) {
@@ -329,6 +739,7 @@ export const DanhSachSinhVienComponents = () => {
             errorCount++;
             continue;
           }
+          
           const importData = {
             maSv: student.maSv,
             tenSv: student.tenSv,
@@ -339,6 +750,7 @@ export const DanhSachSinhVienComponents = () => {
             diaChi: student.diaChi,
             sdt: student.sdt
           };
+          
           await studentService.createStudent(importData);
           successCount++;
         } catch (error) {
@@ -347,6 +759,7 @@ export const DanhSachSinhVienComponents = () => {
           errors.push(`Mã SV "${student.maSv}": ${errorMsg}`);
         }
       }
+      
       if (successCount > 0) {
         message.success(`Import thành công ${successCount} sinh viên`);
       }
@@ -354,6 +767,7 @@ export const DanhSachSinhVienComponents = () => {
         console.error('Import errors:', errors);
         message.error(`${errorCount} sinh viên import thất bại. Kiểm tra console để xem chi tiết.`);
       }
+      
       await fetchStudents();
       setImportPreviewModalVisible(false);
       setImportModalVisible(false);
@@ -365,387 +779,79 @@ export const DanhSachSinhVienComponents = () => {
     }
   };
 
-  const columns = [
-    {
-      title: 'Mã SV',
-      dataIndex: 'maSv',
-      sorter: true,
-      width: '10%'
-    },
-    {
-      title: 'Avatar',
-      dataIndex: 'avatar',
-      width: '8%',
-      render: (avatar, record) => (
-        <Avatar
-          src={avatar}
-          icon={<UserOutlined />}
-          alt={`Avatar của ${record.tenSv}`}
-        />
-      )
-    },
-    {
-      title: 'Họ và tên',
-      dataIndex: 'tenSv',
-      sorter: true,
-      width: '15%'
-    },
-    {
-      title: 'Ngày sinh',
-      dataIndex: 'ngaySinh',
-      sorter: true,
-      width: '10%',
-      render: (date) => moment(date).format('DD/MM/YYYY')
-    },
-    {
-      title: 'Giới tính',
-      dataIndex: 'phai',
-      width: '8%',
-      render: (phai) => phai === 1 ? 'Nam' : 'Nữ'
-    },
-    {
-      title: 'Lớp',
-      dataIndex: 'tenLop',
-      width: '10%'
-    },
-    {
-      title: 'Khoa',
-      dataIndex: 'tenKhoa',
-      width: '15%'
-    },
-    {
-      title: 'Email',
-      dataIndex: 'email',
-      width: '15%'
-    },
-    {
-      title: 'Thao tác',
-      width: '12%',
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="text"
-            icon={<EyeOutlined />}
-            onClick={() => openDetailModal(record)}
-          />
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => openModal(record)}
-          />
-          <Popconfirm
-            title="Bạn có chắc chắn muốn xóa sinh viên này?"
-            onConfirm={() => handleDelete(record.maSv)}
-            okText="Có"
-            cancelText="Không"
-          >
-            <Button type="text" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      )
-    }
-  ];
-
-  const validationRules = {
-    maSv: [
-      { required: true, message: 'Mã sinh viên không được để trống' },
-      { max: 10, message: 'Mã sinh viên không được vượt quá 10 ký tự' }
-    ],
-    tenSv: [
-      { required: true, message: 'Tên sinh viên không được để trống' },
-      { max: 150, message: 'Tên sinh viên không được vượt quá 150 ký tự' },
-      { whitespace: true, message: 'Tên sinh viên không được chỉ chứa khoảng trắng' }
-    ],
-    ngaySinh: [
-      { required: true, message: 'Ngày sinh không được để trống' },
-      {
-        validator: (_, value) => {
-          if (value && value.isAfter(moment())) {
-            return Promise.reject('Ngày sinh phải là ngày trong quá khứ');
-          }
-          return Promise.resolve();
-        }
-      }
-    ],
-    phai: [{ required: true, message: 'Giới tính không được để trống' }],
-    maLop: [{ required: true, message: 'Lớp không được để trống' }],
-    diaChi: [
-      { required: true, message: 'Địa chỉ không được để trống' },
-      { max: 300, message: 'Địa chỉ không được vượt quá 300 ký tự' },
-      { whitespace: true, message: 'Địa chỉ không được chỉ chứa khoảng trắng' }
-    ],
-    sdt: [
-      { required: true, message: 'Số điện thoại không được để trống' },
-      { pattern: /^[0][0-9]{9}$/, message: 'Số điện thoại không hợp lệ (phải có 10 chữ số, bắt đầu bằng 0)' }
-    ],
-    email: [
-      { required: true, message: 'Email không được để trống' },
-      { type: 'email', message: 'Email không hợp lệ' },
-      { max: 100, message: 'Email không được vượt quá 50 ký tự' }
-    ]
-  };
+  // Table configuration
+  const columns = createTableColumns(handleEdit, handleDelete, handleViewDetail);
+  const modalTitle = editingSinhVien ? 'Cập nhật Sinh viên' : 'Thêm Sinh viên Mới';
 
   return (
-    <div className="p-6">
-      <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Danh sách Sinh viên</h2>
-        <Space wrap>
-          <Input
-            placeholder="Tìm theo MSSV, Họ tên, Email"
-            allowClear
-            value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            style={{ width: 300 }}
-            prefix={<SearchOutlined />}
-          />
-          <Select
-            placeholder="Lọc theo lớp"
-            allowClear
-            style={{ width: 180 }}
-            onChange={(value) => setFilters(prev => ({ ...prev, filterLop: value }))}
-            options={classes.map(lop => ({ value: lop.tenLop, label: lop.tenLop }))}
-          />
-          <Select
-            placeholder="Lọc theo khoa"
-            allowClear
-            style={{ width: 180 }}
-            onChange={(value) => setFilters(prev => ({ ...prev, filterKhoa: value }))}
-            options={Array.from(new Set(classes.map(lop => lop.tenKhoa))).map(khoa => ({
-              label: khoa,
-              value: khoa
-            }))}
-          />
-        </Space>
-      </div>
-      <div className="mb-4">
-        <Space wrap>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => openModal()}
-          >
-            Thêm Sinh viên
-          </Button>
-          <Divider type="vertical" />
-          <Button
-            icon={<ImportOutlined />}
-            onClick={() => setImportModalVisible(true)}
-          >
-            Import Excel
-          </Button>
-          <Button
-            icon={<ExportOutlined />}
-            onClick={() => exportToExcel()}
-          >
-            Xuất Excel
-          </Button>
-        </Space>
-      </div>
-      <Table
-        columns={columns}
-        dataSource={getFilteredData()}
-        loading={loading}
-        pagination={pagination}
-        onChange={handleTableChange}
-        rowKey="maSv"
-        scroll={{ x: 1500 }}
+    <div style={{ padding: '24px' }}>
+      <Header 
+        onCreateClick={handleCreate}
+        onImportClick={() => setImportModalVisible(true)}
+        onExportClick={handleExportExcel}
       />
+      
+      <SearchAndFilterBar 
+        filters={filters}
+        onChange={handleFiltersChange}
+        classes={classes}
+      />
+      
+      <ErrorAlert error={error} />
+      
+      <Spin spinning={loading}>
+        <Table
+          columns={columns}
+          dataSource={filteredData}
+          rowKey="maSv"
+          scroll={{ x: 1500 }}
+          pagination={{
+            pageSize: PAGE_SIZE,
+            current: currentPage,
+            onChange: setCurrentPage,
+            total: filteredData.length,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => 
+              `${range[0]}-${range[1]} của ${total} sinh viên`
+          }}
+        />
+      </Spin>
+
+      {/* Detail Modal */}
       <ChiTietSinhVienComponents
         visible={detailModalVisible}
         onClose={() => setDetailModalVisible(false)}
         student={selectedStudent}
       />
-      <Modal
-        title={editingStudent ? "Cập nhật Sinh viên" : "Thêm Sinh viên mới"}
-        open={modalVisible}
-        onOk={handleSubmit}
-        onCancel={closeModal}
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          {!editingStudent && (
-            <Form.Item name="maSv" label="Mã sinh viên" rules={validationRules.maSv}>
-              <Input />
-            </Form.Item>
-          )}
-          <Form.Item name="tenSv" label="Họ và tên" rules={validationRules.tenSv}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="ngaySinh" label="Ngày sinh" rules={validationRules.ngaySinh}>
-            <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="phai" label="Giới tính" rules={validationRules.phai}>
-            <Radio.Group>
-              <Radio value={1}>Nam</Radio>
-              <Radio value={0}>Nữ</Radio>
-            </Radio.Group>
-          </Form.Item>
-          <Form.Item name="maLop" label="Lớp" rules={validationRules.maLop}>
-            <Select placeholder="Chọn lớp" showSearch optionFilterProp="children">
-              {classes.map(lop => (
-                <Select.Option key={lop.maLop} value={lop.maLop}>
-                  {lop.tenLop} - {lop.tenKhoa}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="diaChi" label="Địa chỉ" rules={validationRules.diaChi}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="sdt" label="Số điện thoại" rules={validationRules.sdt}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="email" label="Email" rules={validationRules.email}>
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="avatar"
-            label="Avatar"
-            valuePropName="fileList"
-            getValueFromEvent={(e) => Array.isArray(e) ? e : e?.fileList}
-          >
-            <Upload
-              name="avatar"
-              listType="picture"
-              maxCount={1}
-              beforeUpload={() => false}
-            >
-              <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
-            </Upload>
-          </Form.Item>
-        </Form>
-      </Modal>
-      <Modal
-        title="Import Danh sách Sinh viên từ Excel"
-        open={importModalVisible}
+
+      {/* Create/Edit Modal */}
+      <SinhVienModal
+        visible={modalVisible}
+        title={modalTitle}
+        onOk={handleModalOk}
+        onCancel={handleModalCancel}
+        form={form}
+        editingSinhVien={editingSinhVien}
+        classes={classes}
+      />
+
+      {/* Import Modal */}
+      <ImportModal
+        visible={importModalVisible}
         onCancel={() => setImportModalVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setImportModalVisible(false)}>
-            Hủy
-          </Button>,
-        ]}
-      >
-        <div className="space-y-4">
-          <div>
-            <p className="mb-2 font-medium">Hướng dẫn Import:</p>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>1. Tải template Excel mẫu</li>
-              <li>2. Điền thông tin sinh viên theo đúng format</li>
-              <li>3. Upload file Excel đã hoàn thành</li>
-              <li>4. Kiểm tra và xác nhận import</li>
-            </ul>
-          </div>
-          <div>
-            <p className="mb-2 font-medium">Chọn file Excel:</p>
-            <Upload
-              accept=".xlsx,.xls"
-              beforeUpload={handleImportExcel}
-              showUploadList={false}
-            >
-              <Button icon={<FileExcelOutlined />} size="large" className="w-full">
-                Chọn file Excel để import
-              </Button>
-            </Upload>
-          </div>
-        </div>
-      </Modal>
-      <Modal
-        title="Xem trước dữ liệu Import"
-        open={importPreviewModalVisible}
-        onOk={confirmImport}
+        onImportFile={handleImportFile}
+      />
+
+      {/* Import Preview Modal */}
+      <ImportPreviewModal
+        visible={importPreviewModalVisible}
+        data={importPreviewData}
+        onConfirm={handleConfirmImport}
         onCancel={() => setImportPreviewModalVisible(false)}
-        width={1000}
-        okText="Xác nhận Import"
-        cancelText="Hủy"
-        confirmLoading={loading}
-      >
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="font-medium">
-              Sẽ import {importPreviewData.length} sinh viên
-            </p>
-          </div>
-          <Table
-            dataSource={importPreviewData}
-            pagination={{ pageSize: 10 }}
-            size="small"
-            scroll={{ x: 800 }}
-            rowKey={(record, index) => `preview-${index}`}
-            columns={[
-              {
-                title: 'STT',
-                width: 60,
-                render: (_, record, index) => index + 1
-              },
-              {
-                title: 'Mã SV',
-                dataIndex: 'maSv',
-                width: 120
-              },
-              {
-                title: 'Họ và tên',
-                dataIndex: 'tenSv',
-                width: 180
-              },
-              {
-                title: 'Email',
-                dataIndex: 'email',
-                width: 200
-              },
-              {
-                title: 'Mã lớp',
-                dataIndex: 'maLop',
-                width: 100
-              },
-              {
-                title: 'Phái',
-                dataIndex: 'phai',
-                width: 80,
-                render: (phai) => phai === 1 ? 'Nam' : 'Nữ'
-              },
-              {
-                title: 'Ngày sinh',
-                dataIndex: 'ngaySinh',
-                width: 100,
-                render: (date) => date ? moment(date).format('DD/MM/YYYY') : ''
-              },
-              {
-                title: 'Địa chỉ',
-                dataIndex: 'diaChi',
-                width: 150
-              },
-              {
-                title: 'Số điện thoại',
-                dataIndex: 'sdt',
-                width: 120
-              },
-              {
-                title: 'Trạng thái',
-                width: 120,
-                render: (_, record) => {
-                  const hasRequiredFields = record.maSv && record.tenSv && record.email;
-                  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(record.email || '');
-                  const sdtValid = /^[0][0-9]{9}$/.test(record.sdt || '');
-                  const classValid = classes.find(cls => cls.maLop === record.maLop);
-                  if (!hasRequiredFields) {
-                    return <span className="text-red-500">Thiếu thông tin</span>;
-                  }
-                  if (!emailValid) {
-                    return <span className="text-orange-500">Email không hợp lệ</span>;
-                  }
-                  if (!sdtValid) {
-                    return <span className="text-orange-500">SĐT không hợp lệ</span>;
-                  }
-                  if (!classValid) {
-                    return <span className="text-orange-500">Lớp không hợp lệ</span>;
-                  }
-                  return <span className="text-green-500">Hợp lệ</span>;
-                }
-              }
-            ]}
-          />
-        </div>
-      </Modal>
+        loading={loading}
+        classes={classes}
+      />
     </div>
   );
 };
