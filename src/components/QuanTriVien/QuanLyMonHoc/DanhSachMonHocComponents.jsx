@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, Button, Space, Modal, Form, Input, InputNumber, 
-  message, Popconfirm, Typography, Alert, Spin
+  message, Popconfirm, Typography, Alert, Spin, Card
 } from 'antd';
 import { 
   EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined 
@@ -63,48 +63,110 @@ const createTableColumns = (onEdit, onDelete) => [
     key: 'action',
     width: '25%',
     render: (_, record) => (
-      <Space size="middle">
-        <Button type="primary" icon={<EditOutlined />} onClick={() => onEdit(record)}>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Button 
+          type="primary" 
+          icon={<EditOutlined />} 
+          onClick={() => onEdit(record)}
+          className="w-full sm:w-auto"
+          size="small"
+        >
+          <span className="hidden sm:inline">Sửa</span>
+        </Button>
+        <Popconfirm
+          title="Bạn có chắc chắn muốn xóa?"
+          onConfirm={() => onDelete(record.maMh)}
+        >
+          <Button 
+            type="primary" 
+            danger 
+            icon={<DeleteOutlined />}
+            className="w-full sm:w-auto"
+            size="small"
+          >
+            <span className="hidden sm:inline">Xóa</span>
+          </Button>
+        </Popconfirm>
+      </div>
+    ),
+  },
+];
+
+// Mobile Card Component for responsive
+const MobileCard = ({ record, onEdit, onDelete }) => (
+  <Card 
+    size="small" 
+    className="mb-3 shadow-sm"
+    bodyStyle={{ padding: '12px' }}
+  >
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium text-gray-600">Mã MH:</span>
+        <span className="font-semibold">{record.maMh}</span>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium text-gray-600">Tên MH:</span>
+        <span className="font-medium text-right flex-1 ml-2">{record.tenMh}</span>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium text-gray-600">Số tiết:</span>
+        <span className="font-semibold">{record.soTiet}</span>
+      </div>
+      <div className="flex gap-2 pt-2 border-t border-gray-100">
+        <Button 
+          type="primary" 
+          icon={<EditOutlined />} 
+          onClick={() => onEdit(record)}
+          size="small"
+          className="flex-1"
+        >
           Sửa
         </Button>
         <Popconfirm
           title="Bạn có chắc chắn muốn xóa?"
           onConfirm={() => onDelete(record.maMh)}
         >
-          <Button type="primary" danger icon={<DeleteOutlined />}>
+          <Button 
+            type="primary" 
+            danger 
+            icon={<DeleteOutlined />}
+            size="small"
+            className="flex-1"
+          >
             Xóa
           </Button>
         </Popconfirm>
-      </Space>
-    ),
-  },
-];
+      </div>
+    </div>
+  </Card>
+);
 
 const SearchBar = ({ onChange }) => (
-  <Search
-    placeholder="Tìm theo mã hoặc tên môn học"
-    onSearch={onChange}
-    onChange={(e) => onChange(e.target.value)}
-    // value={value}
-    allowClear
-    enterButton={<SearchOutlined />}
-    style={{ marginBottom: '16px', width: 400 }}
-  />
+  <div className="mb-4">
+    <Search
+      placeholder="Tìm theo mã hoặc tên môn học"
+      onSearch={onChange}
+      onChange={(e) => onChange(e.target.value)}
+      allowClear
+      enterButton={<SearchOutlined />}
+      className="w-full max-w-md"
+    />
+  </div>
 );
 
 const Header = ({ onCreateClick }) => (
-  <div style={{ 
-    marginBottom: '16px', 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
-  }}>
-    <Title level={2}>Quản lý Môn học</Title>
-    <Space>
-      <Button type="primary" icon={<PlusOutlined />} onClick={onCreateClick}>
-        Thêm Môn học Mới
-      </Button>
-    </Space>
+  <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+    <Title level={2} className="!mb-0 text-lg sm:text-xl md:text-2xl">
+      Quản lý Môn học
+    </Title>
+    <Button 
+      type="primary" 
+      icon={<PlusOutlined />} 
+      onClick={onCreateClick}
+      className="w-full sm:w-auto"
+    >
+      <span className="sm:inline">Thêm Môn học Mới</span>
+    </Button>
   </div>
 );
 
@@ -116,7 +178,7 @@ const ErrorAlert = ({ error }) => {
       description={error}
       type="error"
       showIcon
-      style={{ marginBottom: '16px' }}
+      className="mb-4"
     />
   );
 };
@@ -132,7 +194,7 @@ const MonHocForm = ({ form, editingMaMh }) => (
       <Input />
     </Form.Item>
     <Form.Item name="soTiet" label="Số tiết" rules={FORM_RULES.soTiet}>
-      <InputNumber style={{ width: '100%' }} />
+      <InputNumber className="w-full" />
     </Form.Item>
   </Form>
 );
@@ -144,7 +206,9 @@ const MonHocModal = ({ visible, title, onOk, onCancel, form, editingMaMh }) => (
     onOk={onOk}
     onCancel={onCancel}
     destroyOnClose
-    width={600}
+    width="90%"
+    style={{ maxWidth: '600px' }}
+    className="!top-4 sm:!top-20"
   >
     <MonHocForm form={form} editingMaMh={editingMaMh} />
   </Modal>
@@ -161,7 +225,18 @@ export const DanhSachMonHocComponents = () => {
   const [editingMaMh, setEditingMaMh] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [form] = Form.useForm();
+
+  // Handle responsive
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Data fetching
   const fetchMonHocs = async () => {
@@ -185,7 +260,6 @@ export const DanhSachMonHocComponents = () => {
 
   // Event handlers
   const handleSearch = (value) => {
-    
     setSearchText(value);
     const filtered = filterData(monHocs, value);
     setFilteredData(filtered);
@@ -239,29 +313,68 @@ export const DanhSachMonHocComponents = () => {
     form.resetFields();
   };
 
-
-
   // Table configuration
   const columns = createTableColumns(handleEdit, handleDelete);
   const modalTitle = editingMaMh ? 'Cập nhật Môn học' : 'Thêm Môn học Mới';
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div className="p-4 sm:p-6 max-w-full overflow-hidden">
       <Header onCreateClick={handleCreate} />
       <SearchBar value={searchText} onChange={handleSearch} />
       <ErrorAlert error={error} />
       
       <Spin spinning={loading}>
-        <Table
-          columns={columns}
-          dataSource={filteredData}
-          rowKey="maMh"
-          pagination={{
-            pageSize: PAGE_SIZE,
-            current: currentPage,
-            onChange: setCurrentPage,
-          }}
-        />
+        {isMobile ? (
+          // Mobile view with cards
+          <div className="space-y-3">
+            {filteredData
+              .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+              .map(record => (
+                <MobileCard 
+                  key={record.maMh}
+                  record={record}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              ))
+            }
+            {filteredData.length > PAGE_SIZE && (
+              <div className="flex justify-center pt-4">
+                <div className="flex gap-2">
+                  {Array.from({ length: Math.ceil(filteredData.length / PAGE_SIZE) }, (_, i) => (
+                    <Button
+                      key={i + 1}
+                      type={currentPage === i + 1 ? "primary" : "default"}
+                      size="small"
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          // Desktop view with table
+          <div className="overflow-x-auto">
+            <Table
+              columns={columns}
+              dataSource={filteredData}
+              rowKey="maMh"
+              pagination={{
+                pageSize: PAGE_SIZE,
+                current: currentPage,
+                onChange: setCurrentPage,
+                showSizeChanger: false,
+                showQuickJumper: true,
+                showTotal: (total, range) => 
+                  `${range[0]}-${range[1]} của ${total} mục`,
+              }}
+              scroll={{ x: 800 }}
+            />
+          </div>
+        )}
       </Spin>
 
       <MonHocModal
