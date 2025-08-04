@@ -150,7 +150,7 @@ const MenuItem = ({ item, isExpanded, isOpen, toggleOpen, isMobile, onItemClick 
   );
 };
 
-const Sidebar = ({ role = 'admin', isExpanded, onToggle }) => {
+const Sidebar = ({ role, isExpanded, onToggle }) => {
   const [openMenus, setOpenMenus] = useState(new Set(['Dashboard']));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -297,51 +297,6 @@ const Sidebar = ({ role = 'admin', isExpanded, onToggle }) => {
   );
 };
 
-// Demo component to show how it works
-const App = () => {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [currentRole, setCurrentRole] = useState('admin');
 
-  return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar 
-        role={currentRole} 
-        isExpanded={isExpanded} 
-        onToggle={() => setIsExpanded(!isExpanded)} 
-      />
-      
-      <div className="flex-1 p-4 md:p-8 ml-0 md:ml-0">
-        <div className="bg-white rounded-lg shadow p-6 mt-16 md:mt-0">
-          <h1 className="text-2xl font-bold mb-4">Dashboard Content</h1>
-          <p className="text-gray-600 mb-4">
-            Sidebar sẽ tự động chuyển sang mobile menu khi màn hình nhỏ hơn 768px.
-          </p>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Chọn role để test:
-            </label>
-            <select 
-              value={currentRole} 
-              onChange={(e) => setCurrentRole(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2"
-            >
-              <option value="admin">Admin</option>
-              <option value="teacher">Teacher</option>
-              <option value="student">Student</option>
-            </select>
-          </div>
-          
-          <div className="text-sm text-gray-500">
-            <p>• Desktop: Sidebar collapse/expand như bình thường</p>
-            <p>• Mobile: Menu button ở góc trái trên, slide-out menu</p>
-            <p>• Tự động đóng menu khi click vào link</p>
-            <p>• Responsive với overlay và smooth animations</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-export default App;
+export default Sidebar;
