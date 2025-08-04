@@ -32,14 +32,12 @@ export const DanhSachDiemDiemSVComponents = () => {
     getDiemDanhByMonHoc(selectedMaMh, selectedNhomMh)
       .then((data) => {
         setDsDiemDanh(data);
-        console.log("Danh sách các buổi học điểm danh:", data);
       })
       .catch(error => {
-        console.error("Lỗi khi tải điểm danh:", error);
       })
       .finally(() => setLoading(false));
   } else {
-    console.log("selectedMaMh hoặc selectedNhomMh đang null", selectedMaMh, selectedNhomMh);
+    console.log("selectedMaMh hoặc selectedNhomMh   null", selectedMaMh, selectedNhomMh);
   }
 }, [selectedMaMh, selectedNhomMh]);
 
