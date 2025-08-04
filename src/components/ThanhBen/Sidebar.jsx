@@ -49,8 +49,8 @@ const menuItemsByRole = {
   student: [
     { title: 'Trang Chủ',  icon: <BookOpen size={20} />, path: '/sinh-vien/trang-chu' },
     { title: 'Điểm Danh QR', icon: <Calendar size={20} />, path: '/sinh-vien/quet-ma-qr' },
-    { title: 'Thời Khóa Biểu', icon: <ClipboardList size={20} />, path: '/sinh-vien/thoi-khoa-bieu' },
-    { title: 'Lịch Học Hôm Nay',  icon: <Calendar size={20} />, path: '/sinh-vien/lich-hoc' },
+    // { title: 'Thời Khóa Biểu', icon: <ClipboardList size={20} />, path: '/sinh-vien/thoi-khoa-bieu' },
+    // { title: 'Lịch Học Hôm Nay',  icon: <Calendar size={20} />, path: '/sinh-vien/lich-hoc' },
     { title: 'Lịch Sử Điểm Danh',  icon: <MessageSquare size={20} />, path: '/sinh-vien/lich-su-diem-danh' },
     { title: 'QR Code',  icon: <QrCode size={20} />, path: '/sinh-vien/ma-qr' },
     { title: 'Thông Tin Cá Nhân',  icon: <MessageSquare size={20} />, path: '/sinh-vien/thong-tin-ca-nhan' },
