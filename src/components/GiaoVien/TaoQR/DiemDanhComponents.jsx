@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Select, Button, Radio, InputNumber, Table, Form, message, Spin, Checkbox, Card, Typography, Divider, Popconfirm } from 'antd';
 import { QrcodeOutlined, DeleteOutlined, CopyOutlined, CameraOutlined } from '@ant-design/icons';
 import { QRCodeSVG } from 'qrcode.react';
@@ -6,6 +6,8 @@ import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { Modal, Input } from 'antd';
 import moment from 'moment';
+import * as faceapi from 'face-api.js';
+
 import {
   fetchHocKyList,
   fetchMonHocByGiaoVien,
@@ -18,7 +20,8 @@ import {
 } from '../../../services/GiaoVien/TaoQR/QrcodeService.js';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
 import { GiaoVienService } from '../../../services/GiaoVien/HoSo/GiaoVienService.js';
-
+import Webcam from 'react-webcam';
+import { use } from 'react';
 
 const { Option } = Select;
 const { Text, Title } = Typography;
@@ -43,7 +46,6 @@ export const DiemDanhComponents = () => {
   const [isCheckedDiemDanh, setIsCheckedDiemDanh] = useState(false);
   const [isCheckedDiemDanh2, setIsCheckedDiemDanh2] = useState(false);
 
-
   const [thoiGianHetHan, setThoiGianHetHan] = useState(5);
   const [ghiChuThuCong, setGhiChuThuCong] = useState({});
   const [soLanDiemDanh, setSoLanDiemDanh] = useState(0);
@@ -58,6 +60,13 @@ export const DiemDanhComponents = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [lastScanned, setLastScanned] = useState(null);
   const [startCamera, setStartCamera] = useState(false);
+
+  //Điểm danh khuôn mặt
+  const webcamRef = useRef(null);
+  const [showFaceModal, setShowFaceModal] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [hasDetectedSuccess, setHasDetectedSuccess] = useState(false);
 
   // Loading states
   const [loading, setLoading] = useState({
@@ -79,6 +88,88 @@ export const DiemDanhComponents = () => {
     });
     return count;
   };
+
+  //hook dùng face api
+  useEffect(() => {
+    const loadModels = async () => {
+      const MODEL_URL = '/models';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
+      ]);
+      console.log("Face-api.js models đã load xong");
+    };
+
+    loadModels();
+  }, []);
+
+  //hook xử lý điểm danh nhận diện khuôn mặt
+  useEffect(() => {
+    let interval;
+
+    if (
+      mode === 'detectFace' &&
+      startCamera &&
+      cameraReady &&
+      !isDetecting &&
+      !hasDetectedSuccess
+    ) {
+      interval = setInterval(async () => {
+        if (webcamRef.current?.video) {
+          const video = webcamRef.current.video;
+
+          const detections = await faceapi.detectAllFaces(
+            video,
+            new faceapi.TinyFaceDetectorOptions()
+          );
+
+          if (detections.length > 0) {
+            const canvas = faceapi.createCanvasFromMedia(video);
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(async (blob) => {
+              if (!blob) return;
+              const file = new File([blob], 'face.jpg', { type: 'image/jpeg' });
+
+              const selectedNgayData = ngayList.find(
+                (ngay) => ngay.maTkb === selectedNgay
+              );
+              const requestData = {
+                maTkb: selectedNgayData.maTkb,
+                ngayHoc: selectedNgayData.ngayHoc,
+                ghiChu: 'Điểm danh bằng khuôn mặt',
+              };
+
+              try {
+                setIsDetecting(true);
+                const result = await GiaoVienService.diemDanhFace(file, requestData);
+                if (result === 'Điểm danh thành công') {
+                  setHasDetectedSuccess(true);
+                  message.success('Điểm danh thành công');
+                  await handleThuCong();
+                } else {
+                  message.warning(result || 'Không xác định được khuôn mặt');
+                }
+              } catch (error) {
+                console.error('Lỗi điểm danh khuôn mặt:', error);
+                const backendMessage = error?.response?.data?.message ||
+                  error?.response?.data || 'Điểm danh nhận diện khuôn mặt thất bại';
+                message.error(backendMessage);
+              } finally {
+                setIsDetecting(false);
+              }
+            }, 'image/jpeg');
+          }
+        }
+      }, 1500);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [mode, startCamera, cameraReady, isDetecting, hasDetectedSuccess, webcamRef]);
 
   useEffect(() => {
     setIsCheckedDiemDanh(true);
@@ -105,7 +196,7 @@ export const DiemDanhComponents = () => {
     if (mode === 'qr' && qrCodeData && !qrCodeExpired && selectedNgayData) {
       intervalId = setInterval(() => {
         handleThuCong();
-      }, 3000)
+      }, 2000)
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
@@ -142,6 +233,7 @@ export const DiemDanhComponents = () => {
 
       setIsScanning(true);
       setLastScanned(qrData);
+
       try {
         await processAttendance(qrData);
       } catch (error) {
@@ -208,8 +300,8 @@ export const DiemDanhComponents = () => {
       const requestData = {
         maSv,
         maTkb: selectedNgayData.maTkb,
-        ngayHoc: new Date().toISOString().split('T')[0],
-        //ngayHoc:selectedNgayData.ngayHoc
+        //ngayHoc: new Date().toISOString().split('T')[0],
+        ngayHoc: selectedNgayData.ngayHoc
       };
 
       await GiaoVienService.diemdanhQRSinhVien(requestData);
@@ -673,38 +765,6 @@ const handleMonHocChange = async (value) => {
         const maSv = record.maSv;
         const isSelected = selectedStudents.includes(maSv) || selectedStudents2.includes(maSv);
         const currentValue = ghiChuThuCong[maSv] ?? ghiChu ?? '';
-
-        return (
-          <div
-            contentEditable={isSelected}
-            suppressContentEditableWarning={true}
-            style={{
-              fontSize: 13,
-              fontWeight: 'bold',
-              padding: '4px 6px',
-              border: isSelected ? '1px solid #d9d9d9' : 'none',
-              borderRadius: 4,
-              backgroundColor: isSelected ? '#fefefe' : 'transparent',
-              cursor: isSelected ? 'text' : 'default',
-              minHeight: 30
-            }}
-            onBlur={(e) => {
-              const value = e.target.innerText.trim();
-              setGhiChuThuCong(prev => ({
-                ...prev,
-                [maSv]: value
-              }));
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.currentTarget.blur();
-              }
-            }}
-          >
-            {currentValue}
-          </div>
-        );
       }
     }
   ];
@@ -789,23 +849,71 @@ const handleMonHocChange = async (value) => {
         </Form.Item>
 
         <Form.Item label="Chọn phương thức điểm danh">
-          <Radio.Group value={mode} onChange={(e) => setMode(e.target.value)}>
-            <Radio.Button value="thuCong">Thủ công</Radio.Button>
-            <Radio.Button value="qr">Tạo QR</Radio.Button>
-            <Radio.Button onClick={() => {
+          <Radio.Group className='flex gap-4' value={mode} onChange={(e) => setMode(e.target.value)}>
+            <Radio.Button className='bg-transparent hover:bg-blue-400 text-blue-700 hover:!text-white rounded hover:font-bold' value="thuCong">Thủ công</Radio.Button>
+            <Radio.Button className='bg-transparent hover:bg-blue-400 text-blue-700 hover:!text-white rounded hover:font-bold' value="qr">Tạo QR</Radio.Button>
+            <Radio.Button className='bg-transparent hover:bg-blue-400 text-blue-700 hover:!text-white rounded hover:font-bold'
+              onClick={() => {
               setShowScanner(true);
               setSoLanDiemDanh(prev => prev + 1);
               setStartCamera(false);
             }} value="svqr">Quét mã</Radio.Button>
+            <Radio.Button className='bg-transparent hover:bg-blue-400 text-blue-700 hover:!text-white rounded hover:font-bold'
+                onClick={() => {
+                setMode("detectFace");
+                setShowFaceModal(true);
+                setShowScanner(false);
+                setStartCamera(false);
+                setHasDetectedSuccess(false);
+              }}
+              value="detectFace"
+            >Nhận diện khuôn mặt</Radio.Button>
           </Radio.Group>
-          {/* <div className="mt-8">
-            Đã điểm danh: <strong>{soLuongDaDiemDanh()}</strong> / <strong>{danhSachSinhVien.length}</strong> sinh viên lần <strong>...</strong>
-          </div> */}
+          <div className="mt-8">
+            Đã điểm danh: <strong>{soLuongDaDiemDanh()}</strong> / <strong>{danhSachSinhVien.length}</strong> sinh viên<strong></strong>
+          </div>
         </Form.Item>
+        {mode == 'detectFace' && (
+          <Modal
+            title="Điểm danh bằng nhận diện khuôn mặt"
+            open={showFaceModal}
+            onCancel={() => {
+              setShowFaceModal(false);
+              setStartCamera(false);
+            }}
+            footer={null}
+            width={450}
+          >
+            <div className="text-center">
+              {!startCamera ? (
+                <Button
+                  type="primary"
+                  icon={<CameraOutlined />}
+                  onClick={() => setStartCamera(true)}
+                  className="mb-3"
+                >
+                  Bật camera
+                </Button>
+              ) : (
+                <>
+                  <Webcam
+                    ref={webcamRef}
+                    audio={false}
+                    screenshotFormat="image/jpeg"
+                    width={400}
+                    videoConstraints={{ facingMode: "user" }}
+                    onUserMedia={() => setCameraReady(true)}
+                  />
+                  <p className="mt-3 text-gray-600">Đang nhận diện khuôn mặt...</p>
+                </>
+              )}
+            </div>
+          </Modal>
+        )}
         {mode === 'svqr' && (
           <>
             <Modal
-              title={`Quét mã QR sinh viên - lần ${soLanDiemDanh}`}
+              title={`Quét mã QR sinh viên`}
               open={showScanner}
               onCancel={stopScanning}
               footer={null}
@@ -835,7 +943,7 @@ const handleMonHocChange = async (value) => {
                       onError={handleError}
                       constraints={{
                         video: {
-                          facingMode: 'user' // Camera trước
+                          facingMode: 'user'
                         }
                       }}
                       components={{

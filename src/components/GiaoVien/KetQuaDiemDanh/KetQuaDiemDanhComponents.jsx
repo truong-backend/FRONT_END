@@ -103,7 +103,7 @@ export default function KetQuaDiemDanhComponents() {
         <Table
           dataSource={dataMonHoc}
           columns={columnsMonHoc}
-          rowKey="maMh"
+          rowKey={(record) => `${record.maMh}-${record.nmh}`}
           pagination={false}
         />
       </div>
