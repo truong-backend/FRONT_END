@@ -48,35 +48,15 @@ export const ThemSinhVienComponent = () => {
 
   // ThoiKhoaBieu states
   const [tkbModalVisible, setTkbModalVisible] = useState(false);
+  const [tkbForm] = Form.useForm();
   const [creatingTkb, setCreatingTkb] = useState(false);
   const [deletingTkb, setDeletingTkb] = useState(false);
   const [tkbList, setTkbList] = useState([]);
   const [loadingTkb, setLoadingTkb] = useState(false);
   const [tkbSearchText, setTkbSearchText] = useState('');
 
-  // Shared form instances - consolidate forms that can be reused
-  const [sharedForm] = Form.useForm(); // For TKB and other operations
-  const [bulkStudentInput, setBulkStudentInput] = useState(''); // For bulk student input
-
   const { user } = useAuth();
   const maGv = user.maGv || user.username || user.id;
-
-  // Shared search component - can be reused across different tables
-  const SearchInput = useMemo(() => ({ 
-    placeholder, 
-    value, 
-    onChange, 
-    style = { width: 300 } 
-  }) => (
-    <Input
-      placeholder={placeholder}
-      prefix={<SearchOutlined />}
-      value={value}
-      onChange={onChange}
-      style={style}
-      allowClear
-    />
-  ), []);
 
   // Fetch functions
   const fetchLichGdList = useCallback(async (maGv) => {
@@ -129,30 +109,23 @@ export const ThemSinhVienComponent = () => {
     ]);
   }, [fetchLichGdList, maGv]);
 
-  // Shared filter function - can be used for different data types
-  const createFilterFunction = useCallback((searchFields) => {
-    return (data, searchText) => {
-      if (!searchText) return data;
-      const search = searchText.toLowerCase();
-      return data.filter(item => 
-        searchFields.some(field => {
-          const value = field.split('.').reduce((obj, key) => obj?.[key], item);
-          return value?.toString().toLowerCase().includes(search);
-        })
-      );
-    };
-  }, []);
-
-  // Filter functions using shared filter logic
+  // Filter functions
   const filteredAvailableStudents = useMemo(() => {
-    const filterFn = createFilterFunction(['maSv', 'tenSv', 'email']);
-    return filterFn(availableStudents, studentSearchText);
-  }, [studentSearchText, availableStudents, createFilterFunction]);
+    if (!studentSearchText) return availableStudents;
+    return availableStudents.filter(sv => {
+      const search = studentSearchText.toLowerCase();
+      return (
+        sv.maSv?.toLowerCase().includes(search) ||
+        sv.tenSv?.toLowerCase().includes(search) ||
+        sv.email?.toLowerCase().includes(search)
+      );
+    });
+  }, [studentSearchText, availableStudents]);
 
   const filteredEnrolledStudents = useMemo(() => {
     if (!enrolledStudentSearchText) return enrolledStudents;
-    const search = enrolledStudentSearchText.toLowerCase();
     return enrolledStudents.filter((sv) => {
+      const search = enrolledStudentSearchText.toLowerCase();
       const studentInfo = studentList.find(s => s.maSv === sv.maSv);
       return (
         sv.maSv?.toLowerCase().includes(search) ||
@@ -162,10 +135,21 @@ export const ThemSinhVienComponent = () => {
     });
   }, [enrolledStudentSearchText, enrolledStudents, studentList]);
 
+  const filteredTkbList = useMemo(() => {
+    if (!tkbSearchText) return tkbList;
+    return tkbList.filter(tkb => {
+      const search = tkbSearchText.toLowerCase();
+      return (
+        tkb.phongHoc?.toLowerCase().includes(search) ||
+        moment(tkb.ngayHoc).format('DD/MM/YYYY').includes(search) ||
+        tkb.stBd?.toString().includes(search) ||
+        tkb.stKt?.toString().includes(search)
+      );
+    });
+  }, [tkbSearchText, tkbList]);
 
-
-  // Shared search functionality
-  const handleLichGDSearch = useCallback((e) => {
+  // Search functionality
+  const handleSearch = useCallback((e) => {
     const value = e.target.value.toLowerCase();
     setSearchText(value);
 
@@ -180,33 +164,6 @@ export const ThemSinhVienComponent = () => {
       setData(filtered);
     }
   }, [originalData]);
-
-  // Shared bulk student input handler
-  const handleBulkStudentInput = useCallback((value) => {
-    setBulkStudentInput(value);
-    
-    const lines = value
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line !== '');
-
-    const uniqueMaSv = [...new Set(lines)];
-
-    const matchedStudents = availableStudents.filter(sv =>
-      uniqueMaSv.includes(sv.maSv)
-    );
-
-    const notFound = uniqueMaSv.filter(ma => !matchedStudents.some(sv => sv.maSv === ma));
-    if (notFound.length > 0 && lines.length > 0) {
-      message.warning(`Không tìm thấy: ${notFound.join(', ')}`);
-    }
-
-    const newSelections = matchedStudents.filter(
-      sv => !selectedStudentsToAdd.some(sel => sel.maSv === sv.maSv)
-    );
-
-    setSelectedStudentsToAdd(prev => [...prev, ...newSelections]);
-  }, [availableStudents, selectedStudentsToAdd]);
 
   // Student management functions
   const handleXoaSinhVien = useCallback(async (maSv) => {
@@ -233,10 +190,13 @@ export const ThemSinhVienComponent = () => {
   }, [currentMaGd, fetchEnrolledStudents, fetchAvailableStudents, addStudentModalVisible]);
 
   const openAddStudentModal = async () => {
+    if (!currentMaGd) {
+      message.error('Không tìm thấy mã giảng dạy');
+      return;
+    }
 
     setSelectedStudentsToAdd([]);
     setStudentSearchText('');
-    setBulkStudentInput('');
     await fetchAvailableStudents(currentMaGd);
     setAddStudentModalVisible(true);
   };
@@ -245,7 +205,6 @@ export const ThemSinhVienComponent = () => {
     setAddStudentModalVisible(false);
     setSelectedStudentsToAdd([]);
     setAvailableStudents([]);
-    setBulkStudentInput('');
   };
 
   const handleAddStudentsConfirm = async () => {
@@ -273,14 +232,6 @@ export const ThemSinhVienComponent = () => {
     }
   };
 
-  // Shared modal close handler
-  const handleModalClose = useCallback((modalSetter, resetForm = false) => {
-    modalSetter(false);
-    if (resetForm) {
-      sharedForm.resetFields();
-    }
-  }, [sharedForm]);
-
   // ThoiKhoaBieu functions
   const handleAddTKB = () => {
     setTkbModalVisible(true);
@@ -291,7 +242,10 @@ export const ThemSinhVienComponent = () => {
     try {
       const { thu } = values;
 
-      
+      if (!currentMaGd || !selectedRecord?.maMh) {
+        message.error('Không đủ thông tin để tạo thời khóa biểu');
+        return;
+      }
 
       if (!thu || thu.length === 0) {
         message.error('Vui lòng chọn ít nhất một thứ');
@@ -314,7 +268,8 @@ export const ThemSinhVienComponent = () => {
 
       message.success(`Đã tạo thành công ${Array.isArray(result) ? result.length : 'các'} buổi học cho các thứ: ${selectedThuNames}`);
 
-      handleModalClose(setTkbModalVisible, true);
+      setTkbModalVisible(false);
+      tkbForm.resetFields();
       await fetchTkbByMaGd(currentMaGd);
 
     } catch (error) {
@@ -354,12 +309,6 @@ export const ThemSinhVienComponent = () => {
     ]);
     setDetailModalVisible(true);
   }, [fetchEnrolledStudents, fetchTkbByMaGd]);
-
-  // Shared table configuration for pagination
-  const defaultPaginationConfig = useMemo(() => ({
-    showSizeChanger: true,
-    showQuickJumper: true,
-  }), []);
 
   // Table columns
   const columns = useMemo(() => [
@@ -569,41 +518,18 @@ export const ThemSinhVienComponent = () => {
     },
   ], []);
 
-  // Shared information display component
-  const InfoPanel = useMemo(() => ({ record }) => (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      gap: 48,
-      padding: '16px',
-      backgroundColor: '#f0f8ff',
-      borderRadius: '6px'
-    }}>
-      <div style={{ textAlign: 'left' }}>
-        <p><strong>Giáo viên:</strong> {record.tenGv}</p>
-        <p><strong>Môn học:</strong> {record.tenMh} ({record.maMh})</p>
-        <p><strong>Nhóm MH:</strong> {record.nmh}</p>
-      </div>
-      <div style={{ textAlign: 'left' }}>
-        <p><strong>Phòng học:</strong> {record.phongHoc}</p>
-        <p><strong>Thời gian:</strong> {moment(record.ngayBd).format('DD/MM/YYYY')} - {moment(record.ngayKt).format('DD/MM/YYYY')}</p>
-        <p><strong>Tiết học:</strong> {record.stBd} - {record.stKt}</p>
-      </div>
-      <div style={{ textAlign: 'left' }}>
-        <p><strong>Học kỳ:</strong> {record.hocKy}</p>
-      </div>
-    </div>
-  ), []);
-
   return (
     <div>
       <h2>QUẢN LÝ LỊCH GIẢNG DẠY</h2>
 
       <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-        <SearchInput
+        <Input
           placeholder="Tìm kiếm theo tên GV hoặc tên MH"
+          prefix={<SearchOutlined />}
           value={searchText}
-          onChange={handleLichGDSearch}
+          onChange={handleSearch}
+          style={{ width: 300 }}
+          allowClear
         />
       </div>
 
@@ -615,7 +541,8 @@ export const ThemSinhVienComponent = () => {
         scroll={{ x: 1400 }}
         pagination={{
           pageSize: 10,
-          ...defaultPaginationConfig,
+          showSizeChanger: true,
+          showQuickJumper: true,
           showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} bản ghi`,
         }}
       />
@@ -635,7 +562,28 @@ export const ThemSinhVienComponent = () => {
         {selectedRecord && (
           <div>
             <div style={{ marginBottom: 16 }}>
-              <InfoPanel record={selectedRecord} />
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 48,
+                padding: '16px',
+                backgroundColor: '#f0f8ff',
+                borderRadius: '6px'
+              }}>
+                <div style={{ textAlign: 'left' }}>
+                  <p><strong>Giáo viên:</strong> {selectedRecord.tenGv}</p>
+                  <p><strong>Môn học:</strong> {selectedRecord.tenMh} ({selectedRecord.maMh})</p>
+                  <p><strong>Nhóm MH:</strong> {selectedRecord.nmh}</p>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
+                  <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).format('DD/MM/YYYY')}</p>
+                  <p><strong>Tiết học:</strong> {selectedRecord.stBd} - {selectedRecord.stKt}</p>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <p><strong>Học kỳ:</strong> {selectedRecord.hocKy}</p>
+                </div>
+              </div>
             </div>
 
             <Tabs defaultActiveKey="1">
@@ -644,8 +592,10 @@ export const ThemSinhVienComponent = () => {
                   <h3>Danh sách sinh viên đã đăng ký ({enrolledStudents.length} sinh viên):</h3>
                   
                   <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-                    <SearchInput
+                    <Input
                       placeholder="Tìm kiếm sinh viên đã đăng ký (MSSV, tên, email)"
+                      prefix={<SearchOutlined />}
+                      allowClear
                       value={enrolledStudentSearchText}
                       onChange={(e) => setEnrolledStudentSearchText(e.target.value)}
                       style={{ width: 400 }}
@@ -661,7 +611,7 @@ export const ThemSinhVienComponent = () => {
                     dataSource={filteredEnrolledStudents}
                     pagination={{
                       pageSize: 5,
-                      ...defaultPaginationConfig,
+                      showSizeChanger: true,
                       showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} sinh viên`,
                     }}
                   />
@@ -673,8 +623,10 @@ export const ThemSinhVienComponent = () => {
                   <h3>Danh sách thời khóa biểu</h3>
                   
                   <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-                    <SearchInput
+                    <Input
                       placeholder="Tìm kiếm theo phòng học, ngày học, tiết học"
+                      prefix={<SearchOutlined />}
+                      allowClear
                       value={tkbSearchText}
                       onChange={(e) => setTkbSearchText(e.target.value)}
                       style={{ width: 400 }}
@@ -704,11 +656,11 @@ export const ThemSinhVienComponent = () => {
                   <Table
                     rowKey="id"
                     columns={tkbColumns}
-                    dataSource={tkbList}
+                    dataSource={filteredTkbList}
                     loading={loadingTkb}
                     pagination={{
                       pageSize: 10,
-                      ...defaultPaginationConfig,
+                      showSizeChanger: true,
                       showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} buổi học`,
                     }}
                   />
@@ -730,11 +682,12 @@ export const ThemSinhVienComponent = () => {
         width={800}
       >
         <div style={{ marginBottom: 16 }}>
-          <SearchInput
+          <Input
             placeholder="Tìm kiếm sinh viên theo mã SV, tên hoặc email"
+            prefix={<SearchOutlined />}
             value={studentSearchText}
-            onChange={(e) => setStudentSearchText(e.target.value)} 
-            style={{ width: '100%' }}
+            onChange={(e) => setStudentSearchText(e.target.value)}
+            allowClear
           />
         </div>
 
@@ -743,9 +696,29 @@ export const ThemSinhVienComponent = () => {
           <Input.TextArea
             rows={4}
             placeholder="VD:\nSV001\nSV002\nSV003"
-            value={bulkStudentInput}
-            onChange={(e) => setBulkStudentInput(e.target.value)}
-            onBlur={(e) => handleBulkStudentInput(e.target.value)}
+            onBlur={(e) => {
+              const lines = e.target.value
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line !== '');
+
+              const uniqueMaSv = [...new Set(lines)];
+
+              const matchedStudents = availableStudents.filter(sv =>
+                uniqueMaSv.includes(sv.maSv)
+              );
+
+              const notFound = uniqueMaSv.filter(ma => !matchedStudents.some(sv => sv.maSv === ma));
+              if (notFound.length > 0) {
+                message.warning(`Không tìm thấy: ${notFound.join(', ')}`);
+              }
+
+              const newSelections = matchedStudents.filter(
+                sv => !selectedStudentsToAdd.some(sel => sel.maSv === sv.maSv)
+              );
+
+              setSelectedStudentsToAdd(prev => [...prev, ...newSelections]);
+            }}
           />
         </div>
 
@@ -755,7 +728,7 @@ export const ThemSinhVienComponent = () => {
           dataSource={filteredAvailableStudents}
           pagination={{
             pageSize: 5,
-            ...defaultPaginationConfig,
+            showSizeChanger: true,
             showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} sinh viên`,
           }}
         />
@@ -763,17 +736,10 @@ export const ThemSinhVienComponent = () => {
         <div style={{ marginTop: 16 }}>
           <p><strong>Đã chọn:</strong> {selectedStudentsToAdd.length} sinh viên</p>
           {selectedStudentsToAdd.length > 0 && (
-           <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #d9d9d9', padding: 8, borderRadius: 4 }}>
+            <div style={{ maxHeight: 100, overflow: 'auto', border: '1px solid #d9d9d9', padding: 8 }}>
               {selectedStudentsToAdd.map(student => (
-                <div key={student.maSv} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span>{student.maSv} - {student.tenSv}</span>
-                  <Button 
-                    size="small" 
-                    danger 
-                    onClick={() => setSelectedStudentsToAdd(selectedStudentsToAdd.filter(s => s.maSv !== student.maSv))}
-                  >
-                    Xóa
-                  </Button>
+                <div key={student.maSv} style={{ marginBottom: 4 }}>
+                  {student.maSv} - {student.tenSv}
                 </div>
               ))}
             </div>
@@ -781,49 +747,69 @@ export const ThemSinhVienComponent = () => {
         </div>
       </Modal>
 
-      {/* TKB Modal */}
+      {/* Add TKB Modal */}
       <Modal
         title="Thêm thời khóa biểu"
         open={tkbModalVisible}
-        onCancel={() => handleModalClose(setTkbModalVisible, true)}
-        footer={null}
-        width={600}
+        onCancel={() => {
+          setTkbModalVisible(false);
+          tkbForm.resetFields();
+        }}
+        onOk={() => {
+          tkbForm
+            .validateFields()
+            .then(values => {
+              handleCreateTkb(values);
+            })
+            .catch(err => {
+              console.error('❌ Lỗi validate:', err);
+            });
+        }}
+        okText="Tạo thời khóa biểu"
+        cancelText="Hủy"
+        confirmLoading={creatingTkb}
+        destroyOnClose={true}
       >
-        <Form
-          form={sharedForm}
-          layout="vertical"
-          onFinish={handleCreateTkb}
-        >
+        <Form form={tkbForm} layout="vertical">
           <Form.Item
             name="thu"
-            label="Chọn các thứ trong tuần"
-            rules={[{ required: true, message: 'Vui lòng chọn ít nhất một thứ!' }]}
+            label="Chọn thứ"
+            rules={[{
+              required: true,
+              message: 'Vui lòng chọn ít nhất một thứ'
+            }]}
           >
             <Select
               mode="multiple"
-              placeholder="Chọn các thứ"
+              placeholder="Chọn một hoặc nhiều thứ"
               style={{ width: '100%' }}
+              maxTagCount="responsive"
+              allowClear
             >
-              <Option value={1}>Thứ hai</Option>
-              <Option value={2}>Thứ ba</Option>
-              <Option value={3}>Thứ tư</Option>
-              <Option value={4}>Thứ năm</Option>
-              <Option value={5}>Thứ sáu</Option>
-              <Option value={6}>Thứ bảy</Option>
-              <Option value={7}>Chủ nhật</Option>
+              <Option value={1}>Thứ Hai</Option>
+              <Option value={2}>Thứ Ba</Option>
+              <Option value={3}>Thứ Tư</Option>
+              <Option value={4}>Thứ Năm</Option>
+              <Option value={5}>Thứ Sáu</Option>
+              <Option value={6}>Thứ Bảy</Option>
+              <Option value={7}>Chủ Nhật</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item style={{ textAlign: 'right', marginBottom: 0 }}>
-            <Space>
-              <Button onClick={() => handleModalClose(setTkbModalVisible, true)}>
-                Hủy
-              </Button>
-              <Button type="primary" htmlType="submit" loading={creatingTkb}>
-                Tạo thời khóa biểu
-              </Button>
-            </Space>
-          </Form.Item>
+          {selectedRecord && (
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '6px',
+              marginTop: '16px'
+            }}>
+              <h4>Thông tin lịch giảng dạy:</h4>
+              <p><strong>Môn học:</strong> {selectedRecord.tenMh} ({selectedRecord.maMh})</p>
+              <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
+              <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).format('DD/MM/YYYY')}</p>
+              <p><strong>Tiết:</strong> {selectedRecord.stBd} - {selectedRecord.stKt}</p>
+            </div>
+          )}
         </Form>
       </Modal>
     </div>
