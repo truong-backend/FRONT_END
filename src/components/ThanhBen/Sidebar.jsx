@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -23,7 +23,7 @@ import {
   UserCheck,
   User,
   Menu,
-  X,
+  X
 } from 'lucide-react';
 
 const menuItemsByRole = {
@@ -43,33 +43,41 @@ const menuItemsByRole = {
     { title: 'Điểm Danh', icon: <QrCode size={20} />, path: '/giao-vien/diem-danh' },
     { title: 'Kết Quả Điểm Danh',  icon: <UserCheck size={20} />, path: '/giao-vien/ket-qua-diem-danh' },
     { title: 'Lịch học & Sinh viên',  icon: <Calendar size={20} />, path: '/giao-vien/them-sinh-vien' },
-    // { title: 'Quản lý thời khóa biểu', shortTitle: 'QLTKB', icon: <Calendar size={20} />, path: '/giao-vien/thoi-khoa-bieu' },
     { title: 'Thông Tin Cá Nhân', icon: <User size={20} />, path: '/giao-vien/thong-tin-ca-nhan' },
   ],
   student: [
     { title: 'Trang Chủ',  icon: <BookOpen size={20} />, path: '/sinh-vien/trang-chu' },
     { title: 'Điểm Danh QR', icon: <Calendar size={20} />, path: '/sinh-vien/quet-ma-qr' },
-    // { title: 'Thời Khóa Biểu', icon: <ClipboardList size={20} />, path: '/sinh-vien/thoi-khoa-bieu' },
-    // { title: 'Lịch Học Hôm Nay',  icon: <Calendar size={20} />, path: '/sinh-vien/lich-hoc' },
+    { title: 'Thời Khóa Biểu', icon: <ClipboardList size={20} />, path: '/sinh-vien/thoi-khoa-bieu' },
+    { title: 'Lịch Học Hôm Nay',  icon: <Calendar size={20} />, path: '/sinh-vien/lich-hoc' },
     { title: 'Lịch Sử Điểm Danh',  icon: <MessageSquare size={20} />, path: '/sinh-vien/lich-su-diem-danh' },
     { title: 'QR Code',  icon: <QrCode size={20} />, path: '/sinh-vien/ma-qr' },
     { title: 'Thông Tin Cá Nhân',  icon: <MessageSquare size={20} />, path: '/sinh-vien/thong-tin-ca-nhan' },
   ]
 };
 
-const MenuItem = ({ item, isExpanded, isOpen, toggleOpen, isMobile, onMobileClose }) => {
+const MenuItem = ({ item, isExpanded, isOpen, toggleOpen, isMobile, onItemClick }) => {
   const location = useLocation();
   const hasSubItems = item.subItems && item.subItems.length > 0;
   const isActive = location.pathname === item.path || 
     (hasSubItems && item.subItems.some(subItem => location.pathname === subItem.path));
+
+  const handleClick = () => {
+    if (isMobile && onItemClick) {
+      onItemClick();
+    }
+    if (hasSubItems) {
+      toggleOpen();
+    }
+  };
 
   const renderLink = (content, path) => {
     if (path) {
       return (
         <Link
           to={path}
-          onClick={() => isMobile && onMobileClose && onMobileClose()}
-          className={`flex items-center px-4 py-3 transition-colors ${
+          onClick={() => isMobile && onItemClick && onItemClick()}
+          className={`flex items-center px-3 py-3 md:px-4 transition-colors duration-200 ${
             isActive 
               ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
               : 'text-gray-700 hover:bg-gray-100'
@@ -81,11 +89,8 @@ const MenuItem = ({ item, isExpanded, isOpen, toggleOpen, isMobile, onMobileClos
     }
     return (
       <div
-        onClick={(e) => {
-          e.preventDefault();
-          if (hasSubItems) toggleOpen();
-        }}
-        className={`flex items-center px-4 py-3 cursor-pointer transition-colors ${
+        onClick={handleClick}
+        className={`flex items-center px-3 py-3 md:px-4 cursor-pointer transition-colors duration-200 ${
           isOpen ? 'bg-gray-50' : ''
         } ${isActive ? 'text-blue-600' : 'text-gray-700'} hover:bg-gray-100`}
       >
@@ -96,14 +101,14 @@ const MenuItem = ({ item, isExpanded, isOpen, toggleOpen, isMobile, onMobileClos
 
   const content = (
     <>
-      <span className="text-lg">{item.icon}</span>
-      {isExpanded || isMobile ? (
+      <span className="text-lg flex-shrink-0">{item.icon}</span>
+      {(isExpanded || isMobile) ? (
         <>
-          <span className="ml-3 flex-1">{item.title}</span>
+          <span className="ml-3 flex-1 text-sm md:text-base">{item.title}</span>
           {hasSubItems && (
             <ChevronDown
               size={16}
-              className={`transition-transform duration-200 ${
+              className={`transition-transform duration-200 flex-shrink-0 ${
                 isOpen ? 'transform rotate-180' : ''
               }`}
             />
@@ -121,19 +126,19 @@ const MenuItem = ({ item, isExpanded, isOpen, toggleOpen, isMobile, onMobileClos
 
       {/* Submenu */}
       {hasSubItems && (isExpanded || isMobile) && isOpen && (
-        <div>
+        <div className="bg-gray-50">
           {item.subItems.map((subItem, index) => (
             <Link
               key={index}
               to={subItem.path}
-              onClick={() => isMobile && onMobileClose && onMobileClose()}
-              className={`flex items-center px-4 py-2 text-sm transition-colors rounded-lg ${
+              onClick={() => isMobile && onItemClick && onItemClick()}
+              className={`flex items-center px-6 py-2 md:px-8 text-sm transition-colors duration-200 ${
                 location.pathname === subItem.path
                   ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              <span className={location.pathname === subItem.path ? 'text-blue-500' : 'text-gray-500'}>
+              <span className={`flex-shrink-0 ${location.pathname === subItem.path ? 'text-blue-500' : 'text-gray-500'}`}>
                 {subItem.icon}
               </span>
               <span className="ml-2">{subItem.title}</span>
@@ -145,9 +150,29 @@ const MenuItem = ({ item, isExpanded, isOpen, toggleOpen, isMobile, onMobileClos
   );
 };
 
-const Sidebar = ({ role, isExpanded, onToggle }) => {
+const Sidebar = ({ role = 'admin', isExpanded, onToggle }) => {
   const [openMenus, setOpenMenus] = useState(new Set(['Dashboard']));
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Close mobile menu when screen size changes to desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileMenuOpen(false);
+    }
+  }, [isMobile]);
 
   const toggleMenu = (title) => {
     setOpenMenus((prev) => {
@@ -161,101 +186,162 @@ const Sidebar = ({ role, isExpanded, onToggle }) => {
     });
   };
 
-  const toggleMobile = () => {
-    setIsMobileOpen(!isMobileOpen);
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const closeMobile = () => {
-    setIsMobileOpen(false);
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
   };
 
-  return (
-    <>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={toggleMobile}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-      >
-        {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
-      {/* Mobile Overlay */}
-      {isMobileOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={closeMobile}
-        />
-      )}
-
-      <div
-        className={`
-          relative bg-white shadow-lg transition-all duration-300 ease-in-out z-40
-          
-          /* Mobile: Fixed overlay sidebar */
-          lg:relative fixed top-0 left-0 h-screen
-          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          w-64 lg:w-auto
-          
-          /* Desktop: Collapsible sidebar */
-          ${isExpanded ? 'lg:w-64' : 'lg:w-16'}
-        `}
-      >
-        {/* Sidebar Header */}
-        <div className="p-4 border-b">
-          <h2 className={`font-bold text-gray-800 ${!isExpanded && 'lg:hidden'}`}>
-            Menu
-          </h2>
-        </div>
-
-        {/* Menu Items */}
-        <nav className="mt-4 pb-4 overflow-y-auto max-h-screen">
-          {menuItemsByRole[role]?.map((item, index) => (
-            <MenuItem
-              key={index}
-              item={item}
-              isExpanded={isExpanded}
-              isOpen={openMenus.has(item.title)}
-              toggleOpen={() => toggleMenu(item.title)}
-              isMobile={true}
-              onMobileClose={closeMobile}
-            />
-          ))}
-        </nav>
-
-        {/* Desktop Toggle Button - chỉ hiện trên desktop */}
+  // Mobile menu button
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile Menu Button */}
         <button
-          onClick={onToggle}
-          className="hidden lg:block absolute -right-3 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-all duration-300"
+          onClick={toggleMobileMenu}
+          className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200 md:hidden"
         >
-          <div
-            className={`transform transition-transform duration-300 ${
-              isExpanded ? 'rotate-0' : 'rotate-180'
-            }`}
-          >
-            {'❯'}
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {/* Mobile Overlay */}
+        {isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            onClick={closeMobileMenu}
+          />
+        )}
+
+        {/* Mobile Sidebar */}
+        <div
+          className={`fixed top-0 left-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 md:hidden ${
+            isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          {/* Mobile Header */}
+          <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+            <h2 className="font-bold text-gray-800 text-lg">Menu</h2>
+            <button
+              onClick={closeMobileMenu}
+              className="p-1 hover:bg-gray-200 rounded transition-colors duration-200"
+            >
+              <X size={20} />
+            </button>
           </div>
-        </button> 
+
+          {/* Mobile Menu Items */}
+          <nav className="flex-1 overflow-y-auto">
+            <div className="py-2">
+              {menuItemsByRole[role]?.map((item, index) => (
+                <MenuItem
+                  key={index}
+                  item={item}
+                  isExpanded={true}
+                  isOpen={openMenus.has(item.title)}
+                  toggleOpen={() => toggleMenu(item.title)}
+                  isMobile={true}
+                  onItemClick={closeMobileMenu}
+                />
+              ))}
+            </div>
+          </nav>
+        </div>
+      </>
+    );
+  }
+
+  // Desktop sidebar (your original code with responsive classes)
+  return (
+    <div
+      className={`hidden md:block relative bg-white shadow-lg transition-all duration-300 ease-in-out ${
+        isExpanded ? 'w-64' : 'w-16'
+      }`}
+    >
+      {/* Sidebar Header */}
+      <div className="p-4 border-b">
+        <h2 className={`font-bold text-gray-800 ${!isExpanded && 'hidden'}`}>
+          Menu
+        </h2>
       </div>
-    </>
+
+      {/* Menu Items */}
+      <nav className="mt-4">
+        {menuItemsByRole[role]?.map((item, index) => (
+          <MenuItem
+            key={index}
+            item={item}
+            isExpanded={isExpanded}
+            isOpen={openMenus.has(item.title)}
+            toggleOpen={() => toggleMenu(item.title)}
+            isMobile={false}
+          />
+        ))}
+      </nav>
+
+      {/* Desktop Toggle Button */}
+      <button
+        onClick={onToggle}
+        className="absolute -right-3 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-all duration-300"
+      >
+        <div
+          className={`transform transition-transform duration-300 ${
+            isExpanded ? 'rotate-0' : 'rotate-180'
+          }`}
+        >
+          {'❯'}
+        </div>
+      </button> 
+    </div>
   );
 };
 
-// Demo component để test
-const SidebarDemo = () => {
+// Demo component to show how it works
+const App = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [currentRole, setCurrentRole] = useState('admin');
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100">
       <Sidebar 
         role={currentRole} 
         isExpanded={isExpanded} 
         onToggle={() => setIsExpanded(!isExpanded)} 
       />
       
-
+      <div className="flex-1 p-4 md:p-8 ml-0 md:ml-0">
+        <div className="bg-white rounded-lg shadow p-6 mt-16 md:mt-0">
+          <h1 className="text-2xl font-bold mb-4">Dashboard Content</h1>
+          <p className="text-gray-600 mb-4">
+            Sidebar sẽ tự động chuyển sang mobile menu khi màn hình nhỏ hơn 768px.
+          </p>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Chọn role để test:
+            </label>
+            <select 
+              value={currentRole} 
+              onChange={(e) => setCurrentRole(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option value="admin">Admin</option>
+              <option value="teacher">Teacher</option>
+              <option value="student">Student</option>
+            </select>
+          </div>
+          
+          <div className="text-sm text-gray-500">
+            <p>• Desktop: Sidebar collapse/expand như bình thường</p>
+            <p>• Mobile: Menu button ở góc trái trên, slide-out menu</p>
+            <p>• Tự động đóng menu khi click vào link</p>
+            <p>• Responsive với overlay và smooth animations</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default SidebarDemo;
+export default App;
