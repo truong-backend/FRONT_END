@@ -46,12 +46,16 @@ export default function SinhVienProfileComponents() {
 
     const handleSave = async () => {
         try {
-        
-            const res = await SinhVienService.updateSinhVienProfile(sinhVienData);
-            console.log('Cập nhật thành công ',res);
+            const dataToUpdate = {
+                sdt: sinhVienData.sdt,
+                diaChi: sinhVienData.diaChi
+            }; 
+            const res = await SinhVienService.updateSinhVienProfile(dataToUpdate ,avatarFile);
+            console.log('Cập nhật thành công ',res.data);
             await fetchProfile();
 
             setIsEditing(false);
+            setAvatarFile(null);
         } catch (error) {
             console.log('Lỗi khi cập nhật thông tin sinh viên',error);
         }
@@ -129,10 +133,14 @@ export default function SinhVienProfileComponents() {
                         <div className="lg:col-span-1">
                             <div className="flex flex-col items-center">
                                 <div className="relative mb-4">
-                                    <div className="w-48 h-48 bg-gray-100 rounded-lg border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+                                    <div className="w-40 h-60 bg-gray-100 rounded-lg border-2 border-gray-200 flex items-center justify-center overflow-hidden">
                                         {sinhVienData && sinhVienData.avatar ? (
                                             <img
-                                                src={`${sinhVienData.avatar}?${new Date().getTime()}`}
+                                                src={
+                                                    sinhVienData.avatar?.startsWith('data:image')
+                                                        ? sinhVienData.avatar
+                                                        : `${sinhVienData.avatar}?${new Date().getTime()}`
+                                                }
                                                 alt="Avatar"
                                                 className="w-full h-full object-cover"
                                             />
