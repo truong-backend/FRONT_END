@@ -253,40 +253,7 @@ const SidebarDemo = () => {
         onToggle={() => setIsExpanded(!isExpanded)} 
       />
       
-      <div className="flex-1 p-4 lg:p-8 pt-16 lg:pt-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6">Sidebar Responsive</h1>
-          
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Chọn Role:</h2>
-            <div className="flex flex-wrap gap-2">
-              {Object.keys(menuItemsByRole).map((role) => (
-                <button
-                  key={role}
-                  onClick={() => setCurrentRole(role)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    currentRole === role
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {role.charAt(0).toUpperCase() + role.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Tính năng:</h2>
-            <ul className="space-y-2 text-gray-700">
-              <li>📱 Mobile: Sidebar overlay với nút hamburger</li>
-              <li>💻 Desktop: Sidebar thu gọn/mở rộng như cũ</li>
-              <li>🎯 Giữ nguyên toàn bộ logic và nội dung gốc</li>
-              <li>✨ Chỉ thêm CSS responsive</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
