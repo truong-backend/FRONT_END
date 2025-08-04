@@ -31,6 +31,7 @@ const menuItemsByRole = {
     { title: 'Trang Chủ',  icon: <LayoutDashboard size={20} />, path: '/quan-tri/trang-chu' },
     { title: 'Tài Khoản Quản Trị', icon: <UserCog size={18} />, path: '/quan-tri/tai-khoan-quan-tri' },
     { title: 'Báo Cáo Điểm Danh',  icon: <ClipboardCheck size={20} />, path: '/quan-tri/quan-ly-diem-danh' },
+    { title: 'Quản Lý Ngày Lễ',  icon: <ClipboardCheck size={20} />, path: '/quan-tri/quan-ly-ngay-le' },
     { title: 'Quản Lý Lịch GD', icon: <Presentation size={20} />, path: '/quan-tri/quan-ly-lich-giang-day' },
     { title: 'Quản Lý Giáo Viên', icon: <Presentation size={20} />, path: '/quan-tri/danh-sach-giao-vien' },
     { title: 'Quản Lý Sinh Viên', icon: <GraduationCap size={20} />, path: '/quan-tri/danh-sach-sinh-vien' },

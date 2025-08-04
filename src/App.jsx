@@ -29,6 +29,7 @@ import { DsachDdanhPage } from './pages/Admin/danhsachdiemdanh/DsachDdanhPage.js
 import { ThemSinhVienPage } from './pages/GiaoVien/ThemSinhVien/ThemSinhVienPage.jsx';
 import { ThoiKhoaBieuPage } from './pages/GiaoVien/ThoiKhoaBieu/ThoiKhoaBieuPage.jsx';
 import { KetQuaDiemDanhPage } from './pages/GiaoVien/KetQuaDiemDanh/KetQuaDiemDanhPage.jsx';
+import { QuanLyNgayLePage } from './pages/Admin/QuanLyNgayLe/QuanLyNgayLePage.jsx';
 
 // Component để bảo vệ các route đăng nhập
 const PublicRoute = ({ children }) => {
@@ -263,6 +264,14 @@ function App() {
               element={
                 <BaoVeDuongDan allowedRoles={['ADMIN']}>
                   <DanhSachLopPage />
+                </BaoVeDuongDan>
+              }
+            />
+            <Route
+              path="/quan-tri/quan-ly-ngay-le"
+              element={
+                <BaoVeDuongDan allowedRoles={['ADMIN']}>
+                  <QuanLyNgayLePage />
                 </BaoVeDuongDan>
               }
             />
