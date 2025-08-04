@@ -24,7 +24,7 @@ export const GiaoVienService = {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('maTkb', requestData.maTkb);
-        formData.append('ngayHoc', requestData.ngayHoc); // ISO format yyyy-MM-dd
+        formData.append('ngayHoc', requestData.ngayHoc);
         formData.append('ghiChu', requestData.ghiChu);
         
         try {
