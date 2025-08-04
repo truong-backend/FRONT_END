@@ -31,15 +31,6 @@ const FORM_RULES = {
   ]
 };
 
-// Excel column mapping
-const EXCEL_COLUMNS = {
-  'Mã Lớp': 'maLop',
-  'Tên Lớp': 'tenLop', 
-  'Mã Khoa': 'maKhoa',
-  'GVCN': 'gvcn',
-  'SĐT GVCN': 'sdtGvcn'
-};
-
 // Utility functions
 const applyFilters = (data, filters) => {
   const { selectedKhoa, searchText } = filters;
@@ -299,152 +290,12 @@ export const DanhSachLopComponents = () => {
   const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
   const [sorter, setSorter] = useState(DEFAULT_SORTER);
-  const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState(0);
+
   const [form] = Form.useForm();
 
-  // Excel export function
-  const exportToExcel = () => {
-    try {
-      // Get all filtered data (not just current page)
-      const allFilteredData = applyFilters(allLops, { selectedKhoa, searchText });
-      const sortedData = applySorting(allFilteredData, sorter);
-      
-      // Prepare data for export
-      const exportData = sortedData.map((item, index) => ({
-        'STT': index + 1,
-        'Mã Lớp': item.maLop,
-        'Tên Lớp': item.tenLop,
-        'Khoa': item.tenKhoa,
-        'GVCN': item.gvcn,
-        'SĐT GVCN': item.sdtGvcn,
-      }));
-
-      // Create workbook and worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportData);
-
-      // Set column widths
-      const colWidths = [
-        { wch: 5 },  // STT
-        { wch: 12 }, // Mã Lớp
-        { wch: 20 }, // Tên Lớp
-        { wch: 25 }, // Khoa
-        { wch: 20 }, // GVCN
-        { wch: 15 }, // SĐT GVCN
-      ];
-      ws['!cols'] = colWidths;
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Danh sách Lớp');
-
-      // Generate Excel file and save
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      
-      // Generate filename with current date and filters
-      const currentDate = new Date().toISOString().split('T')[0];
-      let fileName = `DanhSachLop_${currentDate}`;
-      
-      if (selectedKhoa) {
-        const khoaName = khoas.find(k => k.maKhoa === selectedKhoa)?.tenKhoa || selectedKhoa;
-        fileName += `_${khoaName.replace(/\s+/g, '_')}`;
-      }
-      
-      if (searchText) {
-        fileName += `_Search_${searchText.replace(/\s+/g, '_')}`;
-      }
-      
-      fileName += '.xlsx';
-      
-      saveAs(blob, fileName);
-      message.success(`Xuất file Excel thành công! (${exportData.length} bản ghi)`);
-    } catch (error) {
-      console.error('Error exporting to Excel:', error);
-      message.error('Có lỗi xảy ra khi xuất file Excel');
-    }
-  };
-
-  // Excel import function
-  const handleImport = async (importData) => {
-    setIsImporting(true);
-    setImportProgress(0);
-    
-    try {
-      // Validate data
-      const errors = [];
-      const validData = [];
-      
-      importData.forEach((row, index) => {
-        const rowErrors = validateExcelRow(row, index, khoas);
-        if (rowErrors.length > 0) {
-          errors.push(...rowErrors);
-        } else {
-          // Clean and format data
-          validData.push({
-            maLop: row.maLop.toString().trim(),
-            tenLop: row.tenLop.toString().trim(),
-            maKhoa: row.maKhoa.toString().trim(),
-            gvcn: row.gvcn.toString().trim(),
-            sdtGvcn: row.sdtGvcn.toString().trim()
-          });
-        }
-      });
-
-      if (errors.length > 0) {
-        message.error(`Phát hiện ${errors.length} lỗi trong dữ liệu`);
-        return;
-      }
-
-      if (validData.length === 0) {
-        message.warning('Không có dữ liệu hợp lệ để import');
-        return;
-      }
-
-      // Import data using forEach with API calls
-      let successCount = 0;
-      let errorCount = 0;
-      const importErrors = [];
-
-      for (let i = 0; i < validData.length; i++) {
-        try {
-          await lopService.createLop(validData[i]);
-          successCount++;
-        } catch (error) {
-          errorCount++;
-          const errorMessage = error.response?.data || error.message || 'Lỗi không xác định';
-          importErrors.push(`Dòng ${i + 1} (${validData[i].maLop}): ${errorMessage}`);
-        }
-        
-        // Update progress
-        const progress = Math.round(((i + 1) / validData.length) * 100);
-        setImportProgress(progress);
-        
-        // Small delay to show progress
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      // Show results
-      if (successCount > 0) {
-        message.success(`Import thành công ${successCount} lớp`);
-      }
-      
-      if (errorCount > 0) {
-        message.error(`${errorCount} lớp không thể import`);
-        console.error('Import errors:', importErrors);
-      }
 
 
-      fetchData();
-      
-    } catch (error) {
-      console.error('Import error:', error);
-      message.error('Có lỗi xảy ra trong quá trình import');
-    } finally {
-      setIsImporting(false);
-      setImportProgress(0);
-    }
-  };
+
 
   // Data processing
   const processData = () => {

@@ -1,27 +1,214 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Table, Input, Space, Button, Popconfirm, message, Modal, Form, Avatar, Upload
+  Table, Input, Space, Button, Popconfirm, message, Modal, Form, Alert, Spin, Typography
 } from 'antd';
 import {
-  EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, UserOutlined, UploadOutlined
+  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined
 } from '@ant-design/icons';
 import { adminService } from '../../../services/Admin/adminService.js';
 import moment from 'moment';
 
+const { Title } = Typography;
+const { Search } = Input;
+
+// Config
+const PAGE_SIZE = 10;
+const FORM_RULES = {
+  username: [
+    { required: true, message: 'Vui lòng nhập username' },
+    { max: 50, message: 'Username không được vượt quá 50 ký tự' },
+  ],
+  password: [
+    { required: true, message: 'Vui lòng nhập mật khẩu' },
+    { min: 6, message: 'Mật khẩu ít nhất 6 ký tự' },
+  ],
+  fullName: [
+    { required: true, message: 'Vui lòng nhập họ và tên' },
+    { max: 100, message: 'Họ và tên không được vượt quá 100 ký tự' },
+  ],
+  email: [
+    { required: true, message: 'Vui lòng nhập email' },
+    { type: 'email', message: 'Email không hợp lệ' },
+  ],
+};
+
+// Utility
+const filterData = (data, searchText) => {
+  if (!searchText) return data;
+  const lowerSearch = searchText.toLowerCase();
+  return data.filter(item =>
+    item.username?.toLowerCase().includes(lowerSearch) ||
+    item.fullName?.toLowerCase().includes(lowerSearch) ||
+    item.email?.toLowerCase().includes(lowerSearch)
+  );
+};
+
+const createTableColumns = (onEdit, onDelete) => [
+  {
+    title: 'ID',
+    dataIndex: 'id',
+    width: '5%',
+    sorter: (a, b) => a.id - b.id,
+  },
+  {
+    title: 'Họ và tên',
+    dataIndex: 'fullName',
+    width: '20%',
+    sorter: (a, b) => a.fullName?.localeCompare(b.fullName),
+  },
+  {
+    title: 'Username',
+    dataIndex: 'username',
+    width: '15%',
+    sorter: (a, b) => a.username?.localeCompare(b.username),
+  },
+  {
+    title: 'Email',
+    dataIndex: 'email',
+    width: '25%',
+    sorter: (a, b) => a.email?.localeCompare(b.email),
+  },
+  {
+    title: 'Vai trò',
+    dataIndex: 'role',
+    width: '10%',
+  },
+  {
+    title: 'Ngày tạo',
+    dataIndex: 'createdAt',
+    width: '12%',
+    sorter: (a, b) => moment(a.createdAt).unix() - moment(b.createdAt).unix(),
+    render: date => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A',
+  },
+  {
+    title: 'Cập nhật',
+    dataIndex: 'updatedAt',
+    width: '12%',
+    sorter: (a, b) => moment(a.updatedAt).unix() - moment(b.updatedAt).unix(),
+    render: date => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A',
+  },
+  {
+    title: 'Thao tác',
+    width: '10%',
+    render: (_, record) => (
+      <Space>
+        <Button
+          type="primary"
+          icon={<EditOutlined />}
+          size="small"
+          onClick={() => onEdit(record)}
+        >
+          Sửa
+        </Button>
+        <Popconfirm
+          title="Bạn có chắc chắn muốn xóa?"
+          onConfirm={() => onDelete(record.id)}
+          okText="Có"
+          cancelText="Không"
+        >
+          <Button type="primary" danger icon={<DeleteOutlined />} size="small">
+            Xóa
+          </Button>
+        </Popconfirm>
+      </Space>
+    ),
+  },
+];
+
+// Components
+const Header = ({ onCreateClick }) => (
+  <div style={{
+    marginBottom: 16,
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  }}>
+    <Title level={2}>Quản lý Tài khoản Admin</Title>
+    <Button type="primary" icon={<PlusOutlined />} onClick={onCreateClick}>
+      Thêm Admin Mới
+    </Button>
+  </div>
+);
+
+const SearchBar = ({ value, onChange }) => (
+  <Search
+    placeholder="Tìm theo username, họ tên, email"
+    value={value}
+    onChange={e => onChange(e.target.value)}
+    allowClear
+    enterButton={<SearchOutlined />}
+    style={{ marginBottom: 16, width: 400 }}
+  />
+);
+
+const ErrorAlert = ({ error }) => {
+  if (!error) return null;
+  return (
+    <Alert
+      message="Lỗi"
+      description={error}
+      type="error"
+      showIcon
+      style={{ marginBottom: 16 }}
+    />
+  );
+};
+
+const AdminForm = ({ form, editingAdmin }) => (
+  <Form form={form} layout="vertical">
+    <Form.Item name="username" label="Username" rules={FORM_RULES.username}>
+      <Input disabled={!!editingAdmin} />
+    </Form.Item>
+    {!editingAdmin && (
+      <Form.Item name="password" label="Mật khẩu" rules={FORM_RULES.password}>
+        <Input.Password />
+      </Form.Item>
+    )}
+    <Form.Item name="fullName" label="Họ và tên" rules={FORM_RULES.fullName}>
+      <Input />
+    </Form.Item>
+    <Form.Item name="email" label="Email" rules={FORM_RULES.email}>
+      <Input />
+    </Form.Item>
+  </Form>
+);
+
+const AdminModal = ({ visible, title, onOk, onCancel, form, editingAdmin }) => (
+  <Modal
+    title={title}
+    open={visible}
+    onOk={onOk}
+    onCancel={onCancel}
+    destroyOnClose
+    width={600}
+  >
+    <AdminForm form={form} editingAdmin={editingAdmin} />
+  </Modal>
+);
+
+// Main Component
 export const DanhSachTaiKhoanAdminComponents = () => {
   const [admins, setAdmins] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
-  const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [form] = Form.useForm();
 
+  // Fetch data
   const fetchAdmins = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await adminService.getAdminsKphanTrang();
-      setAdmins(data.content || data);
-    } catch (error) {
+      const list = data.content || data;
+      setAdmins(list);
+      setFilteredData(filterData(list, searchText));
+    } catch (err) {
+      setError('Không thể tải danh sách quản trị viên. Vui lòng thử lại.');
       message.error('Lỗi khi tải danh sách quản trị viên');
     } finally {
       setLoading(false);
@@ -32,25 +219,22 @@ export const DanhSachTaiKhoanAdminComponents = () => {
     fetchAdmins();
   }, []);
 
-  const handleSearch = (e) => {
-    setSearchText(e.target.value.toLowerCase());
+  // Search handler
+  const handleSearch = (value) => {
+    setSearchText(value);
+    const filtered = filterData(admins, value);
+    setFilteredData(filtered);
+    setCurrentPage(1);
   };
 
-  const filteredData = admins.filter((admin) =>
-    admin.fullName?.toLowerCase().includes(searchText) ||
-    admin.email?.toLowerCase().includes(searchText) ||
-    admin.username?.toLowerCase().includes(searchText)
-  );
-
-  const showModal = (record = null) => {
-    if (record && Object.keys(record).length > 0) {
+  // Show modal (create or edit)
+  const handleaddOrEdit = (record = null) => {
+    if (record) {
       setEditingAdmin(record);
       form.setFieldsValue({
         username: record.username,
-        email: record.email,
         fullName: record.fullName,
-        role: record.role,
-        avatar: undefined
+        email: record.email,
       });
     } else {
       setEditingAdmin(null);
@@ -59,244 +243,76 @@ export const DanhSachTaiKhoanAdminComponents = () => {
     setModalVisible(true);
   };
 
+  // Modal OK handler
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      const formData = new FormData();
-
-      Object.keys(values).forEach(key => {
-        if (key !== 'avatar') {
-          formData.append(key, values[key]);
-        }
-      });
-
-      if (values.avatar && values.avatar[0]) {
-        formData.append('avatar', values.avatar[0].originFileObj);
-      }
+      values.role = 'admin'; // mặc định role admin
 
       if (editingAdmin) {
-        await adminService.updateAdmin(editingAdmin.id, formData);
+        await adminService.updateAdmin(editingAdmin.id, values);
         message.success('Cập nhật quản trị viên thành công');
       } else {
-        await adminService.createAdmin(formData);
+        await adminService.createAdmin(values);
         message.success('Thêm quản trị viên mới thành công');
       }
 
       setModalVisible(false);
+      form.resetFields();
       fetchAdmins();
-    } catch (error) {
-      message.error( (error.response?.data?.message || error.message));
+    } catch (err) {
+      message.error(err.response?.data?.message || err.message || 'Có lỗi xảy ra');
     }
   };
 
+  const handleModalCancel = () => {
+    setModalVisible(false);
+    setEditingAdmin(null);
+    form.resetFields();
+  };
+
+  // Delete handler
   const handleDelete = async (id) => {
     try {
       await adminService.deleteAdmin(id);
       message.success('Xóa quản trị viên thành công');
       fetchAdmins();
-    } catch (error) {
+    } catch (err) {
       message.error('Lỗi khi xóa quản trị viên');
     }
   };
 
-  const columns = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      sorter: true,
-      width: '5%'
-    },
-    {
-      title: 'Avatar',
-      dataIndex: 'avatar',
-      width: '8%',
-      render: (avatar, record) => (
-        <Avatar
-          src={avatar}
-          icon={<UserOutlined />}
-          alt={`Avatar của ${record.fullName}`}
-        />
-      )
-    },
-    {
-      title: 'Họ và tên',
-      dataIndex: 'fullName',
-      sorter: true,
-      width: '15%'
-    },
-    {
-      title: 'Username',
-      dataIndex: 'username',
-      sorter: true,
-      width: '15%'
-    },
-    {
-      title: 'Email',
-      dataIndex: 'email',
-      sorter: true,
-      width: '20%'
-    },
-    {
-      title: 'Vai trò',
-      dataIndex: 'role',
-      width: '10%'
-    },
-    {
-      title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      sorter: true,
-      width: '12%',
-      render: (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A'
-    },
-    {
-      title: 'Cập nhật',
-      dataIndex: 'updatedAt',
-      sorter: true,
-      width: '12%',
-      render: (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : 'N/A'
-    },
-    {
-      title: 'Thao tác',
-      width: '8%',
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => showModal(record)}
-          />
-          <Popconfirm
-            title="Bạn có chắc chắn muốn xóa quản trị viên này?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Có"
-            cancelText="Không"
-          >
-            <Button type="primary" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      )
-    }
-  ];
-
-  const normFile = (e) => {
-    if (Array.isArray(e)) return e;
-    return e?.fileList;
-  };
+  // Columns
+  const columns = createTableColumns(handleaddOrEdit, handleDelete);
+  const modalTitle = editingAdmin ? 'Cập nhật Quản trị viên' : 'Thêm Quản trị viên mới';
 
   return (
-    <div className="p-6">
-      <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Tài Khoản Quản Trị Viên</h2>
-        <Space>
-          <Input
-            prefix={<SearchOutlined />}
-            placeholder="Tìm theo tên, username, email"
-            value={searchText}
-            onChange={handleSearch}
-            allowClear
-            style={{ width: 300 }}
-          />
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => showModal()}
-          >
-            Thêm Quản trị viên
-          </Button>
-        </Space>
-      </div>
+    <div style={{ padding: 24 }}>
+      <Header onCreateClick={() => handleaddOrEdit()} />
+      <SearchBar value={searchText} onChange={handleSearch} />
+      <ErrorAlert error={error} />
 
-      <Table
-        columns={columns}
-        dataSource={filteredData}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
-        loading={loading}
-        scroll={{ x: 1500 }}
-      />
+      <Spin spinning={loading}>
+        <Table
+          columns={columns}
+          dataSource={filteredData}
+          rowKey="id"
+          pagination={{
+            pageSize: PAGE_SIZE,
+            current: currentPage,
+            onChange: setCurrentPage,
+          }}
+        />
+      </Spin>
 
-      <Modal
-        title={editingAdmin ? "Cập nhật Quản trị viên" : "Thêm Quản trị viên mới"}
-        open={modalVisible}
+      <AdminModal
+        visible={modalVisible}
+        title={modalTitle}
         onOk={handleModalOk}
-        onCancel={() => setModalVisible(false)}
-        width={600}
-        destroyOnClose
-      >
-        <Form
-          key={editingAdmin?.id || 'new'} // force render Form mỗi lần
-          form={form}
-          layout="vertical"
-        >
-          <Form.Item
-            name="username"
-            label="Username"
-            rules={[
-              { required: true, message: 'Vui lòng nhập username' },
-              { min: 3, message: 'Username phải có ít nhất 3 ký tự' }
-            ]}
-          >
-            <Input />
-          </Form.Item>
-
-          {!editingAdmin && (
-            <Form.Item
-              name="password"
-              label="Mật khẩu"
-              rules={[
-                { required: true, message: 'Vui lòng nhập mật khẩu' },
-                { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' }
-              ]}
-            >
-              <Input.Password />
-            </Form.Item>
-          )}
-
-          <Form.Item
-            name="fullName"
-            label="Họ và tên"
-            rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: 'Vui lòng nhập email' },
-              { type: 'email', message: 'Email không hợp lệ' }
-            ]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            name="role"
-            label="Vai trò"
-            hidden
-            initialValue="admin"
-          >
-            <Input disabled />
-          </Form.Item>
-
-          <Form.Item
-            name="avatar"
-            label="Avatar"
-            valuePropName="fileList"
-            getValueFromEvent={normFile}
-          >
-            <Upload
-              name="avatar"
-              listType="picture"
-              maxCount={1}
-              beforeUpload={() => false}
-            >
-              <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
-            </Upload>
-          </Form.Item>
-        </Form>
-      </Modal>
+        onCancel={handleModalCancel}
+        form={form}
+        editingAdmin={editingAdmin}
+      />
     </div>
   );
 };

@@ -83,12 +83,12 @@ const createTableColumns = (onEdit, onDelete) => [
 
 
 // Components
-const SearchBar = ({ value, onChange }) => (
+const SearchBar = ({ onChange }) => (
   <Search
     placeholder="Tìm theo mã hoặc tên môn học"
     onSearch={onChange}
     onChange={(e) => onChange(e.target.value)}
-    value={value}
+    // value={value}
     allowClear
     enterButton={<SearchOutlined />}
     style={{ marginBottom: '16px', width: 400 }}
