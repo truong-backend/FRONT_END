@@ -417,62 +417,53 @@ export const DiemDanhComponents = () => {
   };
 
 
-const handleHocKyChange = async (value) => {
-  if (!maGv) return;
+  const handleHocKyChange = async (value) => {
+    if (!maGv) return;
 
-  // Tách value để lấy hocKy và namHoc
-  const [hocKy, namHoc] = value.split('-').map(Number);
-  const selectedHocKyData = hocKyList.find(
-    hk => hk.hocKy === hocKy && hk.namHoc === namHoc
-  );
-  
-  if (!selectedHocKyData) return;
+    const selectedHocKyData = hocKyList.find(hk => hk.hocKy === value);
+    if (!selectedHocKyData) return;
 
-  resetSelections();
-  setSelectedHocKy(value);
+    resetSelections();
+    setSelectedHocKy(value);
 
-  setLoading(prev => ({ ...prev, monHoc: true }));
-  try {
-    const data = await fetchMonHocByGiaoVien(maGv, selectedHocKyData.hocKy, selectedHocKyData.namHoc);
-    setMonHocList(data);
-  } catch (error) {
-    message.error('Không thể tải danh sách môn học');
-  } finally {
-    setLoading(prev => ({ ...prev, monHoc: false }));
-  }
-};
+    setLoading(prev => ({ ...prev, monHoc: true }));
+    try {
+      const data = await fetchMonHocByGiaoVien(maGv, selectedHocKyData.hocKy, selectedHocKyData.namHoc);
+      setMonHocList(data);
+    } catch (error) {
+      message.error('Không thể tải danh sách môn học');
+    } finally {
+      setLoading(prev => ({ ...prev, monHoc: false }));
+    }
+  };
 
-const handleMonHocChange = async (value) => {
-  if (!maGv) return;
+  const handleMonHocChange = async (value) => {
+    if (!maGv) return;
 
-  const selectedMonHocData = monHocList.find(mh => mh.maMh === value);
-  
-  // Tách value để lấy hocKy và namHoc từ selectedHocKy
-  const [hocKy, namHoc] = selectedHocKy.split('-').map(Number);
-  const selectedHocKyData = hocKyList.find(
-    hk => hk.hocKy === hocKy && hk.namHoc === namHoc
-  );
+    const selectedMonHocData = monHocList.find(mh => mh.maMh === value);
+    const selectedHocKyData = hocKyList.find(hk => hk.hocKy === selectedHocKy);
 
-  if (!selectedMonHocData || !selectedHocKyData) return;
 
-  setSelectedMonHoc(value);
-  resetSubSelections();
+    if (!selectedMonHocData || !selectedHocKyData) return;
 
-  setLoading(prev => ({ ...prev, nhom: true }));
-  try {
-    const data = await fetchNhomMonHoc(
-      maGv,
-      selectedMonHocData.maMh,
-      selectedHocKyData.hocKy,
-      selectedHocKyData.namHoc
-    );
-    setNhomList(data);
-  } catch (error) {
-    message.error('Không thể tải danh sách nhóm môn học');
-  } finally {
-    setLoading(prev => ({ ...prev, nhom: false }));
-  }
-};
+    setSelectedMonHoc(value);
+    resetSubSelections();
+
+    setLoading(prev => ({ ...prev, nhom: true }));
+    try {
+      const data = await fetchNhomMonHoc(
+        maGv,
+        selectedMonHocData.maMh,
+        selectedHocKyData.hocKy,
+        selectedHocKyData.namHoc
+      );
+      setNhomList(data);
+    } catch (error) {
+      message.error('Không thể tải danh sách nhóm môn học');
+    } finally {
+      setLoading(prev => ({ ...prev, nhom: false }));
+    }
+  };
 
   const handleNhomChange = async (value) => {
     const selectedNhomData = nhomList.find(nhom => nhom.maGd === value);
@@ -761,11 +752,6 @@ const handleMonHocChange = async (value) => {
       title: 'Ghi chú',
       dataIndex: 'ghiChu',
       width: 200,
-      render: (ghiChu, record) => {
-        const maSv = record.maSv;
-        const isSelected = selectedStudents.includes(maSv) || selectedStudents2.includes(maSv);
-        const currentValue = ghiChuThuCong[maSv] ?? ghiChu ?? '';
-      }
     }
   ];
 
@@ -787,13 +773,12 @@ const handleMonHocChange = async (value) => {
         {/* Form Controls */}
         <Form.Item label="Chọn học kỳ">
           <Select
-            value={selectedHocKy}
             onChange={handleHocKyChange}
             placeholder="Chọn học kỳ  "
             loading={loading.hocKy}
           >
             {hocKyList.map((hk) => (
-              <Option key={`${hk.hocKy}-${hk.namHoc}`}  value={`${hk.hocKy}-${hk.namHoc}`} >
+              <Option key={hk.hocKy} value={hk.hocKy}>
                 {hk.hocKyDisplay}
               </Option>
             ))}
