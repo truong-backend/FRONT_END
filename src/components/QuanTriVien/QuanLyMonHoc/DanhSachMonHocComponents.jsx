@@ -80,9 +80,6 @@ const createTableColumns = (onEdit, onDelete) => [
   },
 ];
 
-
-
-// Components
 const SearchBar = ({ onChange }) => (
   <Search
     placeholder="Tìm theo mã hoặc tên môn học"
