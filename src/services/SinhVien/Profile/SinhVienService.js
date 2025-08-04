@@ -11,9 +11,22 @@ export const SinhVienService = {
         }
     },
 
-    updateSinhVienProfile : async (data) =>{
+    updateSinhVienProfile : async (data,avatarFile) =>{
         try {
-            const res = await api.put('/sinh-vien/update-profile',data);
+            const formData = new FormData();
+            formData.append(
+                'profile',
+                new Blob([JSON.stringify(data)], { type: 'application/json' })
+            );
+
+            if(avatarFile) {
+                formData.append('avatarFile', avatarFile);
+            }
+            const res = await api.put('/sinh-vien/update-profile', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             return res.data;
         } catch (error) {
             console.log('Lỗi khi cập nhật thông tin sinh viên',error);
