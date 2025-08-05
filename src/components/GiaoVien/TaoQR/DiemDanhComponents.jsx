@@ -325,16 +325,16 @@ export const DiemDanhComponents = () => {
     setIsScanning(false);
   };
 
-  const maGv = user?.maGv || user?.id || user?.username;
+  const maGvAu = user?.maGv || user?.id || user?.username;
 
   useEffect(() => {
-    if (!isAuthenticated || !maGv) {
+    if (!isAuthenticated || !maGvAu) {
       message.error('Vui lòng đăng nhập để sử dụng chức năng này');
       return;
     }
-    console.log('Gọi API học kỳ với maGv:', maGv);
-    loadHocKyList(maGv);
-  }, [isAuthenticated, maGv]);
+    console.log('Gọi API học kỳ với maGv:', maGvAu);
+    loadHocKyList(maGvAu);
+  }, [isAuthenticated, maGvAu]);
 
 
   // Load students when date is selected in manual mode
@@ -384,10 +384,10 @@ export const DiemDanhComponents = () => {
     return () => clearInterval(interval);
   }, [qrCodeData, qrCodeExpired]);
 
-  const loadHocKyList = async (maGv) => {
+  const loadHocKyList = async (maGvAu) => {
     setLoading(prev => ({ ...prev, hocKy: true }));
     try {
-      const data = await fetchHocKyList(maGv);
+      const data = await fetchHocKyList(maGvAu);
       console.log('Danh sách học kỳ:', data);
       setHocKyList(data);
     } catch (error) {
@@ -418,7 +418,7 @@ export const DiemDanhComponents = () => {
 
 
   const handleHocKyChange = async (value) => {
-    if (!maGv) return;
+    if (!maGvAu) return;
 
     const selectedHocKyData = hocKyList.find(hk => hk.hocKy === value);
     if (!selectedHocKyData) return;
@@ -428,7 +428,7 @@ export const DiemDanhComponents = () => {
 
     setLoading(prev => ({ ...prev, monHoc: true }));
     try {
-      const data = await fetchMonHocByGiaoVien(maGv, selectedHocKyData.hocKy, selectedHocKyData.namHoc);
+      const data = await fetchMonHocByGiaoVien(maGvAu, selectedHocKyData.hocKy, selectedHocKyData.namHoc);
       setMonHocList(data);
     } catch (error) {
       message.error('Không thể tải danh sách môn học');
@@ -438,7 +438,7 @@ export const DiemDanhComponents = () => {
   };
 
   const handleMonHocChange = async (value) => {
-    if (!maGv) return;
+    if (!maGvAu) return;
 
     const selectedMonHocData = monHocList.find(mh => mh.maMh === value);
     const selectedHocKyData = hocKyList.find(hk => hk.hocKy === selectedHocKy);
@@ -452,7 +452,7 @@ export const DiemDanhComponents = () => {
     setLoading(prev => ({ ...prev, nhom: true }));
     try {
       const data = await fetchNhomMonHoc(
-        maGv,
+        maGvAu,
         selectedMonHocData.maMh,
         selectedHocKyData.hocKy,
         selectedHocKyData.namHoc
@@ -758,7 +758,7 @@ export const DiemDanhComponents = () => {
 
 
   // Validation
-  if (!isAuthenticated || !maGv) {
+  if (!isAuthenticated || !maGvAu) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <p>Vui lòng đăng nhập để sử dụng chức năng này</p>
