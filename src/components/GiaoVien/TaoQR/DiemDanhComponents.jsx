@@ -386,16 +386,9 @@ export const DiemDanhComponents = () => {
 
   const loadHocKyList = async (maGvAu) => {
     setLoading(prev => ({ ...prev, hocKy: true }));
-    try {
-      const data = await fetchHocKyList(maGvAu);
+    const data = await fetchHocKyList(maGvAu);
       console.log('Danh sách học kỳ:', data);
       setHocKyList(data);
-    } catch (error) {
-      console.error('Lỗi tải học kỳ:', error);
-      
-    } finally {
-      setLoading(prev => ({ ...prev, hocKy: false }));
-    }
   };
 
   const handleSelectAllDiemDanh1 = (checked) => {
