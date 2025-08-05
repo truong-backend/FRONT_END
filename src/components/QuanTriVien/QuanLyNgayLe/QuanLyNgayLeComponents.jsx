@@ -1,32 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Table, Button, Space, Modal, Form, Input, InputNumber, 
+  Table, Button, Space, Modal, Form, Input, InputNumber, DatePicker,
   message, Popconfirm, Typography, Alert, Spin, Card
 } from 'antd';
 import { 
-  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined 
+  EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, CalendarOutlined 
 } from '@ant-design/icons';
-
-import { monHocService } from '../../../services/Admin/monHocService.js';
+import dayjs from 'dayjs';
 
 const { Title } = Typography;
 const { Search } = Input;
 
 // Configuration
-const PAGE_SIZE = 10;
 const FORM_RULES = {
-  maMh: [
-    { required: true, message: 'Vui lòng nhập mả môn học' },
-    { max: 20, message: 'Mã môn học không được vượt quá 20 ký tự' }
+  ngay: [
+    { required: true, message: 'Vui lòng chọn ngày lễ' }
   ],
-  tenMh: [
-    { required: true, message: 'Vui lòng nhập tên môn học' },
-    { max: 50, message: 'Tên môn học không được vượt quá 50 ký tự' }
-  ],
-  soTiet: [
-    { required: true, message: 'Vui lòng nhập số tiết' },
-    { type: 'number', min: 1, message: 'Số tiết phải lớn hơn 0' }
+  soNgayNghi: [
+    { required: true, message: 'Vui lòng nhập số ngày nghỉ' },
+    { type: 'number', min: 1, message: 'Số ngày nghỉ phải lớn hơn 0' }
   ]
+};
+
+// Mock service - replace with actual API calls
+const ngayLeService = {
+  getAllNgayLe: async () => {
+    // Mock data - replace with actual API call
+    return [
+      { 
+        ngay: '2025-01-01', 
+        soNgayNghi: 1,
+        tenNgayLe: 'Tết Dương lịch'
+      },
+      { 
+        ngay: '2025-02-10', 
+        soNgayNghi: 9,
+        tenNgayLe: 'Tết Nguyên đán'
+      },
+      { 
+        ngay: '2025-04-30', 
+        soNgayNghi: 1,
+        tenNgayLe: 'Ngày Giải phóng miền Nam'
+      },
+      { 
+        ngay: '2025-05-01', 
+        soNgayNghi: 1,
+        tenNgayLe: 'Ngày Quốc tế Lao động'
+      },
+      { 
+        ngay: '2025-09-02', 
+        soNgayNghi: 1,
+        tenNgayLe: 'Quốc khánh'
+      }
+    ];
+  },
+  createNgayLe: async (data) => {
+    // Mock create - replace with actual API call
+    console.log('Creating:', data);
+    return Promise.resolve(data);
+  },
+  updateNgayLe: async (ngay, data) => {
+    // Mock update - replace with actual API call
+    console.log('Updating:', ngay, data);
+    return Promise.resolve({ ...data, ngay });
+  },
+  deleteNgayLe: async (ngay) => {
+    // Mock delete - replace with actual API call
+    console.log('Deleting:', ngay);
+    return Promise.resolve();
+  }
 };
 
 // Utility functions
@@ -34,29 +76,57 @@ const filterData = (data, searchText) => {
   if (!searchText) return data;
   const lowerSearch = searchText.toLowerCase();
   return data.filter(item => 
-    item.tenMh.toLowerCase().includes(lowerSearch) ||
-    item.maMh.toLowerCase().includes(lowerSearch)
+    item.tenNgayLe?.toLowerCase().includes(lowerSearch) ||
+    dayjs(item.ngay).format('DD/MM/YYYY').includes(searchText)
   );
+};
+
+const formatDate = (dateString) => {
+  return dayjs(dateString).format('DD/MM/YYYY');
+};
+
+const getHolidayName = (dateString) => {
+  // Auto-generate holiday names based on common Vietnamese holidays
+  const month = dayjs(dateString).month() + 1;
+  const day = dayjs(dateString).date();
+  
+  if (month === 1 && day === 1) return 'Tết Dương lịch';
+  if (month === 4 && day === 30) return 'Ngày Giải phóng miền Nam';
+  if (month === 5 && day === 1) return 'Ngày Quốc tế Lao động';
+  if (month === 9 && day === 2) return 'Quốc khánh';
+  return 'Ngày lễ';
 };
 
 const createTableColumns = (onEdit, onDelete) => [
   {
-    title: 'Mã môn học',
-    dataIndex: 'maMh',
-    width: '20%',
-    sorter: (a, b) => a.maMh.localeCompare(b.maMh),
+    title: 'Ngày lễ',
+    dataIndex: 'ngay',
+    width: '25%',
+    sorter: (a, b) => dayjs(a.ngay).unix() - dayjs(b.ngay).unix(),
+    render: (text) => (
+      <span className="flex items-center gap-2">
+        <CalendarOutlined className="text-blue-500" />
+        {formatDate(text)}
+      </span>
+    ),
   },
   {
-    title: 'Tên môn học',
-    dataIndex: 'tenMh',
-    width: '40%',
-    sorter: (a, b) => a.tenMh.localeCompare(b.tenMh),
+    title: 'Tên ngày lễ',
+    dataIndex: 'tenNgayLe',
+    width: '35%',
+    sorter: (a, b) => (a.tenNgayLe || '').localeCompare(b.tenNgayLe || ''),
+    render: (text, record) => text || getHolidayName(record.ngay),
   },
   {
-    title: 'Số tiết',
-    dataIndex: 'soTiet',
+    title: 'Số ngày nghỉ',
+    dataIndex: 'soNgayNghi',
     width: '15%',
-    sorter: (a, b) => a.soTiet - b.soTiet,
+    sorter: (a, b) => a.soNgayNghi - b.soNgayNghi,
+    render: (text) => (
+      <span className="font-semibold text-green-600">
+        {text} ngày
+      </span>
+    ),
   },
   {
     title: 'Thao tác',
@@ -74,8 +144,9 @@ const createTableColumns = (onEdit, onDelete) => [
           <span className="hidden sm:inline">Sửa</span>
         </Button>
         <Popconfirm
-          title="Bạn có chắc chắn muốn xóa?"
-          onConfirm={() => onDelete(record.maMh)}
+          title="Bạn có chắc chắn muốn xóa ngày lễ này?"
+          description="Hành động này không thể hoàn tác."
+          onConfirm={() => onDelete(record.ngay)}
         >
           <Button 
             type="primary" 
@@ -96,21 +167,26 @@ const createTableColumns = (onEdit, onDelete) => [
 const MobileCard = ({ record, onEdit, onDelete }) => (
   <Card 
     size="small" 
-    className="mb-3 shadow-sm"
+    className="mb-3 shadow-sm border-l-4 border-l-blue-500"
     bodyStyle={{ padding: '12px' }}
   >
     <div className="space-y-2">
       <div className="flex justify-between items-center">
-        <span className="text-sm font-medium text-gray-600">Mã MH:</span>
-        <span className="font-semibold">{record.maMh}</span>
+        <span className="text-sm font-medium text-gray-600">Ngày:</span>
+        <span className="font-semibold flex items-center gap-1">
+          <CalendarOutlined className="text-blue-500" />
+          {formatDate(record.ngay)}
+        </span>
       </div>
       <div className="flex justify-between items-center">
-        <span className="text-sm font-medium text-gray-600">Tên MH:</span>
-        <span className="font-medium text-right flex-1 ml-2">{record.tenMh}</span>
+        <span className="text-sm font-medium text-gray-600">Tên ngày lễ:</span>
+        <span className="font-medium text-right flex-1 ml-2">
+          {record.tenNgayLe || getHolidayName(record.ngay)}
+        </span>
       </div>
       <div className="flex justify-between items-center">
-        <span className="text-sm font-medium text-gray-600">Số tiết:</span>
-        <span className="font-semibold">{record.soTiet}</span>
+        <span className="text-sm font-medium text-gray-600">Số ngày nghỉ:</span>
+        <span className="font-semibold text-green-600">{record.soNgayNghi} ngày</span>
       </div>
       <div className="flex gap-2 pt-2 border-t border-gray-100">
         <Button 
@@ -124,11 +200,11 @@ const MobileCard = ({ record, onEdit, onDelete }) => (
         </Button>
         <Popconfirm
           title="Bạn có chắc chắn muốn xóa?"
-          onConfirm={() => onDelete(record.maMh)}
+          onConfirm={() => onDelete(record.ngay)}
         >
           <Button 
             type="primary" 
-            danger 
+            danger
             icon={<DeleteOutlined />}
             size="small"
             className="flex-1"
@@ -141,10 +217,11 @@ const MobileCard = ({ record, onEdit, onDelete }) => (
   </Card>
 );
 
-const SearchBar = ({ onChange }) => (
+const SearchBar = ({ value, onChange }) => (
   <div className="mb-4">
     <Search
-      placeholder="Tìm theo mã hoặc tên môn học"
+      placeholder="Tìm theo tên ngày lễ hoặc ngày (dd/mm/yyyy)"
+      value={value}
       onSearch={onChange}
       onChange={(e) => onChange(e.target.value)}
       allowClear
@@ -154,18 +231,24 @@ const SearchBar = ({ onChange }) => (
   </div>
 );
 
-const Header = ({ onCreateClick }) => (
+const Header = ({ onCreateClick, totalCount }) => (
   <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-    <Title level={2} className="!mb-0 text-lg sm:text-xl md:text-2xl">
-      Quản lý Môn học
-    </Title>
+    <div>
+      <Title level={2} className="!mb-0 text-lg sm:text-xl md:text-2xl">
+        Quản lý Ngày lễ
+      </Title>
+      <p className="text-gray-600 text-sm mt-1">
+        Tổng cộng: {totalCount} ngày lễ
+      </p>
+    </div>
     <Button 
       type="primary" 
       icon={<PlusOutlined />} 
       onClick={onCreateClick}
       className="w-full sm:w-auto"
+      size="large"
     >
-      <span className="sm:inline">Thêm Môn học Mới</span>
+      <span className="sm:inline">Thêm Ngày lễ Mới</span>
     </Button>
   </div>
 );
@@ -183,23 +266,28 @@ const ErrorAlert = ({ error }) => {
   );
 };
 
-const MonHocForm = ({ form, editingMaMh }) => (
+const NgayLeForm = ({ form, editingNgay }) => (
   <Form form={form} layout="vertical">
-    {!editingMaMh && (
-      <Form.Item name="maMh" label="Mã môn học" rules={FORM_RULES.maMh}>
-        <Input />
-      </Form.Item>
-    )}
-    <Form.Item name="tenMh" label="Tên môn học" rules={FORM_RULES.tenMh}>
-      <Input />
+    <Form.Item name="ngay" label="Ngày lễ" rules={FORM_RULES.ngay}>
+      <DatePicker 
+        className="w-full"
+        format="DD/MM/YYYY"
+        placeholder="Chọn ngày lễ"
+        disabled={!!editingNgay}
+      />
     </Form.Item>
-    <Form.Item name="soTiet" label="Số tiết" rules={FORM_RULES.soTiet}>
-      <InputNumber className="w-full" />
+    <Form.Item name="soNgayNghi" label="Số ngày nghỉ" rules={FORM_RULES.soNgayNghi}>
+      <InputNumber 
+        className="w-full" 
+        min={1}
+        max={30}
+        placeholder="Nhập số ngày nghỉ"
+      />
     </Form.Item>
   </Form>
 );
 
-const MonHocModal = ({ visible, title, onOk, onCancel, form, editingMaMh }) => (
+const NgayLeModal = ({ visible, title, onOk, onCancel, form, editingNgay }) => (
   <Modal
     title={title}
     open={visible}
@@ -210,21 +298,20 @@ const MonHocModal = ({ visible, title, onOk, onCancel, form, editingMaMh }) => (
     style={{ maxWidth: '600px' }}
     className="!top-4 sm:!top-20"
   >
-    <MonHocForm form={form} editingMaMh={editingMaMh} />
+    <NgayLeForm form={form} editingNgay={editingNgay} />
   </Modal>
 );
 
 // Main Component
 export const QuanLyNgayLeComponents = () => {
   // State management
-  const [monHocs, setMonHocs] = useState([]);
+  const [ngayLes, setNgayLes] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingMaMh, setEditingMaMh] = useState(null);
+  const [editingNgay, setEditingNgay] = useState(null);
   const [searchText, setSearchText] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [form] = Form.useForm();
 
@@ -239,72 +326,84 @@ export const QuanLyNgayLeComponents = () => {
   }, []);
 
   // Data fetching
-  const fetchMonHocs = async () => {
+  const fetchNgayLes = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await monHocService.getAllMonHocs();
-      setMonHocs(data);
-      setFilteredData(data);
+      const data = await ngayLeService.getAllNgayLe();
+      // Sort by date
+      const sortedData = data.sort((a, b) => dayjs(a.ngay).unix() - dayjs(b.ngay).unix());
+      setNgayLes(sortedData);
+      setFilteredData(sortedData);
     } catch (error) {
-      setError('Không thể tải danh sách môn học. Vui lòng thử lại sau.');
-      message.error('Không thể tải danh sách môn học');
+      setError('Không thể tải danh sách ngày lễ. Vui lòng thử lại sau.');
+      message.error('Không thể tải danh sách ngày lễ');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMonHocs();
+    fetchNgayLes();
   }, []);
 
   // Event handlers
   const handleSearch = (value) => {
     setSearchText(value);
-    const filtered = filterData(monHocs, value);
+    const filtered = filterData(ngayLes, value);
     setFilteredData(filtered);
-    setCurrentPage(1);
   };
 
   const handleCreate = () => {
     form.resetFields();
-    setEditingMaMh(null);
+    setEditingNgay(null);
     setModalVisible(true);
   };
 
   const handleEdit = (record) => {
-    form.setFieldsValue(record);
-    setEditingMaMh(record.maMh);
+    form.setFieldsValue({
+      ngay: dayjs(record.ngay),
+      soNgayNghi: record.soNgayNghi
+    });
+    setEditingNgay(record.ngay);
     setModalVisible(true);
   };
 
-  const handleDelete = async (maMh) => {
+  const handleDelete = async (ngay) => {
     try {
-      await monHocService.deleteMonHoc(maMh);
-      message.success('Xóa môn học thành công');
-      fetchMonHocs();
+      await ngayLeService.deleteNgayLe(ngay);
+      message.success('Xóa ngày lễ thành công');
+      fetchNgayLes();
     } catch (error) {
-      message.error(error.response?.data || 'Không thể xóa môn học');
+      message.error(error.response?.data || 'Không thể xóa ngày lễ');
     }
   };
 
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
+      const formattedValues = {
+        ...values,
+        ngay: values.ngay.format('YYYY-MM-DD')
+      };
       
-      if (editingMaMh) {
-        await monHocService.updateMonHoc(editingMaMh, values);
-        message.success('Cập nhật môn học thành công');
+      if (editingNgay) {
+        await ngayLeService.updateNgayLe(editingNgay, formattedValues);
+        message.success('Cập nhật ngày lễ thành công');
       } else {
-        await monHocService.createMonHoc(values);
-        message.success('Thêm môn học mới thành công');
+        await ngayLeService.createNgayLe(formattedValues);
+        message.success('Thêm ngày lễ mới thành công');
       }
       
       setModalVisible(false);
       form.resetFields();
-      fetchMonHocs();
+      fetchNgayLes();
     } catch (error) {
-      message.error(error.response?.data || 'Có lỗi xảy ra');
+      if (error.errorFields) {
+        message.error('Vui lòng kiểm tra lại thông tin nhập vào');
+      } else {
+        message.error(error.response?.data || 'Có lỗi xảy ra');
+      }
     }
   };
 
@@ -315,76 +414,66 @@ export const QuanLyNgayLeComponents = () => {
 
   // Table configuration
   const columns = createTableColumns(handleEdit, handleDelete);
-  const modalTitle = editingMaMh ? 'Cập nhật Môn học' : 'Thêm Môn học Mới';
+  const modalTitle = editingNgay ? 'Cập nhật Ngày lễ' : 'Thêm Ngày lễ Mới';
 
   return (
-    <div className="p-4 sm:p-6 max-w-full overflow-hidden">
-      <Header onCreateClick={handleCreate} />
-      <SearchBar value={searchText} onChange={handleSearch} />
-      <ErrorAlert error={error} />
-      
-      <Spin spinning={loading}>
-        {isMobile ? (
-          // Mobile view with cards
-          <div className="space-y-3">
-            {filteredData
-              .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-              .map(record => (
-                <MobileCard 
-                  key={record.maMh}
-                  record={record}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              ))
-            }
-            {filteredData.length > PAGE_SIZE && (
-              <div className="flex justify-center pt-4">
-                <div className="flex gap-2">
-                  {Array.from({ length: Math.ceil(filteredData.length / PAGE_SIZE) }, (_, i) => (
-                    <Button
-                      key={i + 1}
-                      type={currentPage === i + 1 ? "primary" : "default"}
-                      size="small"
-                      onClick={() => setCurrentPage(i + 1)}
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
+    <div className="p-4 sm:p-6 max-w-full overflow-hidden bg-gray-50 min-h-screen">
+      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+        <Header onCreateClick={handleCreate} totalCount={filteredData.length} />
+        <SearchBar value={searchText} onChange={handleSearch} />
+        <ErrorAlert error={error} />
+        
+        <Spin spinning={loading}>
+          {isMobile ? (
+            // Mobile view with cards
+            <div className="space-y-3">
+              {filteredData.length === 0 && !loading ? (
+                <div className="text-center py-8 text-gray-500">
+                  <CalendarOutlined className="text-4xl mb-2" />
+                  <p>Không có ngày lễ nào</p>
                 </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          // Desktop view with table
-          <div className="overflow-x-auto">
-            <Table
-              columns={columns}
-              dataSource={filteredData}
-              rowKey="maMh"
-              pagination={{
-                pageSize: PAGE_SIZE,
-                current: currentPage,
-                onChange: setCurrentPage,
-                showSizeChanger: false,
-                showQuickJumper: true,
-                showTotal: (total, range) => 
-                  `${range[0]}-${range[1]} của ${total} mục`,
-              }}
-              scroll={{ x: 800 }}
-            />
-          </div>
-        )}
-      </Spin>
+              ) : (
+                filteredData.map(record => (
+                  <MobileCard 
+                    key={record.ngay}
+                    record={record}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))
+              )}
+            </div>
+          ) : (
+            // Desktop view with table
+            <div className="overflow-x-auto">
+              <Table
+                columns={columns}
+                dataSource={filteredData}
+                rowKey="ngay"
+                pagination={false}
+                scroll={{ x: 800 }}
+                locale={{
+                  emptyText: (
+                    <div className="text-center py-8 text-gray-500">
+                      <CalendarOutlined className="text-4xl mb-2" />
+                      <p>Không có ngày lễ nào</p>
+                    </div>
+                  )
+                }}
+              />
+            </div>
+          )}
+        </Spin>
 
-      <MonHocModal
-        visible={modalVisible}
-        title={modalTitle}
-        onOk={handleModalOk}
-        onCancel={handleModalCancel}
-        form={form}
-        editingMaMh={editingMaMh}
-      />
+        <NgayLeModal
+          visible={modalVisible}
+          title={modalTitle}
+          onOk={handleModalOk}
+          onCancel={handleModalCancel}
+          form={form}
+          editingNgay={editingNgay}
+        />
+      </div>
     </div>
   );
 };
