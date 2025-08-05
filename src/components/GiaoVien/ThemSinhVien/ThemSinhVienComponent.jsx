@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import moment from 'moment-timezone';
 import {
   Table,
   Input,
@@ -142,7 +141,7 @@ export const ThemSinhVienComponent = () => {
       const search = tkbSearchText.toLowerCase();
       return (
         tkb.phongHoc?.toLowerCase().includes(search) ||
-        moment(tkb.ngayHoc).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY').includes(search) ||
+        moment(tkb.ngayHoc).format('DD/MM/YYYY').includes(search) ||
         tkb.stBd?.toString().includes(search) ||
         tkb.stKt?.toString().includes(search)
       );
@@ -291,7 +290,7 @@ export const ThemSinhVienComponent = () => {
     try {
       await ThoiKhoaBieuService.XoaTkbTheoMaGd(currentMaGd);
       message.success('Đã xóa tất cả thời khóa biểu của môn học này');
-
+      
       await fetchTkbByMaGd(currentMaGd);
     } catch (error) {
       console.error('Lỗi khi xóa thời khóa biểu:', error);
@@ -348,14 +347,14 @@ export const ThemSinhVienComponent = () => {
       dataIndex: 'ngayBd',
       key: 'ngayBd',
       width: 120,
-      render: (text) => moment(text).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY'),
+      render: (text) => moment(text).format('DD/MM/YYYY'),
     },
     {
       title: 'Ngày kết thúc',
       dataIndex: 'ngayKt',
       key: 'ngayKt',
       width: 120,
-      render: (text) => moment(text).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY'),
+      render: (text) => moment(text).format('DD/MM/YYYY'),
     },
     {
       title: 'Tiết bắt đầu',
@@ -481,27 +480,27 @@ export const ThemSinhVienComponent = () => {
       title: 'Ngày học',
       dataIndex: 'ngayHoc',
       key: 'ngayHoc',
-      render: (text) => moment(text).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY'),
+      render: (text) => moment(text).format('DD/MM/YYYY'),
     },
-{
-  title: 'Thứ',
-  dataIndex: 'ngayHoc',
-  key: 'thu',
-  render: (text) => {
-    const dayOfWeek = moment(text).tz('Asia/Ho_Chi_Minh').day();
-    const isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
-    const days = {
-      1: 'Thứ hai',
-      2: 'Thứ ba', 
-      3: 'Thứ tư',
-      4: 'Thứ năm',
-      5: 'Thứ sáu',
-      6: 'Thứ bảy',
-      7: 'Chủ nhật'
-    };
-    return days[isoDayOfWeek];
-  },
-},
+    // {
+    //   title: 'Thứ',
+    //   dataIndex: 'ngayHoc',
+    //   key: 'thu',
+    //   render: (text) => {
+    //     const dayOfWeek = moment(text).day();
+    //     const isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+    //     const days = {
+    //       1: 'Thứ hai',
+    //       2: 'Thứ ba', 
+    //       3: 'Thứ tư',
+    //       4: 'Thứ năm',
+    //       5: 'Thứ sáu',
+    //       6: 'Thứ bảy',
+    //       7: 'Chủ nhật'
+    //     };
+    //     return days[isoDayOfWeek];
+    //   },
+    // },
     {
       title: 'Phòng học',
       dataIndex: 'phongHoc',
@@ -578,7 +577,7 @@ export const ThemSinhVienComponent = () => {
                 </div>
                 <div style={{ textAlign: 'left' }}>
                   <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
-                  <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY')}</p>
+                  <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).format('DD/MM/YYYY')}</p>
                   <p><strong>Tiết học:</strong> {selectedRecord.stBd} - {selectedRecord.stKt}</p>
                 </div>
                 <div style={{ textAlign: 'left' }}>
@@ -591,7 +590,7 @@ export const ThemSinhVienComponent = () => {
               <TabPane tab="Danh sách sinh viên" key="1">
                 <div>
                   <h3>Danh sách sinh viên đã đăng ký ({enrolledStudents.length} sinh viên):</h3>
-
+                  
                   <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
                     <Input
                       placeholder="Tìm kiếm sinh viên đã đăng ký (MSSV, tên, email)"
@@ -622,7 +621,7 @@ export const ThemSinhVienComponent = () => {
               <TabPane tab="Thời khóa biểu" key="2">
                 <div>
                   <h3>Danh sách thời khóa biểu</h3>
-
+                  
                   <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
                     <Input
                       placeholder="Tìm kiếm theo phòng học, ngày học, tiết học"
@@ -807,7 +806,7 @@ export const ThemSinhVienComponent = () => {
               <h4>Thông tin lịch giảng dạy:</h4>
               <p><strong>Môn học:</strong> {selectedRecord.tenMh} ({selectedRecord.maMh})</p>
               <p><strong>Phòng học:</strong> {selectedRecord.phongHoc}</p>
-              <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY')}</p>
+              <p><strong>Thời gian:</strong> {moment(selectedRecord.ngayBd).format('DD/MM/YYYY')} - {moment(selectedRecord.ngayKt).format('DD/MM/YYYY')}</p>
               <p><strong>Tiết:</strong> {selectedRecord.stBd} - {selectedRecord.stKt}</p>
             </div>
           )}
