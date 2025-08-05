@@ -7,6 +7,7 @@ import {
   EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, CalendarOutlined 
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { ngayleService } from '../../../services/Admin/ngayleService'; // Import the actual service
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -20,55 +21,6 @@ const FORM_RULES = {
     { required: true, message: 'Vui lòng nhập số ngày nghỉ' },
     { type: 'number', min: 1, message: 'Số ngày nghỉ phải lớn hơn 0' }
   ]
-};
-
-// Mock service - replace with actual API calls
-const ngayLeService = {
-  getAllNgayLe: async () => {
-    // Mock data - replace with actual API call
-    return [
-      { 
-        ngay: '2025-01-01', 
-        soNgayNghi: 1,
-        tenNgayLe: 'Tết Dương lịch'
-      },
-      { 
-        ngay: '2025-02-10', 
-        soNgayNghi: 9,
-        tenNgayLe: 'Tết Nguyên đán'
-      },
-      { 
-        ngay: '2025-04-30', 
-        soNgayNghi: 1,
-        tenNgayLe: 'Ngày Giải phóng miền Nam'
-      },
-      { 
-        ngay: '2025-05-01', 
-        soNgayNghi: 1,
-        tenNgayLe: 'Ngày Quốc tế Lao động'
-      },
-      { 
-        ngay: '2025-09-02', 
-        soNgayNghi: 1,
-        tenNgayLe: 'Quốc khánh'
-      }
-    ];
-  },
-  createNgayLe: async (data) => {
-    // Mock create - replace with actual API call
-    console.log('Creating:', data);
-    return Promise.resolve(data);
-  },
-  updateNgayLe: async (ngay, data) => {
-    // Mock update - replace with actual API call
-    console.log('Updating:', ngay, data);
-    return Promise.resolve({ ...data, ngay });
-  },
-  deleteNgayLe: async (ngay) => {
-    // Mock delete - replace with actual API call
-    console.log('Deleting:', ngay);
-    return Promise.resolve();
-  }
 };
 
 // Utility functions
@@ -325,17 +277,20 @@ export const QuanLyNgayLeComponents = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Data fetching
+  // Data fetching using actual ngayleService
   const fetchNgayLes = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await ngayLeService.getAllNgayLe();
+      const response = await ngayleService.getAllNgayLe();
+      const data = response.data || response; // Handle different response structures
+      
       // Sort by date
       const sortedData = data.sort((a, b) => dayjs(a.ngay).unix() - dayjs(b.ngay).unix());
       setNgayLes(sortedData);
       setFilteredData(sortedData);
     } catch (error) {
+    //   console.error('Error fetching ngay le:', error);
       setError('Không thể tải danh sách ngày lễ. Vui lòng thử lại sau.');
       message.error('Không thể tải danh sách ngày lễ');
     } finally {
@@ -371,11 +326,15 @@ export const QuanLyNgayLeComponents = () => {
 
   const handleDelete = async (ngay) => {
     try {
-      await ngayLeService.deleteNgayLe(ngay);
+      await ngayleService.deleteNgayLe(ngay);
       message.success('Xóa ngày lễ thành công');
       fetchNgayLes();
     } catch (error) {
-      message.error(error.response?.data || 'Không thể xóa ngày lễ');
+      console.error('Error deleting ngay le:', error);
+      const errorMessage = error?.response?.data?.message || 
+                          error?.message || 
+                          'Không thể xóa ngày lễ';
+      message.error(errorMessage);
     }
   };
 
@@ -388,10 +347,13 @@ export const QuanLyNgayLeComponents = () => {
       };
       
       if (editingNgay) {
-        await ngayLeService.updateNgayLe(editingNgay, formattedValues);
+        // For update, only send soNgayNghi as per controller expectation
+        await ngayleService.updateNgayLe(editingNgay, { 
+          soNgayNghi: formattedValues.soNgayNghi 
+        });
         message.success('Cập nhật ngày lễ thành công');
       } else {
-        await ngayLeService.createNgayLe(formattedValues);
+        await ngayleService.createNgayLe(formattedValues);
         message.success('Thêm ngày lễ mới thành công');
       }
       
@@ -399,10 +361,15 @@ export const QuanLyNgayLeComponents = () => {
       form.resetFields();
       fetchNgayLes();
     } catch (error) {
+      console.error('Error saving ngay le:', error);
+      
       if (error.errorFields) {
         message.error('Vui lòng kiểm tra lại thông tin nhập vào');
       } else {
-        message.error(error.response?.data || 'Có lỗi xảy ra');
+        const errorMessage = error?.response?.data?.message || 
+                            error?.message || 
+                            'Có lỗi xảy ra';
+        message.error(errorMessage);
       }
     }
   };

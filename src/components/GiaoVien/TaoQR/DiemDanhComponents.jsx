@@ -867,7 +867,7 @@ export const DiemDanhComponents = () => {
               setStartCamera(false);
             }}
             footer={null}
-            width={450}
+            width={1000}
           >
             <div className="text-center">
               {!startCamera ? (
