@@ -786,13 +786,13 @@ export const ThemSinhVienComponent = () => {
               maxTagCount="responsive"
               allowClear
             >
-              <Option value={1}>Thứ Hai</Option>
-              <Option value={2}>Thứ Ba</Option>
-              <Option value={3}>Thứ Tư</Option>
-              <Option value={4}>Thứ Năm</Option>
-              <Option value={5}>Thứ Sáu</Option>
-              <Option value={6}>Thứ Bảy</Option>
-              <Option value={7}>Chủ Nhật</Option>
+              <Option value={0}>Thứ Hai</Option>
+              <Option value={1}>Thứ Ba</Option>
+              <Option value={2}>Thứ Tư</Option>
+              <Option value={3}>Thứ Năm</Option>
+              <Option value={4}>Thứ Sáu</Option>
+              <Option value={5}>Thứ Bảy</Option>
+              <Option value={6}>Chủ Nhật</Option>
             </Select>
           </Form.Item>
 

@@ -868,6 +868,7 @@ export const DiemDanhComponents = () => {
             }}
             footer={null}
             width={1000}
+            height={1000}
           >
             <div className="text-center">
               {!startCamera ? (
