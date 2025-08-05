@@ -392,7 +392,7 @@ export const DiemDanhComponents = () => {
       setHocKyList(data);
     } catch (error) {
       console.error('Lỗi tải học kỳ:', error);
-      message.error('Không thể tải danh sách học kỳ');
+      
     } finally {
       setLoading(prev => ({ ...prev, hocKy: false }));
     }
