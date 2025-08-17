@@ -48,6 +48,13 @@ export const adminService = {
     return response.data;
   },
 
+  layDanhSachQuanTriVien: async ({ page = 0, size = 10, search = '', sort = 'id,asc' } = {}) => {
+    const response = await api.get('/admin/danh-sach-quan-tri-vien', {
+      params: { page, size, search, sort }, // <-- gửi sort="id,asc", không dùng []
+    });
+    return response.data;
+  },
+
   // Thêm admin mới
   createAdmin: async (adminData) => {
     const response = await api.post('/admin', adminData);

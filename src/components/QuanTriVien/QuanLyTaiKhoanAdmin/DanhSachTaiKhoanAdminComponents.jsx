@@ -11,7 +11,7 @@ import moment from 'moment';
 const { Title } = Typography;
 const { Search } = Input;
 
-// Config
+
 const PAGE_SIZE = 10;
 const FORM_RULES = {
   username: [
@@ -32,18 +32,7 @@ const FORM_RULES = {
   ],
 };
 
-// Utility
-const filterData = (data, searchText) => {
-  if (!searchText) return data;
-  const lowerSearch = searchText.toLowerCase();
-  return data.filter(item =>
-    item.username?.toLowerCase().includes(lowerSearch) ||
-    item.fullName?.toLowerCase().includes(lowerSearch) ||
-    item.email?.toLowerCase().includes(lowerSearch)
-  );
-};
-
-const createTableColumns = (onEdit, onDelete) => [
+const Columns = (onEdit, onDelete) => [
   {
     title: 'ID',
     dataIndex: 'id',
@@ -55,12 +44,6 @@ const createTableColumns = (onEdit, onDelete) => [
     dataIndex: 'fullName',
     width: '20%',
     sorter: (a, b) => a.fullName?.localeCompare(b.fullName),
-  },
-  {
-    title: 'Username',
-    dataIndex: 'username',
-    width: '15%',
-    sorter: (a, b) => a.username?.localeCompare(b.username),
   },
   {
     title: 'Email',
@@ -115,7 +98,6 @@ const createTableColumns = (onEdit, onDelete) => [
   },
 ];
 
-// Components
 const Header = ({ onCreateClick }) => (
   <div style={{
     marginBottom: 16,
@@ -132,7 +114,7 @@ const Header = ({ onCreateClick }) => (
 
 const SearchBar = ({ value, onChange }) => (
   <Search
-    placeholder="Tìm theo username, họ tên, email"
+    placeholder="Tìm theo họ tên, email"
     value={value}
     onChange={e => onChange(e.target.value)}
     allowClear
@@ -156,19 +138,19 @@ const ErrorAlert = ({ error }) => {
 
 const AdminForm = ({ form, editingAdmin }) => (
   <Form form={form} layout="vertical">
-    <Form.Item name="username" label="Username" rules={FORM_RULES.username}>
-      <Input disabled={!!editingAdmin} />
+    <Form.Item name="username" label="Tên tài khoản" rules={FORM_RULES.username}>
+      <Input placeholder="Nhập tên tài khoản" />
     </Form.Item>
     {!editingAdmin && (
       <Form.Item name="password" label="Mật khẩu" rules={FORM_RULES.password}>
-        <Input.Password />
+        <Input.Password placeholder="Nhập mật khẩu" />
       </Form.Item>
     )}
     <Form.Item name="fullName" label="Họ và tên" rules={FORM_RULES.fullName}>
-      <Input />
+      <Input placeholder="Nhập họ và tên đầy đủ" />
     </Form.Item>
     <Form.Item name="email" label="Email" rules={FORM_RULES.email}>
-      <Input />
+      <Input placeholder="Nhập địa chỉ email" />
     </Form.Item>
   </Form>
 );
@@ -179,17 +161,16 @@ const AdminModal = ({ visible, title, onOk, onCancel, form, editingAdmin }) => (
     open={visible}
     onOk={onOk}
     onCancel={onCancel}
-    destroyOnClose
+
     width={600}
   >
     <AdminForm form={form} editingAdmin={editingAdmin} />
   </Modal>
 );
 
-// Main Component
 export const DanhSachTaiKhoanAdminComponents = () => {
   const [admins, setAdmins] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
+  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -198,17 +179,21 @@ export const DanhSachTaiKhoanAdminComponents = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [form] = Form.useForm();
 
-  // Fetch data
-  const fetchAdmins = async () => {
+  const fetchAdmins = async (page = 0, search = '') => {
     try {
       setLoading(true);
       setError(null);
-      const data = await adminService.getAdminsKphanTrang();
-      const list = data.content || data;
-      setAdmins(list);
-      setFilteredData(filterData(list, searchText));
+      const response = await adminService.layDanhSachQuanTriVien({
+        page,
+        size: PAGE_SIZE,
+        search,
+        sort: 'id,asc',
+      });
+      setAdmins(response.content || []);
+      setTotalElements(response.totalElements || 0);
+      setCurrentPage(page + 1);
     } catch (err) {
-      setError('Không thể tải danh sách quản trị viên. Vui lòng thử lại.');
+      setError('Không thể tải danh sách quản trị viên.');
       message.error('Lỗi khi tải danh sách quản trị viên');
     } finally {
       setLoading(false);
@@ -219,35 +204,43 @@ export const DanhSachTaiKhoanAdminComponents = () => {
     fetchAdmins();
   }, []);
 
-  // Search handler
   const handleSearch = (value) => {
     setSearchText(value);
-    const filtered = filterData(admins, value);
-    setFilteredData(filtered);
-    setCurrentPage(1);
+    fetchAdmins(0, value);
   };
 
-  // Show modal (create or edit)
-  const handleaddOrEdit = (record = null) => {
-    if (record) {
-      setEditingAdmin(record);
-      form.setFieldsValue({
-        username: record.username,
-        fullName: record.fullName,
-        email: record.email,
-      });
-    } else {
-      setEditingAdmin(null);
-      form.resetFields();
-    }
+  const handlePageChange = (page) => {
+    fetchAdmins(page - 1, searchText);
+  };
+
+  const handleCreate = () => {
+    setEditingAdmin(null);
+    form.resetFields();
+    form.setFieldsValue({
+      username: '',
+      password: '',
+      fullName: '',
+      email: ''
+    });
     setModalVisible(true);
   };
 
-  // Modal OK handler
+
+  const handleEdit = (record) => {
+    setEditingAdmin(record);
+    form.resetFields();
+    form.setFieldsValue({
+      username: record.username,
+      fullName: record.fullName,
+      email: record.email,
+    });
+    setModalVisible(true);
+  };
+
   const handleModalOk = async () => {
     try {
-      const values = await form.validateFields();
-      values.role = 'admin'; // mặc định role admin
+      const values = await form.validateFields(); // <-- sẽ tự báo lỗi nếu trống
+      values.role = 'admin';
 
       if (editingAdmin) {
         await adminService.updateAdmin(editingAdmin.id, values);
@@ -258,12 +251,19 @@ export const DanhSachTaiKhoanAdminComponents = () => {
       }
 
       setModalVisible(false);
+      setEditingAdmin(null);
       form.resetFields();
-      fetchAdmins();
+      fetchAdmins(currentPage - 1, searchText);
     } catch (err) {
-      message.error(err.response?.data?.message || err.message || 'Có lỗi xảy ra');
+      // Nếu validateFields fail, err là object từ Form
+      if (err.errorFields) {
+        message.error('Vui lòng điền đầy đủ tất cả các trường bắt buộc');
+      } else {
+        message.error(err.response?.data?.message || err.message || 'Có lỗi xảy ra');
+      }
     }
   };
+
 
   const handleModalCancel = () => {
     setModalVisible(false);
@@ -271,36 +271,35 @@ export const DanhSachTaiKhoanAdminComponents = () => {
     form.resetFields();
   };
 
-  // Delete handler
   const handleDelete = async (id) => {
     try {
       await adminService.deleteAdmin(id);
       message.success('Xóa quản trị viên thành công');
-      fetchAdmins();
+      fetchAdmins(currentPage - 1, searchText);
     } catch (err) {
       message.error('Lỗi khi xóa quản trị viên');
     }
   };
 
-  // Columns
-  const columns = createTableColumns(handleaddOrEdit, handleDelete);
+  const col = Columns(handleEdit, handleDelete);
   const modalTitle = editingAdmin ? 'Cập nhật Quản trị viên' : 'Thêm Quản trị viên mới';
 
   return (
     <div style={{ padding: 24 }}>
-      <Header onCreateClick={() => handleaddOrEdit()} />
+      <Header onCreateClick={handleCreate} />
       <SearchBar value={searchText} onChange={handleSearch} />
       <ErrorAlert error={error} />
 
       <Spin spinning={loading}>
         <Table
-          columns={columns}
-          dataSource={filteredData}
+          columns={col}
+          dataSource={admins}
           rowKey="id"
           pagination={{
-            pageSize: PAGE_SIZE,
             current: currentPage,
-            onChange: setCurrentPage,
+            pageSize: PAGE_SIZE,
+            total: totalElements,
+            onChange: handlePageChange,
           }}
         />
       </Spin>
